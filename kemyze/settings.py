@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-5r%%&hxuh^*0$qz(o!4!d0zn$75(_4z&h^1tu*piy=lrz1k-^g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app', '.now.sh']
 
 
 # Application definition
@@ -74,10 +74,10 @@ WSGI_APPLICATION = 'kemyze.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    #'default': {
+    #    'ENGINE': 'django.db.backends.sqlite3',
+    #    'NAME': BASE_DIR / 'db.sqlite3',
+    #}
 }
 
 
@@ -114,8 +114,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR/'static',]
+STATIC_ROOT = BASE_DIR/'staticfiles'
+#STATIC_URL = 'static/'
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
