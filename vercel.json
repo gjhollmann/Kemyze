@@ -1,24 +1,3 @@
 {
-  "builds": [
-    {
-      "src": "kemyze/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.13" }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": { "distDir": ".vercel/output" }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.)",
-      "dest": "/staticfiles/$1"
-    },
-    {
-      "src": "/(.)",
-      "dest": "kemyze/wsgi.py"
-    }
-  ]
+
 }
