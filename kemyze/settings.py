@@ -76,8 +76,12 @@ WSGI_APPLICATION = 'kemyze.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'kemyzeDatabase',
+        'USER': 'kemyzeAdmin',
+        'PASSWORD': 'Ch3m1stryRul3s.',
+        'HOST': '129.153.88.118',
+        'PORT': '3306',
     }
 }
 
