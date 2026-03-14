@@ -4,5 +4,6 @@ django-filter==25.2
 djangorestframework==3.16.1
 Markdown==3.10.2
 mysqlclient==2.2.8
+pkgconfig==1.6.0
 sqlparse==0.5.5
 tzdata==2025.3
