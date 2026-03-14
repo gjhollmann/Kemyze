@@ -6,5 +6,5 @@ def tester(request):
     return HttpResponse("Hello from Kemyze")
 
 def dbtester(request):
-    myData = TestTable.objects.all()
+    myData = TestTable.objects.all().values()
     return HttpResponse(myData)
