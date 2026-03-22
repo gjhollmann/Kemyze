@@ -7,4 +7,5 @@ urlpatterns = [
     path('containers/', views.get_all_containers, name='get_all_containers'),
     path('search/', views.search_containers, name='search_containers'),
     path('containers/add/', views.add_container, name='add_container'),
+    path('containers/<int:container_id>/edit/', views.update_container, name='update_container'),
 ]

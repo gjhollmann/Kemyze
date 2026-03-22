@@ -51,3 +51,19 @@ def add_container(request):
         return Response(serializer.data, status=201)
 
     return Response(serializer.errors, status=400)
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([AllowAny])
+def update_container(request, container_id):
+    try:
+        container = Container.objects.get(id=container_id)
+    except Container.DoesNotExist:
+        return Response({"error": "Container not found"}, status=404)
+
+    serializer = ContainerSerializer(container, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+
+    return Response(serializer.errors, status=400)
