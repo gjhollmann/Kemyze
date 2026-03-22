@@ -40,3 +40,14 @@ def search_containers(request):
 
     serializer = ContainerSerializer(containers, many=True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def add_container(request):
+    serializer = ContainerSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=201)
+
+    return Response(serializer.errors, status=400)
