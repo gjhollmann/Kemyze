@@ -39,7 +39,24 @@ UPDATE kemyzeDatabase.users
 SET email = 'cadams44@newmail.com', phone = '9897632411'
 WHERE user_id = 216789;
 
+-- KM-25: Verify Container Record Update
+-- Return all rows in 'containers.'
+SELECT * 
+FROM kemyzeDatabase.containers;
 
+-- Update existing container records. 
+UPDATE kemyzeDatabase.containers
+SET acqn_date = '2026-01-07', expr_date = '2027-01-07'
+WHERE container_id = 4;
+
+UPDATE kemyzeDatabase.containers
+SET acqn_date = '2026-02-23', cas_number = '987-65-1'
+WHERE container_id = 5;
+
+-- Verify changes made to selected containers.
+SELECT acqn_date, expr_date, cas_number
+FROM kemyzeDatabase.containers
+WHERE container_id IN (4, 5);
 
 
 
