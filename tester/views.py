@@ -1,13 +1,8 @@
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import permission_classes
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db.models import Q
-from .models import TestTable
-from .models import Container
-from .serializers import ContainerSerializer
+  
+
+
+from django.http import HttpResponse, JsonResponse
+from .models import TestTable, ContainerChangeLog
 
 
 def tester(request):
@@ -15,55 +10,50 @@ def tester(request):
 
 
 def dbtester(request):
-    myData = TestTable.objects.all().values()
-    return HttpResponse(myData)
+    myData = list(TestTable.objects.all().values())
+    return JsonResponse(myData, safe=False)
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_all_containers(request):
-    containers = Container.objects.all()
-    serializer = ContainerSerializer(containers, many=True)
-    return Response(serializer.data)
+def _serialize_log(log):
+    return {
+        "audit_id": log.audit_id,
+        "container_id": log.container_id,
+        "action_type": log.action_type,
+        "old_values": log.old_values,
+        "new_values": log.new_values,
+        "changed_by": log.changed_by,
+        "changed_at": log.changed_at.isoformat() if log.changed_at else None,
+    }
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def search_containers(request):
-    query = request.GET.get('q', '')
-
-    containers = Container.objects.filter(
-        Q(chemical_name__icontains=query) |
-        Q(cas_number__icontains=query) |
-        Q(location__icontains=query)
-    )
-
-    serializer = ContainerSerializer(containers, many=True)
-    return Response(serializer.data)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def add_container(request):
-    serializer = ContainerSerializer(data=request.data)
-
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=201)
-
-    return Response(serializer.errors, status=400)
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([AllowAny])
-def update_container(request, container_id):
+def get_change_log(request, container_id):
     try:
-        container = Container.objects.get(id=container_id)
-    except Container.DoesNotExist:
-        return Response({"error": "Container not found"}, status=404)
+        logs = ContainerChangeLog.objects.filter(
+            container_id=container_id
+        ).order_by("-changed_at", "-audit_id")
 
-    serializer = ContainerSerializer(container, data=request.data, partial=True)
+        data = [_serialize_log(log) for log in logs]
+        return JsonResponse(data, safe=False)
 
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
-    return Response(serializer.errors, status=400)
+
+def get_most_recent_change(request, container_id):
+    try:
+        latest_log = (
+            ContainerChangeLog.objects.filter(container_id=container_id)
+            .order_by("-changed_at", "-audit_id")
+            .first()
+        )
+
+        if latest_log is None:
+            return JsonResponse(
+                {"message": "No changes found for this container"},
+                status=404
+            )
+
+        return JsonResponse(_serialize_log(latest_log), safe=False)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
