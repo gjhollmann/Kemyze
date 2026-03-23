@@ -43,7 +43,8 @@ WHERE user_id = 216789;
 -- Number of users for each access level.
 SELECT access_level, COUNT(*) as user_count
 FROM kemyzeDatabase.users
-GROUP BY access_level;
+GROUP BY access_level
+ORDER BY access_level ASC;
 
 -- Check for null fields like location or phone number. 
 SELECT user_id, first_name, last_name
