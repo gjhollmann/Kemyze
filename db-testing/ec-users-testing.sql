@@ -39,6 +39,29 @@ UPDATE kemyzeDatabase.users
 SET email = 'cadams44@newmail.com', phone = '9897632411'
 WHERE user_id = 216789;
 
+-- KM-32: Perform Test Queries on Users Table
+-- Number of users for each access level.
+SELECT access_level, COUNT(*) as user_count
+FROM kemyzeDatabase.users
+GROUP BY access_level
+ORDER BY access_level ASC;
+
+-- Check for null fields like location or phone number. 
+SELECT user_id, first_name, last_name
+FROM kemyzeDatabase.users
+WHERE location_id IS NULL OR phone_number IS NULL;
+
+-- Check for duplicate column values (e.g., email).
+SELECT email, COUNT(email)
+FROM kemyzeDatabase.users
+GROUP BY email
+HAVING COUNT(email) > 1;
+
+-- Check for nulls in mandatory fields (e.g., user_id, password)
+SELECT *
+FROM kemyzeDatabase.users
+WHERE user_id IS NULL OR password IS NULL;
+
 -- KM-25: Verify Container Record Update
 -- Return all rows in 'containers.'
 SELECT * 
