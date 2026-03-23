@@ -6,3 +6,8 @@ class ContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Container
         fields = '__all__'
+
+class ChangeLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Container
+        fields = '__all__'
