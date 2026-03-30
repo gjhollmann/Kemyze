@@ -40,7 +40,7 @@ router.register(r"users", UserViewSet)
 # Wire up our API using automatic URL routing.
 
 urlpatterns = [
-    path('login/', include('login.urls')),
+    path('login/', include('apps.login.urls')),
     path('', include('tester.urls'))
 
 ]
