@@ -41,5 +41,5 @@ router.register(r"users", UserViewSet)
 
 urlpatterns = [
     path('', include('tester.urls')),
-    path('login/', login.urls)
+    path('', include('login.urls'))
 ]
