@@ -20,14 +20,16 @@ export default function Index() {
 getDBTest();
     
 return (
-    <View style={styles.container}>
-          <Text>
+
+        <View style = {styles.backgroundGradient}>
+        <Text style = {styles.text}>
             Edit src/app/index.tsx to edit this screen.
           </Text>
-        <Text>
+        <Text style = {styles.text}>
         {data}
         </Text>
-    </View>
+        </View>
+
   );
 }
 
@@ -37,4 +39,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+    text:{
+        color:'white',
+    },
+    backgroundGradient: {
+      width: '100%',
+      height: '100%',
+      experimental_backgroundImage: 'linear-gradient(to left, #09091C 0%, #131338 33%, #131338 66%, #09091C 100%)',
+    },
 });
