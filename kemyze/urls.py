@@ -38,7 +38,9 @@ router = routers.DefaultRouter()
 router.register(r"users", UserViewSet)
 
 # Wire up our API using automatic URL routing.
-# Additionally, we include login URLs for the browsable API.
+
 urlpatterns = [
-    path('', include('tester.urls')),
+    path('login/', include('login.urls')),
+    path('', include('tester.urls'))
+
 ]
