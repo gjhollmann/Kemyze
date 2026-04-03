@@ -17,3 +17,4 @@ class Container(models.Model):
 
     def __str__(self):
         return self.chemical_name
+
