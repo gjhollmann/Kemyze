@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Users
 
 # Create your views here.
@@ -14,7 +14,7 @@ def loginMain(request):
         elif User == None:
             return HttpResponseBadRequest("Missing 'User' Parameter")
         elif Password == None:
-            return HttpResponseBadRequest("Missing 'Password' Paramter")
+            return HttpResponseBadRequest("Missing 'Password' Parameter")
         else:
             try:
                 FoundUser = Users.objects.get(email=User, password=Password)
@@ -29,3 +29,29 @@ def loginMain(request):
 def newModelTest(request):
     myData = Users.objects.all().values()
     return HttpResponse(myData)
+
+
+# Handle user's forgotten password specification.
+def forgotPasswordReq(request):
+    if request.method == "POST":
+        user_email = request.POST.get("email")
+        if not user_email or not user_email.strip():
+            rejection = {
+                            "status": "error",
+                            "message": "Missing or empty email parameter."
+                        }
+            return JsonResponse(rejection)
+        else:    
+            try:
+                valid_user = Users.objects.get(email=user_email)
+            except Users.DoesNotExist:
+                valid_user = None
+    
+        confirmation = {
+                            "status": "OK", 
+                            "message": "If an account associated with this email exists, reset instructions have been sent."
+                       }
+        return JsonResponse(confirmation)
+    else:
+        return HttpResponseNotAllowed("[POST]")
+# end forgotPasswordReq        
