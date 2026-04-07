@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Users
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -32,6 +33,7 @@ def newModelTest(request):
 
 
 # Handle user's forgotten password specification.
+@csrf_exempt
 def forgotPasswordReq(request):
     if request.method == "POST":
         user_email = request.POST.get("email")
@@ -53,5 +55,5 @@ def forgotPasswordReq(request):
                        }
         return JsonResponse(confirmation)
     else:
-        return HttpResponseNotAllowed("[POST]")
+        return HttpResponseNotAllowed(["POST"])
 # end forgotPasswordReq        
