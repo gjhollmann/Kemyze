@@ -45,25 +45,28 @@ def forgotPasswordReq(request):
                             "status": "error",
                             "message": "Missing or empty email parameter."
                         }
-            return JsonResponse(rejection)
+            return JsonResponse(rejection, status=400)
         
         else:    
             try:
-                valid_user = Users.objects.get(email=user_email)
-                
+                ValidUser = Users.objects.get(email=user_email)
+                # Successful attempt logs to be added.
+
                 email_subject = "Kemyze: Reset Password"
-                reset_msg = "Hello, please reset your password below."
-                from_email = "no-reply@kemyze.com"
-                send_mail(email_subject, reset_msg, from_email, [user_email], fail_silently=False)
+                reset_msg = "Hello - please follow the email reset instructions below." # Generic instruction prompt.
+                from_email = "no-reply@kemyze.com" # Test sender.
+                send_mail(email_subject, reset_msg, from_email, 
+                          [user_email], fail_silently=False) # Use fail_silently for testing.
 
             except Users.DoesNotExist:
-                valid_user = None
+                ValidUser = None
+                # Failed attempt logs to be added.
     
         confirmation = {
                             "status": "OK", 
-                            "message": "If an account associated with this email exists, reset instructions have been sent."
-                       }
-        return JsonResponse(confirmation)
+                            "message": "Reset instructions have been sent."
+                       } # Generic response (existent or non-existent user).
+        return JsonResponse(confirmation, status=200)
     else:
         return HttpResponseNotAllowed(["POST"])
 # end forgotPasswordReq        
