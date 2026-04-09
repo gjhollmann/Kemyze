@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Users
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
+import json
 
 # Create your views here.
 
@@ -36,16 +38,24 @@ def newModelTest(request):
 @csrf_exempt
 def forgotPasswordReq(request):
     if request.method == "POST":
-        user_email = request.POST.get("email")
+        data = json.loads(request.body) # Extract email from JSON payload. 
+        user_email = data.get("email")
         if not user_email or not user_email.strip():
             rejection = {
                             "status": "error",
                             "message": "Missing or empty email parameter."
                         }
             return JsonResponse(rejection)
+        
         else:    
             try:
                 valid_user = Users.objects.get(email=user_email)
+                
+                email_subject = "Kemyze: Reset Password"
+                reset_msg = "Hello, please reset your password below."
+                from_email = "no-reply@kemyze.com"
+                send_mail(email_subject, reset_msg, from_email, [user_email], fail_silently=False)
+
             except Users.DoesNotExist:
                 valid_user = None
     
