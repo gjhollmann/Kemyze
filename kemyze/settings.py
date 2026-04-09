@@ -112,6 +112,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Email for user validation. 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = BASE_DIR / "dev_email"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
