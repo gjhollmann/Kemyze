@@ -24,6 +24,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
+      {/* Logo goes here? */}
+      <View>
+
+      </View>
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.brandName}>Kemyze</Text>
@@ -78,6 +83,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
         <Text style={styles.bypassText}>QR Scanner Bypass</Text>
       </TouchableOpacity>
 
+      {/* dbstatus text shows connection established */}
       {dbStatus && (
         <Text style={styles.dbText}>Server: {dbStatus}</Text>
       )}
