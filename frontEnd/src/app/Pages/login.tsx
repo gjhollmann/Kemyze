@@ -8,8 +8,9 @@ import {
   SafeAreaView,
   StatusBar
 } from "react-native";
+import { useRouter } from 'expo-router';
 
-//Interface of login + dbstatus
+//Login and Database Establishment
 interface LoginProps {
   onLogin?: (email: string, pass: string) => void;
   dbStatus?: string;
@@ -19,24 +20,27 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Logo goes here? */}
+      {/* Put Logo Here? */}
       <View>
 
       </View>
 
-      {/* Header */}
+      {/* Header Card */} 
       <View style={styles.header}>
         <Text style={styles.brandName}>Kemyze</Text>
         <Text style={styles.subTitle}>Chemical Inventory and Safety Management</Text>
       </View>
 
-      {/* Login/Email */}
+      {/* Login Card */}
       <View style={styles.loginCard}>
+        
+        {/* Email input field */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email address</Text>
           <View style={styles.inputWrapper}>
@@ -51,7 +55,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
           </View>
         </View>
 
-        {/* Password */}
+        {/* Password input field */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputWrapper}>
@@ -64,7 +68,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
           </View>
         </View>
 
-        {/* Makes sure that buttons react on press */}
+        {/* Login Button */}
         <TouchableOpacity 
           style={styles.loginBtn}
           onPress={() => onLogin?.(email, password)}
@@ -72,8 +76,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
           <Text style={styles.buttonText}>Log in</Text>
         </TouchableOpacity>
 
-        {/* Reaction of button for Forgot Password */}
-        <TouchableOpacity style={styles.forgotBtn}>
+        {/* Forgot Password Button */}
+        <TouchableOpacity 
+          style={styles.forgotBtn}
+          //Redirects to recovery page
+          onPress={() => router.push('/Pages/recovery')} 
+        >
           <Text style={styles.buttonText}>Forgot Password</Text>
         </TouchableOpacity>
       </View>
@@ -83,7 +91,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
         <Text style={styles.bypassText}>QR Scanner Bypass</Text>
       </TouchableOpacity>
 
-      {/* dbstatus text shows connection established */}
+      {/* Database Established text on bottom */}
       {dbStatus && (
         <Text style={styles.dbText}>Server: {dbStatus}</Text>
       )}
@@ -91,6 +99,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
   );
 };
 
+//Styles for page
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -102,9 +111,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
-  },
-  logoPlaceholder: {
-    marginBottom: 10,
   },
   brandName: {
     color: 'white',
@@ -153,14 +159,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     height: '100%',
   },
-  errorText: {
-    color: '#f87171',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    fontFamily: 'monospace',
-    marginBottom: 20,
-    fontSize: 13,
-  },
   loginBtn: {
     height: 55,
     backgroundColor: '#3b82f6',
@@ -168,10 +166,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: "#3b82f6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
     elevation: 8,
   },
   forgotBtn: {
@@ -180,10 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
     elevation: 6,
   },
   buttonText: {
