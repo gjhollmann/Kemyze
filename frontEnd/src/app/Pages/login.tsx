@@ -6,28 +6,58 @@ import {
   TextInput, 
   TouchableOpacity,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Alert
 } from "react-native";
+import { handleLogin } from './handleLogin'; // Login function from KM-131
 
-//Interface of login + dbstatus
+// Interface of login + dbstatus
 interface LoginProps {
-  onLogin?: (email: string, pass: string) => void;
   dbStatus?: string;
 }
 
-//Login Credentials
-const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
+// Login Credentials
+const Login: React.FC<LoginProps> = ({ dbStatus }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // State for validation error messages shown under each input
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // --- onPressLogin ---
+  // Called when the user presses "Log In".
+  // Passes email and password to handleLogin, then handles the result.
+  const onPressLogin = async () => {
+    // Clear previous errors before each attempt
+    setEmailError('');
+    setPasswordError('');
+
+    const result = await handleLogin(email, password);
+
+    if (!result.success) {
+      // Show the error under the correct input field
+      if (result.message.toLowerCase().includes('email')) {
+        setEmailError(result.message);
+      } else if (result.message.toLowerCase().includes('password')) {
+        setPasswordError(result.message);
+      } else {
+        // General error (wrong credentials, server error) shown as an alert
+        Alert.alert('Login Failed', result.message);
+      }
+    } else {
+      // Login successful — result.data contains { userID, accessLevel }
+      // TODO: Navigate to the main app screen and pass userID/accessLevel as needed
+      Alert.alert('Success', `Welcome! Access level: ${result.data?.accessLevel}`);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
       {/* Logo goes here? */}
-      <View>
-
-      </View>
+      <View></View>
 
       {/* Header */}
       <View style={styles.header}>
@@ -43,12 +73,17 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
             <TextInput 
               style={styles.input} 
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (emailError) setEmailError(''); // Clear error as user types
+              }}
               autoCapitalize="none"
               keyboardType="email-address"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
+          {/* Show email validation error if present */}
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
         </View>
 
         {/* Password */}
@@ -59,31 +94,36 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
               style={styles.input} 
               secureTextEntry 
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (passwordError) setPasswordError(''); // Clear error as user types
+              }}
             />
           </View>
+          {/* Show password validation error if present */}
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
         </View>
 
-        {/* Makes sure that buttons react on press */}
+        {/* Log In button — triggers the login function */}
         <TouchableOpacity 
           style={styles.loginBtn}
-          onPress={() => onLogin?.(email, password)}
+          onPress={onPressLogin}
         >
           <Text style={styles.buttonText}>Log in</Text>
         </TouchableOpacity>
 
-        {/* Reaction of button for Forgot Password */}
+        {/* Forgot Password button */}
         <TouchableOpacity style={styles.forgotBtn}>
           <Text style={styles.buttonText}>Forgot Password</Text>
         </TouchableOpacity>
       </View>
 
-      {/* QR Scanner */}
+      {/* QR Scanner Bypass button */}
       <TouchableOpacity style={styles.bypassBtn}>
         <Text style={styles.bypassText}>QR Scanner Bypass</Text>
       </TouchableOpacity>
 
-      {/* dbstatus text shows connection established */}
+      {/* dbStatus text shows connection established */}
       {dbStatus && (
         <Text style={styles.dbText}>Server: {dbStatus}</Text>
       )}
@@ -102,9 +142,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
-  },
-  logoPlaceholder: {
-    marginBottom: 10,
   },
   brandName: {
     color: 'white',
@@ -156,9 +193,9 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#f87171',
     fontStyle: 'italic',
-    textAlign: 'center',
     fontFamily: 'monospace',
-    marginBottom: 20,
+    marginTop: 6,
+    marginLeft: 5,
     fontSize: 13,
   },
   loginBtn: {
