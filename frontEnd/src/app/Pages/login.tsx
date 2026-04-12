@@ -80,7 +80,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
         <TouchableOpacity 
           style={styles.forgotBtn}
           //Redirects to recovery page
-          onPress={() => router.push('/Pages/recovery')} 
+          onPress={() => router.push('/Pages/forgot-password')} 
         >
           <Text style={styles.buttonText}>Forgot Password</Text>
         </TouchableOpacity>
