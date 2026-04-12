@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Frontend local artifacts
+frontEnd/node_modules/
+frontEnd/.expo/
+frontEnd/expo-env.d.ts
+
+# VS Code local settings
+.vscode/
