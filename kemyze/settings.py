@@ -112,9 +112,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Email for user validation. 
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = BASE_DIR / "dev_email"
+# Email for user validation. Configured to use Gmail SMTP for testing as of 4/12/26.
+# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_FILE_PATH = BASE_DIR / "dev_email"
+
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "georgeTester@gmail.com"
+EMAIL_HOST_PASSWORD = "" # Placeholder for app password
+DEFAULT_FROM_EMAIL = "georgeTester@gmail.com"
 
 
 # Internationalization
