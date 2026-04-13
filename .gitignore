@@ -10,3 +10,8 @@ frontEnd/expo-env.d.ts
 
 # VS Code local settings
 .vscode/
+.venv/
+venv/
+
+__pycache__/
+
