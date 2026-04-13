@@ -1,4 +1,5 @@
 import {
+    Alert,
     Text,
     View,
     StyleSheet,
@@ -9,6 +10,9 @@ import {
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useRouter } from 'expo-router';
+import GradientButton from '../../components/GradientButton'
+import { handleLogin } from './Pages/handleLogin';
+
 
 //Login and Database Establishment
 interface LoginProps {
@@ -24,6 +28,10 @@ export default function Index() {
   const router = useRouter();
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+    
+    // State for validation error messages shown under each input
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
   const getDBTest = async () => {
     try {
@@ -54,38 +62,68 @@ export default function Index() {
       controller.abort();
     }, 10000);
 
-    try {
-      const response = await fetch("https://kemyze.vercel.app/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-          body: JSON.stringify({
-              email: email
-          }),
-        signal: controller.signal,
-      });
+      try {
+            const response = await fetch("https://kemyze.vercel.app/login/forgot-password/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+                body: JSON.stringify({
+                    email: email
+                }),
+              signal: controller.signal,
+            });
 
-      clearTimeout(timeoutId);
+            clearTimeout(timeoutId);
 
-      console.log(response);
-      const result = await response.json();
-      
+            //const result = await response.json();
+            
 
-      if (response.ok) {
-        setSuccessMessage("Password reset email has been sent.");
+            if (response.ok) {
+              setSuccessMessage("Password reset email has been sent.");
+            } else {
+              setErrorMessage(result.error || result.message || "Request failed.");
+            }
+          } catch (error: any) {
+            if (error.name === "AbortError") {
+              setErrorMessage("Request timed out. Please try again.");
+            } else {
+              setErrorMessage("Network error. Please try again.");
+            }
+          }
+        };
+    
+    // --- onPressLogin ---
+    // Called when the user presses "Log In".
+    // Passes email and password to handleLogin, then handles the result.
+    const onPressLogin = async () => {
+      // Clear previous errors before each attempt
+      setEmailError('');
+      setPasswordError('');
+
+      const result = await handleLogin(email, password);
+
+      if (!result.success) {
+        // Show the error under the correct input field
+        if (result.message.toLowerCase().includes('email')) {
+          setEmailError(result.message);
+        } else if (result.message.toLowerCase().includes('password')) {
+          setPasswordError(result.message);
+        } else {
+          // General error (wrong credentials, server error) shown as an alert
+          Alert.alert('Login Failed', result.message);
+        }
       } else {
-        setErrorMessage(result.error || result.message || "Request failed.");
+        // Login successful — result.data contains { userID, accessLevel }
+        // TODO: Navigate to the main app screen and pass userID/accessLevel as needed
+        Alert.alert('Success', `Welcome! Access level: ${result.data?.accessLevel}`);
       }
-    } catch (error: any) {
-      if (error.name === "AbortError") {
-        setErrorMessage("Request timed out. Please try again.");
-      } else {
-        setErrorMessage("Network error. Please try again.");
-      }
-    }
-  };
+    };
 
+    
+    
+    
+    //Main View Portion
   return (
     <SafeAreaView style={styles.container}>
     <StatusBar barStyle="light-content" />
@@ -113,43 +151,46 @@ export default function Index() {
                 <TextInput
                   style={styles.input}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                      setEmail(text);
+                      if (emailError) setEmailError(''); // Clear error as user types
+                    }}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholderTextColor="rgba(255,255,255,0.3)"
-                />
-              </View>
+          placeholderTextColor="rgba(255,255,255,0.3)"
+        />
+      </View>
+      {/* Show email validation error if present */}
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+    </View>
+          
+          
+          {/* Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                secureTextEntry
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (passwordError) setPasswordError(''); // Clear error as user types
+                }}
+              />
             </View>
-
-            {/* Password input field */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
-              </View>
-            </View>
+            {/* Show password validation error if present */}
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          </View>
 
             {/* Login Button */}
-            <TouchableOpacity
-              style={styles.loginBtn}
-              onPress={() => onLogin?.(email, password)}
-            >
-              <Text style={styles.buttonText}>Log in</Text>
-            </TouchableOpacity>
-
-            {/* Forgot Password Button */}
-            <TouchableOpacity
-              style={styles.forgotBtn}
-              onPress={handleForgotPassword}
-            >
-              <Text style={styles.buttonText}>Forgot Password</Text>
-            </TouchableOpacity>
+          <View style={styles.loginBtn}>
+          <GradientButton title="Log In" onPress = {onPressLogin} width="100%"/>
+          </View>
           
+          <View style = {styles.forgotBtn}>
+          <GradientButton title="Forgot Password" onPress = {handleForgotPassword} width="100%"/>
+          </View>
           
           {successMessage !== "" && (
             <Text style={styles.successText}>{successMessage}</Text>
@@ -159,13 +200,14 @@ export default function Index() {
             <Text style={styles.errorText}>{errorMessage}</Text>
           )}
           
+          
           </View>
 
 
           {/* QR Scanner */}
-          <TouchableOpacity style={styles.bypassBtn}>
-            <Text style={styles.bypassText}>QR Scanner Bypass</Text>
-          </TouchableOpacity>
+          <View style={styles.bypassBtn}>
+          <GradientButton title="QR Scanner Bypass" onPress = {handleForgotPassword} width="100%"/>
+          </View>
 
 
     </View>
@@ -265,7 +307,6 @@ const styles = StyleSheet.create({
     },
     loginBtn: {
       height: 55,
-      backgroundColor: '#3b82f6',
       borderRadius: 15,
       justifyContent: 'center',
       alignItems: 'center',
@@ -274,7 +315,6 @@ const styles = StyleSheet.create({
     },
     forgotBtn: {
       height: 55,
-      backgroundColor: '#2563eb',
       borderRadius: 15,
       justifyContent: 'center',
       alignItems: 'center',
