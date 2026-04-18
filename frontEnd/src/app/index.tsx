@@ -66,7 +66,13 @@ export default function Index() {
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      Alert.alert("Error", "Please enter your email.");
+      showPopup("Error", "Please enter your email.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showPopup("Error", "Please enter a valid email address.");
       return;
     }
 
@@ -84,16 +90,16 @@ export default function Index() {
       clearTimeout(timeoutId);
       const result = await response.json();
 
-      if (response.ok) {
-        Alert.alert("Success", "Password reset email has been sent.");
+      if (response.ok && result.success !== false && !result.error && !result.detail) {
+        showPopup("Success", result.message || "Password reset email has been sent.");
       } else {
-        Alert.alert("Error", result.error || result.message || "Request failed.");
+        showPopup("Error", result.error || result.detail || result.message || "Request failed.");
       }
     } catch (error: any) {
       if (error.name === "AbortError") {
-        Alert.alert("Error", "Request timed out. Please try again.");
+        showPopup("Error", "Request timed out. Please try again.");
       } else {
-        Alert.alert("Error", "Network error. Please try again.");
+        showPopup("Error", "Network error. Please try again.");
       }
     }
   };
