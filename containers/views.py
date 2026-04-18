@@ -17,6 +17,7 @@ def containersMain(request):
 
 """
 View to retrieve a container.
+Route: /containers/getContainer?kemID=<kemIDInput>&accessLevel=<accessLevelInput>
 Request Variables:
 Method: GET
 Parameters:
@@ -83,6 +84,7 @@ def getContainer(request):
 """
 View to retrieve just an SDS for a container.
 Used for testing SDS file format and retrieval. 
+Route: /containers/getSDS?kemID=<kemIDInput>
 Request Variables:
 Method: GET
 Parameters:
