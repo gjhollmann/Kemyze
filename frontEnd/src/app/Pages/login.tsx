@@ -6,56 +6,87 @@ import {
   TextInput, 
   TouchableOpacity,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Alert
 } from "react-native";
-import { useRouter } from 'expo-router';
+import { handleLogin } from './handleLogin'; // Login function from KM-131
 
-//Login and Database Establishment
+// Interface of login + dbstatus
 interface LoginProps {
-  onLogin?: (email: string, pass: string) => void;
   dbStatus?: string;
 }
 
-//Login Credentials
-const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
+// Login Credentials
+const Login: React.FC<LoginProps> = ({ dbStatus }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter();
+
+  // State for validation error messages shown under each input
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // --- onPressLogin ---
+  // Called when the user presses "Log In".
+  // Passes email and password to handleLogin, then handles the result.
+  const onPressLogin = async () => {
+    // Clear previous errors before each attempt
+    setEmailError('');
+    setPasswordError('');
+
+    const result = await handleLogin(email, password);
+
+    if (!result.success) {
+      // Show the error under the correct input field
+      if (result.message.toLowerCase().includes('email')) {
+        setEmailError(result.message);
+      } else if (result.message.toLowerCase().includes('password')) {
+        setPasswordError(result.message);
+      } else {
+        // General error (wrong credentials, server error) shown as an alert
+        Alert.alert('Login Failed', result.message);
+      }
+    } else {
+      // Login successful — result.data contains { userID, accessLevel }
+      // TODO: Navigate to the main app screen and pass userID/accessLevel as needed
+      Alert.alert('Success', `Welcome! Access level: ${result.data?.accessLevel}`);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Put Logo Here? */}
-      <View>
+      {/* Logo goes here? */}
+      <View></View>
 
-      </View>
-
-      {/* Header Card */} 
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.brandName}>Kemyze</Text>
         <Text style={styles.subTitle}>Chemical Inventory and Safety Management</Text>
       </View>
 
-      {/* Login Card */}
+      {/* Login/Email */}
       <View style={styles.loginCard}>
-        
-        {/* Email input field */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email address</Text>
           <View style={styles.inputWrapper}>
             <TextInput 
               style={styles.input} 
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (emailError) setEmailError(''); // Clear error as user types
+              }}
               autoCapitalize="none"
               keyboardType="email-address"
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
           </View>
+          {/* Show email validation error if present */}
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
         </View>
 
-        {/* Password input field */}
+        {/* Password */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputWrapper}>
@@ -63,35 +94,36 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
               style={styles.input} 
               secureTextEntry 
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (passwordError) setPasswordError(''); // Clear error as user types
+              }}
             />
           </View>
+          {/* Show password validation error if present */}
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
         </View>
 
-        {/* Login Button */}
+        {/* Log In button — triggers the login function */}
         <TouchableOpacity 
           style={styles.loginBtn}
-          onPress={() => onLogin?.(email, password)}
+          onPress={onPressLogin}
         >
           <Text style={styles.buttonText}>Log in</Text>
         </TouchableOpacity>
 
-        {/* Forgot Password Button */}
-        <TouchableOpacity 
-          style={styles.forgotBtn}
-          //Redirects to recovery page
-          onPress={() => router.push('/Pages/forgot-password')} 
-        >
+        {/* Forgot Password button */}
+        <TouchableOpacity style={styles.forgotBtn}>
           <Text style={styles.buttonText}>Forgot Password</Text>
         </TouchableOpacity>
       </View>
 
-      {/* QR Scanner */}
+      {/* QR Scanner Bypass button */}
       <TouchableOpacity style={styles.bypassBtn}>
         <Text style={styles.bypassText}>QR Scanner Bypass</Text>
       </TouchableOpacity>
 
-      {/* Database Established text on bottom */}
+      {/* dbStatus text shows connection established */}
       {dbStatus && (
         <Text style={styles.dbText}>Server: {dbStatus}</Text>
       )}
@@ -99,7 +131,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, dbStatus }) => {
   );
 };
 
-//Styles for page
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -159,6 +190,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     height: '100%',
   },
+  errorText: {
+    color: '#f87171',
+    fontStyle: 'italic',
+    fontFamily: 'monospace',
+    marginTop: 6,
+    marginLeft: 5,
+    fontSize: 13,
+  },
   loginBtn: {
     height: 55,
     backgroundColor: '#3b82f6',
@@ -166,6 +205,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 8,
   },
   forgotBtn: {
@@ -174,6 +217,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     elevation: 6,
   },
   buttonText: {

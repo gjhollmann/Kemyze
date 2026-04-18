@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'tester',
     'login',
-    'common'
+    'common',
+    'containers'
 ]
 
 MIDDLEWARE = [
@@ -121,9 +122,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "georgeTester@gmail.com"
-EMAIL_HOST_PASSWORD = "" # Placeholder for app password
-DEFAULT_FROM_EMAIL = "georgeTester@gmail.com"
+EMAIL_HOST_USER = "kemyzetester1@gmail.com"
+EMAIL_HOST_PASSWORD = "zitk atle fjnr tgnm" # Placeholder for app password
+DEFAULT_FROM_EMAIL = "kemyzetester1@gmail.com"
 
 
 # Internationalization
