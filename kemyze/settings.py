@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'tester',
     'login',
-    'common'
+    'common',
+    'containers'
 ]
 
 MIDDLEWARE = [
