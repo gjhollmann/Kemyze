@@ -1,48 +1,119 @@
 import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native"
+import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
 
 type ScanPopupProps = {
     visible: boolean;
     onClose: () => void;
-    //scanResult: ScanData | null;
+    scanResult: ScanData | null;
 };
 
 export function ScanPopup({
     visible,
     onClose,
+    scanResult,
 }: ScanPopupProps) {
+    const { width, height } = useWindowDimensions();
+
+    const popupWidth = Math.min(width * 0.88, 420);
+    const popupMaxHeight = height * 0.85;
+    const qrSize = Math.min(Math.max(width * 0.22, 72), 100);
+
     return (
         <Modal visible={visible} transparent animationType="fade">
             <View style={styling.overlay}>
-                <View style={styling.container}>
+                <View
+                    style={[
+                        styling.container,
+                        {
+                        width: popupWidth,
+                        maxHeight: popupMaxHeight,
+                        },
+                    ]}
+                    >
                     <Pressable onPress={onClose} style={styling.closeButton}>
                         <Text>X</Text>
                     </Pressable>
 
                     <View style={styling.top}>
-                        <Text>Chemical Name:</Text>
-                        <Text>CAS:</Text>
+                        <View
+                            style={[
+                                styling.qrPlaceholder,
+                                {
+                                    width: qrSize,
+                                    height: qrSize,
+                                },
+                            ]}
+                        />
+                        <View style={styling.topTextArea}>
+                            <Text style={styling.chemicalNameText}>
+                                {scanResult?.chemicalName}
+                            </Text>
+
+                            <Text style={styling.casText}>
+                                CAS: {scanResult?.cas}
+                            </Text>
+                        </View>
                     </View>
 
                     <View style={styling.partition}/>
 
                     <View style={styling.body}>
-                        <Text>ID:</Text>
-                        <Text>Purchase Date:</Text>
-                        <Text>Expiration Date:</Text>
-                        <Text>School:</Text>
-                        <Text>Room:</Text>
-                        <Text>Cabinet:</Text>
-                        <Text>Shelf:</Text>
-                        <Text>Status:</Text>
-                        <Text>Quantity:</Text>
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>ID:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.id}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Purchase Date:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.purchaseDate}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Expiration Date:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.expDate}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>School:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.school}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Room:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.roomNumber}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Cabinet:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.cabinet}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Shelf:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.shelf}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Status:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.status}</Text>
+                        </View>
+
+                        <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Quantity:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.quantity}</Text>
+                        </View>
                     </View>
 
                     <View style={styling.partition}/>
 
                     <View style={styling.footer}>
-                        <Text>View SDS</Text>
-                        <Text>Download QR Label</Text>
+                        <Pressable style={styling.actionButton}>
+                            <Text style={styling.actionButtonText}>View SDS</Text>
+                        </Pressable>
+
+                        <Pressable style={styling.actionButton}>
+                            <Text style={styling.actionButtonText}>Download QR Label</Text>
+                        </Pressable>
                     </View>
                 </View>
             </View>
@@ -54,14 +125,13 @@ export function ScanPopup({
 const styling = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
         justifyContent: "center",
         alignItems: "center",
         padding: 20,
     },
 
     container: {
-        width: "88%",
         maxWidth: 420,
         backgroundColor: "white",
         borderRadius: 18,
@@ -91,10 +161,39 @@ const styling = StyleSheet.create({
 
     top: {
         flexDirection: "row",
-        alignItems: "center",
-        paddingBottom: 16
+        alignItems: "flex-start",
+        paddingBottom: 16,
+        paddingRight: 28,
+        minHeight: 100,
     },
 
+    topTextArea: {
+        flex: 1,
+        flexDirection: "column",
+        justifyContent: "flex-start",
+    },
+
+    chemicalNameText: {
+        fontSize: 13,
+        color: "#000000",
+        marginBottom: 6,
+        flexShrink: 1,
+    },
+
+    casText: {
+        fontSize: 13,
+        color: "#000000",
+    },
+
+    qrPlaceholder: {
+        width: 90,
+        height: 90,
+        marginRight: 16,
+        backgroundColor: "#E5E7EB",
+        borderWidth: 1,
+        borderColor: "#000000",
+    },
+    
     body: {
         paddingVertical: 12,
     },
@@ -108,6 +207,27 @@ const styling = StyleSheet.create({
         marginBottom: 8,
     },
 
+    infoRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+
+    infoLabel: {
+        fontSize: 12,
+        color: "#000000",
+        fontWeight: "600",
+    },
+
+    infoValue: {
+        fontSize: 12,
+        color: "#000000",
+        textAlign: "right",
+        flexShrink: 1,
+        marginLeft: 12,
+    },
+
     actionButton: {
         width: "100%",
         height: 44,
@@ -117,6 +237,7 @@ const styling = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 10,
+        backgroundColor: "#FFFFFF",
     },
 
     actionButtonText: {
@@ -146,7 +267,7 @@ type ScanData = {
 
     status: string;
     quantity: string;
-}
+};
 
 
 
