@@ -1,19 +1,23 @@
 import React from "react";
 import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
 
+
 type ScanPopupProps = {
     visible: boolean;
     onClose: () => void;
     scanResult: ScanData | null;
-};
+    editPrivilege: boolean;
+}; // type ScanPopupProps
+
 
 export function ScanPopup({
     visible,
     onClose,
     scanResult,
+    editPrivilege
 }: ScanPopupProps) {
+    // Start with window dimensions for scaling.
     const { width, height } = useWindowDimensions();
-
     const popupWidth = Math.min(width * 0.88, 420);
     const popupMaxHeight = height * 0.85;
     const qrSize = Math.min(Math.max(width * 0.22, 72), 100);
@@ -23,7 +27,7 @@ export function ScanPopup({
             <View style={styling.overlay}>
                 <View
                     style={[
-                        styling.container,
+                        styling.container, // Assert with window dimensions.
                         {
                         width: popupWidth,
                         maxHeight: popupMaxHeight,
@@ -31,7 +35,7 @@ export function ScanPopup({
                     ]}
                     >
                     <Pressable onPress={onClose} style={styling.closeButton}>
-                        <Text>X</Text>
+                        <Text>Done</Text>
                     </Pressable>
 
                     <View style={styling.top}>
@@ -44,7 +48,9 @@ export function ScanPopup({
                                 },
                             ]}
                         />
-                        <View style={styling.topTextArea}>
+
+                        {/*Top section holds image of QR code, chemical name field, CAS, and quantity indicator. */}
+                        <View style={styling.topTextArea}> {}
                             <Text style={styling.chemicalNameText}>
                                 {scanResult?.chemicalName}
                             </Text>
@@ -52,11 +58,15 @@ export function ScanPopup({
                             <Text style={styling.casText}>
                                 CAS: {scanResult?.cas}
                             </Text>
+
+                            <View style={styling.quantityIndicator} />
                         </View>
                     </View>
-
+                    
+                    {/*Insert partition between each section.*/}
                     <View style={styling.partition}/>
-
+                    
+                    {/*Body, or middle section, holds most textual information (i.e., ID, room, shelf, building.*/}
                     <View style={styling.body}>
                         <View style={styling.infoRow}>
                             <Text style={styling.infoLabel}>ID:</Text>
@@ -106,6 +116,7 @@ export function ScanPopup({
 
                     <View style={styling.partition}/>
 
+                    {/*Footer, or bottom section, holds buttons for */}
                     <View style={styling.footer}>
                         <Pressable style={styling.actionButton}>
                             <Text style={styling.actionButtonText}>View SDS</Text>
@@ -114,14 +125,22 @@ export function ScanPopup({
                         <Pressable style={styling.actionButton}>
                             <Text style={styling.actionButtonText}>Download QR Label</Text>
                         </Pressable>
+
+                        {/*Third button 'Edit Information' should only be presented to privileged user. Toggled by 'editPrivilege' boolean.*/}
+                        {editPrivilege && (
+                            <Pressable style={styling.actionButton}>
+                            <Text style={styling.actionButtonText}>Edit Information</Text>
+                            </Pressable>
+                        )}
                     </View>
                 </View>
             </View>
         </Modal>
     );
-}
+} // export function ScanPopup({ ... }: ScanPopupProps) { ... }
 
 
+// Styling for each layer and section: overlay, container, top section, etc.
 const styling = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -246,12 +265,24 @@ const styling = StyleSheet.create({
         color: "#0B5C7A",
     },
 
+    quantityIndicator: {
+        width: 42,
+        height: 42,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: "#FFFFFF",
+        backgroundColor: "#E5E7EB",
+        borderRadius: 6,
+        alignSelf: "flex-start",
+    },
+
     footer: {
         paddingTop: 14,
     }
-});
+}); // const styling ... 
 
 
+// All text fields to be included in scan popup; 'chemicalName' and 'cas' to be included in top section. 
 type ScanData = {
     chemicalName: string;
     cas: string;
@@ -267,10 +298,7 @@ type ScanData = {
 
     status: string;
     quantity: string;
-};
-
-
-
+}; // type ScanData
 
 
 
