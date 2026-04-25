@@ -4,3 +4,8 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Frontend local artifacts
+frontEnd/node_modules/
+frontEnd/.expo/
+frontEnd/expo-env.d.ts
