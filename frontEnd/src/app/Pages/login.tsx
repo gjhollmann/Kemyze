@@ -9,7 +9,7 @@ import {
   StatusBar,
   Alert
 } from "react-native";
-import { handleLogin } from './handleLogin'; // Login function from KM-131
+import { handleLogin } from '../../utils/handleLogin';
 
 // Interface of login + dbstatus
 interface LoginProps {
