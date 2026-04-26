@@ -26,8 +26,8 @@ const Inventory: React.FC = () => {
   // Mock data based on your screenshot
   const inventoryData: Chemical[] = [
     { 
-      id: '', 
-      name: '', 
+      id: '45645645',
+      name: '',
       cas: '', 
       location: '', 
       status: 'GOOD',

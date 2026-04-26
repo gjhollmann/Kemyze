@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.gjhollmann.frontEnd"
+      "bundleIdentifier": "com.gjhollmann.frontEnd",
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
