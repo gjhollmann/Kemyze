@@ -1,12 +1,14 @@
 import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native"
-
+import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { useState } from "react";
+import { Alert } from "react-native";
 
 type ScanPopupProps = {
     visible: boolean;
     onClose: () => void;
     scanResult: ScanData | null;
     editPrivilege: boolean;
+    onViewSds: () => void;
 }; // type ScanPopupProps
 
 
@@ -14,7 +16,8 @@ export function ScanPopup({
     visible,
     onClose,
     scanResult,
-    editPrivilege
+    editPrivilege,
+    onViewSds
 }: ScanPopupProps) {
     // Start with window dimensions for scaling.
     const { width, height } = useWindowDimensions();
@@ -84,6 +87,13 @@ export function ScanPopup({
                         </View>
 
                         <View style={styling.infoRow}>
+                            <Text style={styling.infoLabel}>Location:</Text>
+                            <Text style={styling.infoValue}>{scanResult?.location}</Text>
+                        </View>
+
+
+                        {/*}
+                        <View style={styling.infoRow}>
                             <Text style={styling.infoLabel}>School:</Text>
                             <Text style={styling.infoValue}>{scanResult?.school}</Text>
                         </View>
@@ -106,7 +116,7 @@ export function ScanPopup({
                         <View style={styling.infoRow}>
                             <Text style={styling.infoLabel}>Status:</Text>
                             <Text style={styling.infoValue}>{scanResult?.status}</Text>
-                        </View>
+                        </View>*/}
 
                         <View style={styling.infoRow}>
                             <Text style={styling.infoLabel}>Quantity:</Text>
@@ -118,7 +128,7 @@ export function ScanPopup({
 
                     {/*Footer, or bottom section, holds buttons for */}
                     <View style={styling.footer}>
-                        <Pressable style={styling.actionButton}>
+                        <Pressable style={styling.actionButton} onPress={onViewSds}>
                             <Text style={styling.actionButtonText}>View SDS</Text>
                         </Pressable>
 
@@ -290,13 +300,14 @@ type ScanData = {
     id: string;
     purchaseDate: string;
     expDate: string;
+    location: string;
     
-    school: string;
+    /*school: string;
     roomNumber: string;
     cabinet: string;
-    shelf: string;
+    shelf: string;*/
 
-    status: string;
+    //status: string;
     quantity: string;
 }; // type ScanData
 
