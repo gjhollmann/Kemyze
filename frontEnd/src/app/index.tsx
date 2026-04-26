@@ -13,6 +13,10 @@ import {
 } from "react-native";
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
+import { ScanPopup } from "../../components/ScanPopup";
+import { handleContainerResponse } from "../../utils/ScanResUtils";
+import { openBase64Pdf } from "../../utils/PDFUtils";
+import { Linking } from "react-native";
 import { handleLogin } from "../utils/handleLogin";
 import { useRouter } from 'expo-router';
 
@@ -22,6 +26,11 @@ import { useRouter } from 'expo-router';
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupData, setPopupData] = useState<any>(null);
+  const [editPrivilege, setEditPrivilege] = useState(false);
+  const [currentKemId, setCurrentKemId] = useState<string | null>(null);
 
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -138,6 +147,91 @@ export default function Index() {
     }
   };
 
+  // Helper to ensure users of access level <= 4 can edit info.
+  const quaternaryUser = 4;
+  
+  const canEditFromAccessLevel = (accessLevel: number) => {
+    return accessLevel <= quaternaryUser;
+  };
+
+  const fetchContainerData = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    // Test with access level matched to query. 
+    let quinaryUser = 5;
+    let accessLevel = 5;
+    let canEdit = canEditFromAccessLevel(accessLevel);
+    
+    try {
+        const containerResponse = await fetch(
+          "https://kemyze.vercel.app/containers/getContainer?kemID=5&accessLevel=5",
+          {
+            method: "GET",
+            signal: controller.signal,
+          }
+        );  
+
+        clearTimeout(timeoutId);
+
+        // Alert if kemID or kemID and accessLevel are missing.
+        if (!containerResponse.ok) {
+            showPopup("Error", "The container does not exist or the request was invalid.");
+            return;
+        }
+    
+        const data = await containerResponse.json();
+        const result = handleContainerResponse(data);
+    
+        if (result.resType === "invalid") {
+            setEditPrivilege(false);
+            showPopup("Invalid Information", result.message);
+        
+        } else if (result.resType === "sds_only") {
+            setEditPrivilege(false);
+            await openBase64Pdf(result.pdfBase64);
+        
+        } else if (result.resType === "all_info") {
+            setPopupData(result.popupData);
+            setCurrentKemId(result.popupData.id);
+            setEditPrivilege(canEdit);
+            setPopupVisible(true);
+        
+        } else {
+            showPopup("Error", "Unexpected response.");
+        
+        }
+    
+    } catch (error: any) {
+        if (error.name === "AbortError") {
+            showPopup("Request timed out", "The server took too long to respond.");
+      
+        } else if (error instanceof SyntaxError) {
+            showPopup("Invalid response", "The server returned malfomed data.");
+      
+        } else {
+            showPopup("Network error", "Unable to reach server.");
+        
+        }
+    } // try ...
+  }
+
+  // Respond to press on 'View SDS.'
+  const handleViewSds = async () => {
+    if (!currentKemId) {
+      showPopup("Error", "No container ID is available for this SDS.");
+      return;
+    }
+
+    const sdsUrl = `https://kemyze.vercel.app/containers/getSDS?kemID=${currentKemId}`; // Use current passed container ID.
+
+    try {
+      await Linking.openURL(sdsUrl);
+    } catch {
+      showPopup("Error", "Unable to open the SDS.");
+    }
+  };
+  
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
@@ -165,7 +259,6 @@ export default function Index() {
               resizeMode="contain"
             />
           </View>
-
           <Text
             style={[
               styles.title,
@@ -244,6 +337,13 @@ export default function Index() {
           </View>
         </ScrollView>
       </View>
+      <ScanPopup
+        visible={popupVisible}
+        onClose={() => setPopupVisible(false)}
+        scanResult={popupData}
+        editPrivilege={editPrivilege}
+        onViewSds={handleViewSds}
+      />
     </SafeAreaView>
   );
 }
