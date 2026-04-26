@@ -328,7 +328,6 @@ export default function Index() {
 
           <View style={styles.bypassBtn}>
             <GradientButton title="QR Scanner Bypass" onPress={handleForgotPassword} width="100%" />
-            <GradientButton title="Test Container Response" onPress={fetchContainerData} width="100%" />
           </View>
         </ScrollView>
       </View>
