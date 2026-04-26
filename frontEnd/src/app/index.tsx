@@ -33,7 +33,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'expo-router';
 import GradientButton from '../../components/GradientButton'
 import { handleLogin } from './Pages/handleLogin';
-
+import { ScanPopup } from "../../components/ScanPopup";
 
 //Login and Database Establishment
 interface LoginProps {
@@ -51,6 +51,7 @@ export default function Index() {
   const router = useRouter();
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [popupVisible, setPopupVisible] = useState(false);
     
     // State for validation error messages shown under each input
     const [emailError, setEmailError] = useState('');
@@ -225,7 +226,7 @@ export default function Index() {
           </View>
           
     
-          //Josh's Header
+          {/*Josh's Header*/}
           <Text
             style={[
               styles.title,
@@ -333,7 +334,7 @@ export default function Index() {
 
     </ScrollView>
     </View>
-          
+
     </SafeAreaView>
   );
 }
