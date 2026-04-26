@@ -18,7 +18,7 @@ export default function RootLayout() {
       <Stack>
          <Stack.Screen name="index" options={{ headerShown: false }} />
        
-       {/* The Pages folder containing login, scanner, inventory, and profile */}
+       {/* The Pages folder containing scanner, inventory, and profile */}
       <Stack.Screen name="Pages" options={{ headerShown: false }} />
       </Stack>
    );
