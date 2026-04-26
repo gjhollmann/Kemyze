@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
-import { handleLogin } from "./Pages/handleLogin";
+
 
 
 export default function Index() {
@@ -133,6 +133,7 @@ export default function Index() {
       Alert.alert("Login Failed", result.message);
     } else {
       Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+      <Redirect href="/Pages/login" />;
     }
   };
 
