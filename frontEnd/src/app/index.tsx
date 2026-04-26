@@ -13,11 +13,15 @@ import {
 } from "react-native";
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
-import { handleLogin } from "./Pages/handleLogin";
 import { ScanPopup } from "../../components/ScanPopup";
 import { handleContainerResponse } from "../../utils/ScanResUtils";
 import { openBase64Pdf } from "../../utils/PDFUtils";
 import { Linking } from "react-native";
+import { handleLogin } from "../utils/handleLogin";
+import { useRouter } from 'expo-router';
+
+
+
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -31,6 +35,7 @@ export default function Index() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
+  const router = useRouter();
 
   const logoWidth = isTablet
     ? isLandscape
@@ -138,6 +143,7 @@ export default function Index() {
       Alert.alert("Login Failed", result.message);
     } else {
       Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+      router.navigate('/Pages/scanner');
     }
   };
 
