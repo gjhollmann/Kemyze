@@ -6,10 +6,9 @@
  * returned.
  */
 
-import { Alert } from "react-native";
-
+// Expected container data.
 type ContainerData = {
-    container: string;
+    container_id: string;
     chemical_name: string;
     cas_number: string;
     expr_date: string
@@ -55,43 +54,6 @@ type ContainerResult =
     }; // type ContainerResult
 
 
-try {
-    const containerResponse = await fetch("/containers/getContainer?kemID=<kemIDInput>&accessLevel=<accessLevelInput>");
-
-    if (!containerResponse.ok) {
-        Alert.alert("Error: The container does not exist or the request was invalid.");
-    }
-
-    const data = await containerResponse.json();
-    const result = handleContainerResponse(data);
-
-    if (result.resType === "invalid") {
-        Alert.alert("Invalid Information", result.message);
-    
-    } else if (result.resType === "sds_only") {
-        
-    
-    } else if (result.resType === "all_info") {
-
-    
-    } else {
-        Alert.alert("Error: Unexpected response.");
-    
-    }
-
-} catch (error: any) {
-    if (error.name === "AbortError") {
-        Alert.alert("Request timed out: The server took too long to respond.");
-  
-    } else if (error instanceof SyntaxError) {
-        Alert.alert("Invalid response: The server returned malfomed data.");
-  
-    } else {
-        Alert.alert("Network error: Unable to reach server.");
-    
-    }
-} // try ...
-
 // Parse data from JSON object. 
 export function handleContainerResponse(data: any): ContainerResult {
     if (typeof data !== "object" || !data) {
@@ -114,10 +76,10 @@ export function handleContainerResponse(data: any): ContainerResult {
     // Use chemical_name, cas, and ID as criteria to assess whether all 
     // container information has been returned. 
     let hasAllInfo = 
-        typeof data.chemical_name === "string"
-        && typeof data.cas_number === "string"
-        && typeof data.container_id === "string"
-        && typeof data.sds_sheet === "string";
+        data.container_id != null 
+        && data.chemical_name != null 
+        && data.cas_number != null 
+        && data.sds_sheet != null;
 
     if (hasAllInfo) {
         return {
