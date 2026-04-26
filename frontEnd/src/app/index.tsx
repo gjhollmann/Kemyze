@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router';
 import {
   Image,
   ScrollView,
@@ -15,7 +16,10 @@ import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "./Pages/handleLogin";
 
+
 export default function Index() {
+  // The app's entry point. Immediately redirects to the login page when the app loads.
+  //return <Redirect href="/Pages/login" />;}
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
