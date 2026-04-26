@@ -1,6 +1,13 @@
 from django.db import models
 
 # Create your models here.
+
+class MediumBlobField(models.BinaryField):
+    """Custom field for MySQL MEDIUMBLOB storage."""
+    def db_type(self, connection):
+        return 'MEDIUMBLOB'
+
+
 class Containers(models.Model):
     container_id = models.AutoField(primary_key=True)
     chemical_name = models.CharField(max_length=255)
@@ -9,6 +16,7 @@ class Containers(models.Model):
     acqn_date = models.DateField()
     location = models.ForeignKey('Locations', models.DO_NOTHING, blank=True, null=True)
     quantity = models.CharField(max_length=6)
+    sds_sheet = MediumBlobField()
 
     class Meta:
         managed = False
