@@ -1,20 +1,42 @@
+// import { Stack } from "expo-router";
+// import { useFonts } from 'expo-font';
+
+// export default function RootLayout() {
+//    const [fontsLoaded] = useFonts({
+//       'JetBrains Mono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
+//       'JetBrains Mono Bold': require('../../assets/fonts/JetBrainsMono-Bold.ttf'),
+//       'JetBrains Mono Italic': require('../../assets/fonts/JetBrainsMono-Italic.ttf'),
+//    }); 
+
+//    if (!fontsLoaded) {
+//       return null;
+//    }
+
+//    return (
+//       <Stack>
+//          <Stack.Screen name="index" options={{ headerShown: false }} />
+//       </Stack>
+//    );
+// }
 import { Stack } from "expo-router";
-import { useFonts } from 'expo-font';
+import { useFonts } from "expo-font";
 
 export default function RootLayout() {
-   const [fontsLoaded] = useFonts({
-      'JetBrains Mono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
-      'JetBrains Mono Bold': require('../../assets/fonts/JetBrainsMono-Bold.ttf'),
-      'JetBrains Mono Italic': require('../../assets/fonts/JetBrainsMono-Italic.ttf'),
-   }); 
+  const [fontsLoaded] = useFonts({
+    "JetBrains Mono": require("../../assets/fonts/JetBrainsMono-Regular.ttf"),
+    "JetBrains Mono Bold": require("../../assets/fonts/JetBrainsMono-Bold.ttf"),
+    "JetBrains Mono Italic": require("../../assets/fonts/JetBrainsMono-Italic.ttf"),
+  });
 
-   if (!fontsLoaded) {
-      return null;
-   }
+  if (!fontsLoaded) {
+    return null;
+  }
 
-   return (
-      <Stack>
-         <Stack.Screen name="index" options={{ headerShown: false }} />
-      </Stack>
-   );
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="Pages/login" options={{ headerShown: false }} />
+      <Stack.Screen name="Pages/scanner" options={{ headerShown: false }} />
+    </Stack>
+  );
 }

@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "./Pages/handleLogin";
+import { router } from "expo-router";
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -127,9 +128,19 @@ export default function Index() {
 
     if (!result.success) {
       Alert.alert("Login Failed", result.message);
-    } else {
-      Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
-    }
+    } } 
+    else {
+      console.log("Login response received:", result.data);
+
+  Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`, [
+    {
+      text: "OK",
+      onPress: () => router.push("/Pages/scanner"),
+    },
+  ]);
+//else {
+      //Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+    //}
   };
 
   return (
