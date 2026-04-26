@@ -11,40 +11,6 @@ import {
   StatusBar,
   Platform,
 } from "react-native";
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
-import { useRouter } from 'expo-router';
-import GradientButton from '../../components/GradientButton'
-import { handleLogin } from './Pages/handleLogin';
-import { ScanPopup } from "../../components/ScanPopup";
-
-//Login and Database Establishment
-interface LoginProps {
-  onLogin?: (email: string, pass: string) => void;
-  dbStatus?: string;
-}
-          
-
-
-
-export default function Index() {
-  const [data, setData] = useState("if you see this, the fetch failed");
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const router = useRouter();
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [popupVisible, setPopupVisible] = useState(false);
-    
-    // State for validation error messages shown under each input
-    const [emailError, setEmailError] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-    
-  //Constants for Josh's UI config
-    const { width, height } = useWindowDimensions();
-    const isLandscape = width > height;
-    const isTablet = Math.min(width, height) >= 768;
-=======
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "./Pages/handleLogin";
@@ -52,7 +18,6 @@ import { handleLogin } from "./Pages/handleLogin";
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
->>>>>>> a85ffec52f68da0dbfd259f8e60b500d488ad81b
 
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -194,13 +159,6 @@ export default function Index() {
               resizeMode="contain"
             />
           </View>
-<<<<<<< HEAD
-          
-    
-          {/*Josh's Header*/}
-=======
-
->>>>>>> a85ffec52f68da0dbfd259f8e60b500d488ad81b
           <Text
             style={[
               styles.title,
@@ -277,15 +235,8 @@ export default function Index() {
           <View style={styles.bypassBtn}>
             <GradientButton title="QR Scanner Bypass" onPress={handleForgotPassword} width="100%" />
           </View>
-<<<<<<< HEAD
-
-    </ScrollView>
-    </View>
-
-=======
         </ScrollView>
       </View>
->>>>>>> a85ffec52f68da0dbfd259f8e60b500d488ad81b
     </SafeAreaView>
   );
 }
