@@ -21,6 +21,8 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 
+// The root layout that wraps the entire app.
+// Stack here means screens slide over each other (like normal mobile navigation).
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "JetBrains Mono": require("../../assets/fonts/JetBrainsMono-Regular.ttf"),
@@ -32,11 +34,12 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="Pages/login" options={{ headerShown: false }} />
-      <Stack.Screen name="Pages/scanner" options={{ headerShown: false }} />
-    </Stack>
-  );
+return (
+  <Stack>
+    <Stack.Screen name="index" options={{ headerShown: false }} />
+
+    {/* The Pages folder contains scanner, inventory, and profile */}
+    <Stack.Screen name="Pages" options={{ headerShown: false }} />
+  </Stack>
+);
 }

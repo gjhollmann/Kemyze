@@ -1,3 +1,4 @@
+
 import {
   Image,
   ScrollView,
@@ -12,9 +13,9 @@ import {
   Platform,
 } from "react-native";
 import { useState } from "react";
+import { router } from "expo-router";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "./Pages/handleLogin";
-import { router } from "expo-router";
 
 export default function Index() {
   const [email, setEmail] = useState("");
@@ -65,6 +66,14 @@ export default function Index() {
   const containerPaddingHorizontal = isTablet ? 26 : 18;
   const containerPaddingVertical = isTablet ? 24 : 16;
 
+  const showPopup = (title: string, message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleForgotPassword = async () => {
     if (!email.trim()) {
       showPopup("Error", "Please enter your email.");
@@ -81,12 +90,15 @@ export default function Index() {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const response = await fetch("https://kemyze.vercel.app/login/forgot-password/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        "https://kemyze.vercel.app/login/forgot-password/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+          signal: controller.signal,
+        }
+      );
 
       clearTimeout(timeoutId);
       const result = await response.json();
@@ -105,14 +117,6 @@ export default function Index() {
     }
   };
 
-  const showPopup = (title: string, message: string) => {
-    if (Platform.OS === "web") {
-      window.alert(`${title}\n\n${message}`);
-    } else {
-      Alert.alert(title, message);
-    }
-  };
-
   const onPressLogin = async () => {
     if (!email.trim()) {
       showPopup("Missing email", "Please enter your email.");
@@ -128,19 +132,16 @@ export default function Index() {
 
     if (!result.success) {
       Alert.alert("Login Failed", result.message);
-    } } 
-    else {
+    } else {
       console.log("Login response received:", result.data);
 
-  Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`, [
-    {
-      text: "OK",
-      onPress: () => router.push("/Pages/scanner"),
-    },
-  ]);
-//else {
-      //Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
-    //}
+      Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`, [
+        {
+          text: "OK",
+          onPress: () => router.push("/Pages/scanner"),
+        },
+      ]);
+    }
   };
 
   return (
@@ -245,7 +246,7 @@ export default function Index() {
           </View>
 
           <View style={styles.bypassBtn}>
-            <GradientButton title="QR Scanner Bypass" onPress={handleForgotPassword} width="100%" />
+            <GradientButton title="QR Scanner Bypass" onPress={() => router.push("/Pages/scanner")} width="100%" />
           </View>
         </ScrollView>
       </View>
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     experimental_backgroundImage:
       "linear-gradient(to left, #09091C 0%, #131338 33%, #131338 66%, #09091C 100%)",
-  },
+  } as any,
   input: {
     color: "white",
     fontSize: 16,
