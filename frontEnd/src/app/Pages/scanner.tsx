@@ -101,7 +101,7 @@ export default function Scanner() {
     );
   }
 
-  if (permission.status == 'granted') {
+  if (permission.status !== 'granted') {
     // Permission denied
     return (
       <SafeAreaView style={styles.safeArea}>
