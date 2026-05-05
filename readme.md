@@ -143,6 +143,7 @@ Below is the roadmap and timeline that the development team will follow for the 
 
 Team Reverse Engineers <br>
 George Hollmann - ghollmann@csus.edu <br>
+Alexander Apolonio-Flores - aapolonio-flores@csus.edu <br>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
