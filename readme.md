@@ -59,6 +59,16 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#project-status">Project Status</a></li>
+    <li><a href="#key-features">Key Features</a></li>
+    <li><a href="#user-roles">User Roles</a></li>
+    <li><a href="#planned-application-workflow">Planned Application Workflow</a></li>
+    <li><a href="#database-information">Database Information</a></li>
+    <li><a href="#security-considerations">Security Considerations</a></li>
+    <li><a href="#future-improvements">Future Improvements</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#academic-context">Academic Context</a></li>
+    <li><a href="#contact">Contact</a></li>
     </ol>
 </details>
 
@@ -138,12 +148,155 @@ Below is the roadmap and timeline that the development team will follow for the 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
+<!-- PROJECT STATUS -->
+## Project Status
+
+Kemyze is currently in active development as part of the CSC 190/191 Senior Project sequence at California State University, Sacramento.
+
+Current focus areas include:
+
+* Building the mobile application interface
+* Designing and implementing the chemical inventory database
+* Creating QR code scanning functionality
+* Supporting role-based access for administrators, instructors, staff, and guest users
+* Providing access to Safety Data Sheets (SDS) for chemical containers
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- KEY FEATURES -->
+## Key Features
+
+Kemyze is planned to support the following major features:
+
+* Chemical container inventory tracking
+* QR code scanning for quick container lookup
+* Safety Data Sheet access for stored chemicals
+* User account management
+* Role-based access control
+* Chemical location tracking by building, room, cabinet, and shelf
+* Expiration date tracking
+* Low-supply visibility
+* Monthly expiration and inventory reports
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- USER ROLES -->
+## User Roles
+
+Kemyze will support multiple types of users:
+
+* Administrator: Manages instructor accounts, inventory records, SDS files, and system-level information.
+* Authorized Instructor: Views and updates chemical container records within their assigned department.
+* Staff User: Views relevant chemical and SDS information based on assigned access.
+* Guest or Student User: Scans QR codes to view SDS and basic chemical safety information without needing a permanent account.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- PLANNED APPLICATION WORKFLOW -->
+## Planned Application Workflow
+
+1. A chemical container is added to the inventory system.
+2. The container is assigned identifying information such as chemical name, CAS number, location, quantity status, acquisition date, and expiration date.
+3. A QR code is generated or associated with the container.
+4. The QR code is placed on the physical chemical container.
+5. A user scans the QR code using the Kemyze mobile application.
+6. The application displays the container information and provides access to the associated SDS.
+7. Authorized users can update inventory information when needed.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- DATABASE INFORMATION -->
+## Database Information
+
+The Kemyze database is planned to store information related to chemical containers, users, locations, and Safety Data Sheets.
+
+Planned database records include:
+
+* Chemical container name
+* CAS Registry Number
+* Acquisition date
+* Expiration date
+* Quantity status
+* Building, room, cabinet, and shelf location
+* SDS document reference
+* User account information
+* User role and permission information
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- SECURITY CONSIDERATIONS -->
+## Security Considerations
+
+Kemyze is expected to include security controls appropriate for a chemical inventory management application.
+
+Planned security considerations include:
+
+* User authentication
+* Role-based access control
+* Restricted inventory editing permissions
+* Separation of guest access from administrative access
+* Protection of account information
+* Limiting SDS and inventory modification privileges to authorized users
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- FUTURE IMPROVEMENTS -->
+## Future Improvements
+
+Potential future improvements may include:
+
+* Web application extension
+* Multi-school or district-level support
+* Advanced inventory filtering
+* Mass inventory updates
+* Automated email reports
+* Push notifications
+* Chemical reorder recommendations
+* Expanded audit history for archived chemicals
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+Team members should follow the project workflow agreed upon by the development team.
+
+General contribution expectations:
+
+* Pull the latest version of the repository before making changes.
+* Create a separate branch for new work when appropriate.
+* Write clear commit messages.
+* Test changes before submitting them.
+* Avoid committing unnecessary files, credentials, or local environment settings.
+* Communicate major changes with the team before merging.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- ACADEMIC CONTEXT -->
+## Academic Context
+
+Kemyze is being developed as part of the CSC 190/191 Senior Project sequence at California State University, Sacramento.
+
+The project is intended to provide students with experience in software engineering, Agile/SCRUM development, client communication, documentation, prototyping, implementation, testing, and delivery of a working software product.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 <!-- CONTACT -->
 ## Contact
 
 Team Reverse Engineers <br>
 George Hollmann - ghollmann@csus.edu <br>
 Alexander Apolonio-Flores - aapolonio-flores@csus.edu <br>
+Joshua Zamora - joshuazamora@csus.edu <br>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
