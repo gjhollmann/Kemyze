@@ -134,7 +134,7 @@ def getSearch(request):
         if count == None:
             count = 0
         try:
-            FoundSearch = Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input)
+            FoundSearch = Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input)
             data = serializers.serialize('json', FoundSearch)
             return JsonResponse(data)
         except Exception as error:
