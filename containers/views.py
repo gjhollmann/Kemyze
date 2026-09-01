@@ -131,7 +131,7 @@ def getSearch(request):
         if input == None:
             return HttpResponseBadRequest("Missing 'input' Parameter")
         try:
-            FoundSearch = Containers.objects.filter((container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+10]
+            FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+10]
             data = list(FoundSearch.values())
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
