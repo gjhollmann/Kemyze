@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.core.management.base import BaseCommand, CommandError
+from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Containers, Locations
 from django.views.decorators.csrf import csrf_exempt
@@ -133,9 +134,9 @@ def getSearch(request):
         if count == None:
             count = 0
         try:
-            FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+1]
-            data = list(FoundSearch.values())
-            return JsonResponse(data, safe=False)
+            FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+10]
+            data = serializers.serialize('json', FoundSearch)
+            return JsonResponse(data)
         except Containers.DoesNotExist:
             return HttpResponseBadRequest("Container does not exist")
     else:
