@@ -133,7 +133,7 @@ def getSearch(request):
         if count == None:
             count = 0
         try:
-            FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+10]
+            FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+1]
             data = list(FoundSearch.values())
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
