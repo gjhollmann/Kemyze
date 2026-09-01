@@ -130,6 +130,8 @@ def getSearch(request):
         count = request.GET.get("count")
         if input == None:
             return HttpResponseBadRequest("Missing 'input' Parameter")
+        if count == None:
+            count = 0
         try:
             FoundSearch = (Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input))[count:count+10]
             data = list(FoundSearch.values())
