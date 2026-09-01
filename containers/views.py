@@ -137,7 +137,7 @@ def getSearch(request):
             FoundSearch = Containers.objects.filter(container_id__icontains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__icontains=input)
             data = serializers.serialize('json', FoundSearch)
             return JsonResponse(data)
-        except Containers.DoesNotExist:
-            return HttpResponseBadRequest("Container does not exist")
+        except Exception as error:
+            return HttpResponseBadRequest(error)
     else:
         return HttpResponseNotAllowed(["GET"])
