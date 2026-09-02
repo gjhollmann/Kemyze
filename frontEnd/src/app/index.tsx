@@ -13,15 +13,19 @@ import {
 } from "react-native";
 import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
-import { handleLogin } from "./Pages/handleLogin";
+import { handleLogin } from "../utils/handleLogin";
+import { useRouter } from 'expo-router';
+
+
+
 
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
+  const router = useRouter();
 
   const logoWidth = isTablet
     ? isLandscape
@@ -129,9 +133,11 @@ export default function Index() {
       Alert.alert("Login Failed", result.message);
     } else {
       Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+      router.navigate('/Pages/scanner');
     }
   };
 
+  
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
@@ -159,7 +165,6 @@ export default function Index() {
               resizeMode="contain"
             />
           </View>
-
           <Text
             style={[
               styles.title,
