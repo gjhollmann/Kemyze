@@ -112,3 +112,7 @@ def getSDS(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
+
+def getSearchRecent(request):
+    """"""
+# end def getSearchRecent
