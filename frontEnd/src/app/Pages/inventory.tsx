@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  Platform,
+  Alert
 } from "react-native";
 
 interface Chemical {
@@ -20,12 +22,14 @@ interface Chemical {
   hasWarning?: boolean;
 }
 
+const BASE_URL = "https://kemyze-eeasrt42j-george-hollmanns-projects.vercel.app/";
+
 const Inventory: React.FC = () => {
   const [search, setSearch] = useState('');
 
   // Mock data based on your screenshot
-  const inventoryData: Chemical[] = [
-    { 
+  const inventoryDataDefault: Chemical[] = [
+    {
       id: '45645645',
       name: '',
       cas: '', 
@@ -34,15 +38,48 @@ const Inventory: React.FC = () => {
       hasWarning: false 
     },
     { 
-      id: '', 
-      name: '', 
-      cas: '', 
+      id: '6546',
+      name: 'assf',
+      cas: '',
       location: '', 
       status: 'LOW',
       hasWarning: true
 
     },
   ];
+    
+    
+    // function to show popup for error alerts
+    const showPopup = (title: string, message: string) => {
+      if (Platform.OS === "web") {
+        window.alert(`${title}\n\n${message}`);
+      } else {
+        Alert.alert(title, message);
+      }
+    };
+    
+  const [inventoryData, setInventoryData] = useState(inventoryDataDefault)
+    
+  // function to handle when the filter button is pressed
+    const onFilterPress = async () => {
+        //const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
+        const getSearchURL = "https://kemyze.vercel.app/containers/getContainer?kemID=2&accessLevel=1";
+        console.log(getSearchURL);
+        try {
+            const searchResponse = await fetch(getSearchURL,
+              {
+                method: "GET",
+              }
+            );
+            console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
+            console.log(searchResponse);
+            const data = await searchResponse.json();
+            //console.log(data);
+        } catch (error) {
+            console.log(error.message);
+        } // try ...
+    } // const onFilterPress
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -74,7 +111,7 @@ const Inventory: React.FC = () => {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={styles.filterBtn}>
+          <TouchableOpacity style={styles.filterBtn} onPress={onFilterPress}>
           <Text style={styles.filterText}>FILTER</Text>
         </TouchableOpacity>
       </View>
