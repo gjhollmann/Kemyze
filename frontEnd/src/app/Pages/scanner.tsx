@@ -12,7 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions, Camera } from 'expo-camera'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ScanPopup } from "../../../components/ScanPopup";
 import { handleContainerResponse } from "../../../utils/ScanResUtils";
 import { openBase64Pdf } from "../../../utils/PDFUtils";
@@ -31,6 +31,14 @@ export default function Scanner() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
+    const lastScannedTimestampRef = useRef(0);
+    
+    
+    function delay(time){
+        return new Promise(function(resolve,reject){
+            setTimeout(() => resolve(), time);
+        });
+    }
 
   useEffect(() => {
     if (permission && permission.status === 'undetermined') {
@@ -43,8 +51,9 @@ export default function Scanner() {
     return qrData.trim().length > 0;
   };
 
-  const handleValidQRCode = (qrData: string) => {
+  const handleValidQRCode = async (qrData: string) => {
     // should fetch containerID from here
+    await fetchContainerData;
     console.log('Valid QR Code:', qrData);
   };
 
@@ -54,40 +63,48 @@ export default function Scanner() {
     console.log('Container ID not found for QR Code');
   };
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (!scanned) {
-      setScanned(true);
-      setScannedData(data);
-
-      const isValid = validateQRCode(data);
-
-      if (isValid) {
-        handleValidQRCode(data);
-        
-        Alert.alert(
-          'QR Code Scanned, retrieving containerID',
-          `Data: ${data}`,
-          [
-            {
-              text: 'Scan Another',
-              onPress: () => setScanned(false),
-            },
-          ]
-        );
-      } else {
-        handleInvalidQRCode();
-        Alert.alert(
-          'Invalid QR Code',
-          'The QR code could not be read. Please try again.',
-          [
-            {
-              text: 'Scan Again',
-              onPress: () => setScanned(false),
-            },
-          ]
-        );
-      }
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    const timestamp = Date.now();
+    if (scanned || (timestamp - lastScannedTimestampRef.current < 2000)) {
+            return
     }
+    lastScannedTimestampRef.current = timestamp;
+    setTimeout(async () => {
+        if (!scanned) {
+          setScanned(true);
+          setScannedData(data);
+          const isValid = validateQRCode(data);
+
+          if (isValid) {
+
+            setCurrentKemId(data);
+            handleValidQRCode(data);
+            
+            Alert.alert(
+              'QR Code Scanned, retrieving containerID',
+              `Data: ${data}`,
+              [
+                {
+                  text: 'Ok',
+                  onPress: () => setScanned(false),
+                },
+              ]
+            );
+          } else {
+            handleInvalidQRCode();
+            Alert.alert(
+              'Invalid QR Code',
+              'The QR code could not be read. Please try again.',
+              [
+                {
+                  text: 'Scan Again',
+                  onPress: () => setScanned(false),
+                },
+              ]
+            );
+          }
+        }
+    }, 500);
   };
 
   if (!permission) {
@@ -212,7 +229,6 @@ export default function Scanner() {
       <View style={styles.backgroundGradient}>
         <Text style={styles.QRScannerTitle}>Quick Scan</Text>
         <View style={styles.CameraBox}>
-          /*
           <CameraView
             style={{ flex: 1 }}
             facing="back"
@@ -221,7 +237,6 @@ export default function Scanner() {
               barcodeTypes: ['qr'],
             }}
           />
-           */
         </View>
         <Text style={styles.QRScannerInstructions}>
           Scan a QR label to view the Safety Data Sheet (SDS)
