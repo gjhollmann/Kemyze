@@ -134,7 +134,7 @@ def getSearch(request):
         if count == None:
             count = 0
         try:
-            FoundSearch = Containers.objects.filter(container_id__contains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__name__icontains=input)
+            FoundSearch = Containers.objects.filter(container_id__contains=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
             data = serializers.serialize("json", FoundSearch.only("container_id","chemical_name","cas_number","expr_date","acqn_date","quantity")[count:count+10])
             return HttpResponse(data, content_type='application/json')
         except Exception as error:
