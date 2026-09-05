@@ -136,7 +136,7 @@ def getSearch(request):
         try:
             FoundSearch = Containers.objects.filter(container_id__contains=input) | Containers.objects.filter(chemical_name__icontains=input) | Containers.objects.filter(location__name__icontains=input)
             data = serializers.serialize("json", FoundSearch.only("container_id","chemical_name","cas_number","expr_date","acqn_date","quantity")[count:count+10])
-            return JsonResponse(data)
+            return HttpResponse(data, content_type='application/json')
         except Exception as error:
             return HttpResponseBadRequest(error)
     else:
