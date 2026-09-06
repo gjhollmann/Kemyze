@@ -134,9 +134,24 @@ def getSearch(request):
         if count == None:
             count = 0
         try:
+            data = []
             FoundSearch = Containers.objects.filter(container_id__contains=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
-            data = serializers.serialize("json", FoundSearch[count:count+10])
-            return HttpResponse(data, content_type='application/json')
+            for container in FoundSearch:
+                location = container.location.name
+                FoundLocation = container.location
+                while FoundLocation.parent != None:
+                    FoundLocation = FoundLocation.parent
+                    location = location + ', ' + FoundLocation.name
+                data.append({
+                    'container_id': container.container_id,
+                    'chemical_name': container.chemical_name,
+                    'cas_number': container.cas_number,
+                    'expr_date': container.expr_date,
+                    'acqn_date': container.acqn_date,
+                    'location': location,
+                    'quantity': container.quantity,
+                })
+            return JsonResponse(data)
         except Exception as error:
             return HttpResponseBadRequest(error)
     else:
