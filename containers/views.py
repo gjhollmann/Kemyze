@@ -151,7 +151,7 @@ def getSearch(request):
                     'location': location,
                     'quantity': container.quantity,
                 })
-            return JsonResponse(data)
+            return JsonResponse(data, safe=False)
         except Exception as error:
             return HttpResponseBadRequest(error)
     else:
