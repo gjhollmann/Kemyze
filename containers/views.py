@@ -115,7 +115,7 @@ def getSDS(request):
 
 """
 View to retrieve a search.
-Route: /containers/getSearch?input=<seachBarInput>&count<intForDBCursor>
+Route: /containers/getSearch?input=<seachInput>&count=<indexOffset>
 Request Variables:
 Method: GET
 Parameters:
@@ -123,7 +123,29 @@ Parameters:
     count
 
 Response:
-
+The following will return data in the format of the following JSON
+data = {
+        {
+            'container_id'
+            'chemical_name'
+            'cas_number'
+            'expr_date'
+            'acqn_date'
+            'location'
+            'quantity'
+        }, 
+        {
+            'container_id'
+            'chemical_name'
+            'cas_number'
+            'expr_date'
+            'acqn_date'
+            'location'
+            'quantity'
+        }, 
+        ... Repeats until ten containers ...
+    }
+On receiving a count parameter, the response will send containers in between index count and count + 10
 """
 def getSearch(request):
     if request.method == "GET":
