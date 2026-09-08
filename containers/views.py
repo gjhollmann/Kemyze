@@ -135,7 +135,7 @@ def getSearch(request):
             count = 0
         try:
             data = []
-            if isinstance((int)input, int):
+            if (input.isdigit()):
                 FoundSearch = Containers.objects.filter(container_id=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
             else:
                 FoundSearch = Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
