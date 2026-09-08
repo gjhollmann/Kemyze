@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.core.management.base import BaseCommand, CommandError
-from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Containers, Locations
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Max
+from django.db.models import Subquery, OuterRef
 import json
 import base64
 import mimetypes
@@ -113,18 +114,6 @@ def getSDS(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
-"""
-View to retrieve a search.
-Route: /containers/getSearch?input=<seachBarInput>&count<intForDBCursor>
-Request Variables:
-Method: GET
-Parameters:
-    input
-    count
-
-Response:
-
-"""
 def getSearch(request):
     if request.method == "GET":
         input = request.GET.get("input")
@@ -156,3 +145,30 @@ def getSearch(request):
             return HttpResponseBadRequest(error)
     else:
         return HttpResponseNotAllowed(["GET"])
+
+
+def getSearchRecent(request):
+    if request.method == "GET":
+        search_bar_input = request.GET.get("search", "") # Check search bar for specified chemical name.
+
+        # If search bar contains input, query container table for matching chemical name. Else, query all records as targets.
+        if search_bar_input.strip():
+            TargetContainers = Containers.objects.filter(chemical_name__icontains=search_bar_input)
+        else:
+            TargetContainers = Containers.objects.all()
+        # if/else ...
+
+        # Query container_audit_log table, associating container_id with the container found in the query above. 
+        # Order by changed_at (most recent change timestamp) in descending order, limiting output to 1 timestamp (for each container).
+        most_recent_audit = ContainerAuditLog.objects.filter(container_id=OuterRef('container_id')).order_by('-changed_at').values('changed_at')[:1]
+
+        # Use the timestamp returned by most_recent_audit to be represented as most_recent_change. 
+        recently_changed_containers = (
+            TargetContainers
+            .annotate(most_recent_change=Subquery(most_recent_audit))
+            .order_by('-most_recent_change', 'container_id')[:10]
+        )
+        return recently_changed_containers
+    else:
+        return HttpResponseNotAllowed(["GET"])  
+# end def getSearchRecent

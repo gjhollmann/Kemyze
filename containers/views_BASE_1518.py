@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.core.management.base import BaseCommand, CommandError
-from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from common.models import Containers, Locations
 from django.views.decorators.csrf import csrf_exempt
@@ -113,46 +112,3 @@ def getSDS(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
-"""
-View to retrieve a search.
-Route: /containers/getSearch?input=<seachBarInput>&count<intForDBCursor>
-Request Variables:
-Method: GET
-Parameters:
-    input
-    count
-
-Response:
-
-"""
-def getSearch(request):
-    if request.method == "GET":
-        input = request.GET.get("input")
-        count = request.GET.get("count")
-        if input == None:
-            return HttpResponseBadRequest("Missing 'input' Parameter")
-        if count == None:
-            count = 0
-        try:
-            data = []
-            FoundSearch = Containers.objects.filter(container_id__contains=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
-            for container in FoundSearch:
-                location = container.location.name
-                FoundLocation = container.location
-                while FoundLocation.parent != None:
-                    FoundLocation = FoundLocation.parent
-                    location = location + ', ' + FoundLocation.name
-                data.append({
-                    'container_id': container.container_id,
-                    'chemical_name': container.chemical_name,
-                    'cas_number': container.cas_number,
-                    'expr_date': container.expr_date,
-                    'acqn_date': container.acqn_date,
-                    'location': location,
-                    'quantity': container.quantity,
-                })
-            return JsonResponse(data, safe=False)
-        except Exception as error:
-            return HttpResponseBadRequest(error)
-    else:
-        return HttpResponseNotAllowed(["GET"])
