@@ -115,7 +115,7 @@ def getSDS(request):
 
 """
 View to retrieve a search.
-Route: /containers/getSearch?input=<seachBarInput>&count<intForDBCursor>
+Route: /containers/getSearch?input=<seachInput>&count=<indexOffset>
 Request Variables:
 Method: GET
 Parameters:
@@ -123,7 +123,29 @@ Parameters:
     count
 
 Response:
-
+The following will return data in the format of the following JSON
+data = {
+        {
+            'container_id'
+            'chemical_name'
+            'cas_number'
+            'expr_date'
+            'acqn_date'
+            'location'
+            'quantity'
+        }, 
+        {
+            'container_id'
+            'chemical_name'
+            'cas_number'
+            'expr_date'
+            'acqn_date'
+            'location'
+            'quantity'
+        }, 
+        ... Repeats until ten containers ...
+    }
+On receiving a count parameter, the response will send containers in between index count and count + 10
 """
 def getSearch(request):
     if request.method == "GET":
@@ -131,12 +153,17 @@ def getSearch(request):
         count = request.GET.get("count")
         if input == None:
             return HttpResponseBadRequest("Missing 'input' Parameter")
-        if count == None:
+        if count is None or not count.isdigit():
             count = 0
+        else:
+            count = int(count)
         try:
             data = []
-            FoundSearch = Containers.objects.filter(container_id__contains=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
-            for container in FoundSearch:
+            if (input.isdigit()):
+                FoundSearch = Containers.objects.filter(container_id=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
+            else:
+                FoundSearch = Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
+            for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
                 while FoundLocation.parent != None:
