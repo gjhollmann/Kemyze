@@ -135,7 +135,10 @@ def getSearch(request):
             count = 0
         try:
             data = []
-            FoundSearch = Containers.objects.filter(container_id=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
+            if isinstance(input, int):
+                FoundSearch = Containers.objects.filter(container_id=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
+            else:
+                FoundSearch = Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
             for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
