@@ -131,8 +131,10 @@ def getSearch(request):
         count = request.GET.get("count")
         if input == None:
             return HttpResponseBadRequest("Missing 'input' Parameter")
-        if count == None:
+        if count is None or not count.isdigit():
             count = 0
+        else:
+            count = int(count)
         try:
             data = []
             if (input.isdigit()):
