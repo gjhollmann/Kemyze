@@ -158,6 +158,7 @@ def getSearch(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
+"""
 def getSearchRecent(request):
     if request.method == "GET":
         search_bar_input = request.GET.get("search", "") # Check search bar for specified chemical name.
@@ -183,3 +184,4 @@ def getSearchRecent(request):
     else:
         return HttpResponseNotAllowed(["GET"])  
 # end def getSearchRecent    
+"""
