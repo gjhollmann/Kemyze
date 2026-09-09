@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { 
+import React, { useCallback, useState } from 'react';
+import {
   Text, 
   View, 
   StyleSheet, 
@@ -10,7 +10,8 @@ import {
   ScrollView,
   Image,
   Platform,
-  Alert
+  Alert,
+  RefreshControl
 } from "react-native";
 
 interface Chemical {
@@ -22,7 +23,7 @@ interface Chemical {
   hasWarning?: boolean;
 }
 
-const BASE_URL = "https://kemyze-eeasrt42j-george-hollmanns-projects.vercel.app/";
+const BASE_URL = "https://kemyze.vercel.app/";
 
 const Inventory: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -30,23 +31,75 @@ const Inventory: React.FC = () => {
   // Mock data based on your screenshot
   const inventoryDataDefault: Chemical[] = [
     {
-      id: '45645645',
-      name: '',
-      cas: '', 
-      location: '', 
-      status: 'GOOD',
-      hasWarning: false 
+      container_id: '45645645',
+      chemical_name: '',
+      cas_number: '',
+      location: '',
+      quantity: 'GOOD',
+      //hasWarning: false
     },
     { 
-      id: '6546',
-      name: 'assf',
-      cas: '',
-      location: '', 
-      status: 'LOW',
-      hasWarning: true
+        container_id: '45645',
+        chemical_name: '',
+        cas_number: '',
+        location: '',
+        quantity: 'GOOD',
+        //hasWarning: false
 
     },
   ];
+    
+    
+    // function called when user scrolls to end of inventory
+    const [lastUsedSearch, setLastUsedSearch] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(10);
+    const onScrollAtEnd = useCallback(() => {
+        setLoadingMore(true);
+        setTimeout(() => {
+            setLoadingMore(false);
+        }, 2000);
+        console.log("User scrolled to end")
+        if (lastUsedSearch){
+            addMoreSearchContainers();
+        }
+    });
+    
+    // function that adds more containers to list based on search
+    const addMoreSearchContainers = async () => {
+        console.log("Adding more containers based on search");
+        const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex;
+        console.log(getSearchURL);
+        try {
+            const searchResponse = await fetch(getSearchURL,
+              {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+              }
+            );
+            if (!searchResponse.ok){
+                console.log("We are having issues");
+                throw new Error("BAD TIME STATUS: " + searchResponse.status);
+            }
+            const data = await searchResponse.json();
+            console.log(data)
+            if (data !== undefined){
+                setCurrentIndex(currentIndex+10);
+                setInventoryData(inventoryData.concat(data));
+            }
+        } catch (error) {
+            console.log(error.message);
+        } // try ...
+    };
+    
+    // function that detects if given is close to the bottom
+    const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
+        const paddingToBottom = 20;
+        return layoutMeasurement.height + contentOffset.y >=
+          contentSize.height - paddingToBottom;
+      };
     
     
     // function to show popup for error alerts
@@ -63,19 +116,27 @@ const Inventory: React.FC = () => {
     
   // function to handle when the filter button is pressed
     const onFilterPress = async () => {
-        //const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
-        const getSearchURL = "https://kemyze.vercel.app/containers/getContainer?kemID=2&accessLevel=1";
+        const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
+        setLastUsedSearch(true);
+        setCurrentIndex(10);
         console.log(getSearchURL);
         try {
             const searchResponse = await fetch(getSearchURL,
               {
                 method: "GET",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
               }
             );
+            if (!searchResponse.ok){
+                console.log("We are having issues");
+                throw new Error("BAD TIME STATUS: " + searchResponse.status);
+            }
             console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
-            console.log(searchResponse);
             const data = await searchResponse.json();
-            //console.log(data);
+            console.log(data);
+            setInventoryData(data);
         } catch (error) {
             console.log(error.message);
         } // try ...
@@ -183,14 +244,23 @@ const Inventory: React.FC = () => {
       </View>
 
       {/* Inventory List */}
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list}
+          //Function call when user scrolls to end of list
+          //refreshControl = {<RefreshControl refreshing={loadingMore} onRefresh={onScrollAtEnd}/>}
+          onMomentumScrollEnd = {({nativeEvent}) => {
+              if (isCloseToBottom(nativeEvent))
+                  onScrollAtEnd();
+          }
+          }
+      >
+          
         {inventoryData.map((item) => (
-          <View key={item.id} style={styles.chemicalCard}>
+          <View key={item.container_id} style={styles.chemicalCard}>
             <View style={styles.cardMain}>
               <View style={styles.infoSide}>
-                <Text style={styles.chemName}>{item.name}</Text>
-                <Text style={styles.casText}>{item.cas}</Text>
-                <Text style={styles.idText}>{item.id}</Text>
+                <Text style={styles.chemName}>{item.chemical_name}</Text>
+                <Text style={styles.casText}>{item.cas_number}</Text>
+                <Text style={styles.idText}>{item.container_id}</Text>
               </View>
 
               <View style={styles.visualSide}>
@@ -201,7 +271,7 @@ const Inventory: React.FC = () => {
                     <Text style={{fontSize: 10}}>💀</Text>
                   </View>
                 )}
-              </View>
+              </View>	
 
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
@@ -213,9 +283,9 @@ const Inventory: React.FC = () => {
             <Text style={styles.locationText}>{item.location}</Text>
             <Text style={[
               styles.statusText, 
-              { color: item.status === 'GOOD' ? '#4ade80' : '#fbbf24' }
+              { color: item.quantity === 'high' ? '#4ade80' : '#fbbf24' }
             ]}>
-              {item.status}
+              {item.quantity}
             </Text>
           </View>
         ))}
