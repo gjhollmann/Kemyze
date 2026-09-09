@@ -59,6 +59,7 @@ const Inventory: React.FC = () => {
     };
     
   const [inventoryData, setInventoryData] = useState(inventoryDataDefault)
+  const [count, setCount] = useState(0); // For pagination, initialize inventory count to 0 and update that value after each set of 10 records.
     
   // function to handle when the filter button is pressed
     const onFilterPress = async () => {
@@ -79,6 +80,56 @@ const Inventory: React.FC = () => {
             console.log(error.message);
         } // try ...
     } // const onFilterPress
+
+    // Handler for "Recently Changed" inventory button press.
+    const onRecentlyChangedPress = async () => {
+      const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
+      console.log(getRecentSearchURL);
+
+      try {
+        const recentSearchResponse = await fetch(getRecentSearchURL, {method: "GET", });
+        console.log(recentSearchResponse)
+        
+        // Handle assortment of unsuccessful HTTP status codes.
+        if (!recentSearchResponse.ok) {
+          if (recentSearchResponse.status === 400) {
+            console.error("Invalid query parameters (e.g., count).");
+            return null;
+          
+          } else if (recentSearchResponse.status === 405) {
+            console.error("Method not allowed. Method expected: GET");
+            return null;
+
+          } else if (recentSearchResponse.status === 401) {
+            console.error("Unauthorized; user not authenticated.");
+            return null;
+
+          } else if (recentSearchResponse.status === 404) {
+            console.error("404 Not Found; endpoint incorrect or unavailable.");
+            return null;
+          
+          } else if (recentSearchResponse.status === 403) {
+            console.error("Forbidden; user does not have permission to access.");
+            return null;
+
+          } else { // Fall through; separate backend issue.
+            console.error("Unexpected backend failure.");
+            return null;
+          
+          }
+        }
+        /* 
+        Update count by the number of recently changed containers returned 
+        in JS array from backend.
+        */
+        const recentSearchData = await recentSearchResponse.json();
+        setCount(count + recentSearchData.length); 
+          
+      } catch (error) {
+        console.log(error.message);
+      
+      } // try/catch ...
+    } // const onRecentlyChangedPress
 
 
   return (
@@ -120,8 +171,12 @@ const Inventory: React.FC = () => {
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
-            <TouchableOpacity key={tab} style={styles.pillBtn}>
-              <Text style={styles.pillText}>{tab}</Text>
+            <TouchableOpacity key={tab} style={styles.pillBtn}
+              onPress={() => {
+                if (tab === 'RECENTLY CHANGED') { 
+                  onRecentlyChangedPress(); // Call handler for recently changed button press.
+                } // Add more conditionals for other tabs here.
+              }}><Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
