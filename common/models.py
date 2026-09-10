@@ -37,6 +37,10 @@ class ContainerAuditLog(models.Model):
     changed_by = models.IntegerField()
     changed_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        managed = False
+        db_table = 'container_audit_log'
+
 class Locations(models.Model):
     location_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
