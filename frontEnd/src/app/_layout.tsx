@@ -20,6 +20,8 @@ export default function RootLayout() {
        
        {/* The Pages folder containing scanner, inventory, and profile */}
       <Stack.Screen name="Pages" options={{ headerShown: false }} />
+      
+      <Stack.Screen name="SubPages" options={{ headerShown: false }} />
       </Stack>
    );
 }
