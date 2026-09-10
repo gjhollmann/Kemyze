@@ -298,6 +298,7 @@ George Hollmann - ghollmann@csus.edu <br>
 Alexander Apolonio-Flores - aapolonio-flores@csus.edu <br>
 Joshua Zamora - joshuazamora@csus.edu <br>
 Reese Nelson - reesenelson@csus.edu <br>
+Matthew Fronda - mfronda@csus.edu <br>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
