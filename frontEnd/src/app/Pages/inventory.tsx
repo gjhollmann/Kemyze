@@ -13,6 +13,7 @@ import {
   Alert,
   RefreshControl
 } from "react-native";
+import { useRouter } from 'expo-router';
 
 interface Chemical {
   id: string;
@@ -24,6 +25,7 @@ interface Chemical {
 }
 
 const BASE_URL = "https://kemyze.vercel.app/";
+const router = useRouter();
 
 const Inventory: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -140,6 +142,15 @@ const Inventory: React.FC = () => {
             console.log(error.message);
         } // try ...
     } // const onFilterPress
+    
+    // function to handle when edit button is pressed
+    const onEditPress = (container_id: int) => {
+        console.log("Routing to edit screen for: "+container_id);
+        router.push({
+            pathname: '../SubPages/edit_container',
+            params: { container_id: container_id },
+        });
+    }
 
 
   return (
@@ -221,7 +232,8 @@ const Inventory: React.FC = () => {
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn} onPress= {() => onEditPress(item.container_id)}>
+                    <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
             </View>
 
