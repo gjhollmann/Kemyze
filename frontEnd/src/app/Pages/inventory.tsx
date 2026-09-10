@@ -14,6 +14,7 @@ import {
   RefreshControl,
   Modal
 } from "react-native";
+import { useRouter } from 'expo-router';
 
 interface Chemical {
   container_id?: string;
@@ -25,6 +26,7 @@ interface Chemical {
 }
 
 const BASE_URL = "https://kemyze.vercel.app/";
+const router = useRouter();
 
 const Inventory: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -158,6 +160,15 @@ const Inventory: React.FC = () => {
     } // try ...
   }; // const onFilterPress
 
+  // function to handle when edit button is pressed
+  const onEditPress = (container_id: any) => {
+    console.log("Routing to edit screen for: "+container_id);
+    router.push({
+      pathname: '../SubPages/edit_container',
+      params: { container_id: container_id },
+    });
+  };
+
   // Helper functions to handle popup modal close & reset
   const handleCloseAddModal = () => {
     setName('');
@@ -284,7 +295,8 @@ const Inventory: React.FC = () => {
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
+                    <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
             </View>
 
@@ -496,7 +508,7 @@ const Inventory: React.FC = () => {
               <Text style={styles.navIcon}>📷</Text>
               <Text style={styles.navText}>QR Scanner</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} onPress={handleCloseAddModal}>
+            <TouchableOpacity style={styles.navItem}>
               <Text style={[styles.navIcon, styles.activeNav]}>📊</Text>
               <Text style={[styles.navText, styles.activeNav]}>Inventory</Text>
             </TouchableOpacity>
@@ -522,10 +534,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#020617', 
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#020617',
   },
   header: {
     alignItems: 'center',
@@ -712,53 +720,57 @@ const styles = StyleSheet.create({
   activeNav: {
     color: '#3b82f6',
   },
-  // Modal Form Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#020617',
+  },
   modalHeader: {
     alignItems: 'center',
-    marginTop: 15,
-    marginBottom: 20,
     justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 20,
   },
   modalBackBtn: {
     position: 'absolute',
     left: 20,
+    top: 0,
   },
   modalScreenTitle: {
     color: 'white',
     fontFamily: 'monospace',
-    fontSize: 28,
-    fontWeight: '400',
+    fontSize: 18,
+    letterSpacing: 1,
   },
   modalScrollArea: {
-    paddingHorizontal: 15,
+    flex: 1,
+    paddingHorizontal: 20,
   },
   formCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    borderRadius: 24,
-    padding: 18,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderRadius: 20,
+    padding: 15,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: 'rgba(59, 130, 246, 0.2)',
   },
   formLabel: {
     color: 'white',
     fontFamily: 'monospace',
-    fontSize: 13,
-    marginTop: 12,
-    marginBottom: 6,
+    fontSize: 12,
+    marginBottom: 5,
+    marginTop: 10,
   },
   inputWrapper: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 18,
-    height: 38,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
+    borderColor: '#3b82f6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(2, 6, 23, 0.5)',
   },
   modalTextInput: {
     color: 'white',
     fontFamily: 'monospace',
     fontSize: 12,
-    padding: 0,
   },
   formRow: {
     flexDirection: 'row',
@@ -778,39 +790,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   importBtn: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 22,
-    height: 38,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#60a5fa',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   importBtnText: {
     color: 'white',
     fontFamily: 'monospace',
+    fontSize: 12,
     fontWeight: 'bold',
-    fontSize: 13,
   },
   errorText: {
     color: '#ef4444',
     fontFamily: 'monospace',
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 15,
+    marginTop: 10,
   },
   saveBtn: {
     backgroundColor: '#3b82f6',
-    height: 42,
-    borderRadius: 20,
-    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 15,
-    marginHorizontal: 40,
+    marginTop: 20,
   },
   saveBtnText: {
     color: 'white',
     fontFamily: 'monospace',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
