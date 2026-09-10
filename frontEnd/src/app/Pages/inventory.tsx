@@ -133,85 +133,33 @@ const Inventory: React.FC = () => {
   const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
     
   // function to handle when the filter button is pressed
-  const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
-    setLastUsedSearch(true);
-    setCurrentIndex(10);
-    console.log(getSearchURL);
-    try {
-      const searchResponse = await fetch(getSearchURL,
-        {
-          method: "GET",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (!searchResponse.ok){
-        console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
-      }
-      console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
-      const data = await searchResponse.json();
-      console.log(data);
-      setInventoryData(data);
-    } catch (error: any) {
-      console.log(error.message);
-    } // try ...
-  }; // const onFilterPress
+    const onFilterPress = async () => {
+        const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
+        setLastUsedSearch(true);
+        setCurrentIndex(10);
+        console.log(getSearchURL);
+        try {
+            const searchResponse = await fetch(getSearchURL,
+              {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+              }
+            );
+            if (!searchResponse.ok){
+                console.log("We are having issues");
+                throw new Error("BAD TIME STATUS: " + searchResponse.status);
+            }
+            console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
+            const data = await searchResponse.json();
+            console.log(data);
+            setInventoryData(data);
+        } catch (error) {
+            console.log(error.message);
+        } // try ...
+    } // const onFilterPress
 
-  // function to handle when edit button is pressed
-  const onEditPress = (container_id: any) => {
-    console.log("Routing to edit screen for: "+container_id);
-    router.push({
-      pathname: '../SubPages/edit_container',
-      params: { container_id: container_id },
-    });
-  };
-
-  // Helper functions to handle popup modal close & reset
-  const handleCloseAddModal = () => {
-    setName('');
-    setCasX('');
-    setCasY('');
-    setCasZ('');
-    setContainerQuantity('');
-    setAcquisitionDate('');
-    setExpirationDate('');
-    setLocationName('');
-    setRoom('');
-    setCabinet('');
-    setShelf('');
-    setSdsFileLocation('');
-    setErrorMessage('');
-    setIsAddModalVisible(false);
-  };
-
-  const handleSaveContainer = () => {
-    if (!name.trim()) {
-      setErrorMessage('*Please enter a chemical name*');
-      return;
-    }
-    if (!locationName.trim()) {
-      setErrorMessage('*Location Name is required*');
-      return;
-    }
-
-    const formattedCas = `${casX}-${casY}-${casZ}`;
-    const fullLocation = `${locationName}${room ? ` - Room ${room}` : ''}`;
-
-    const newContainer: Chemical = {
-      container_id: Math.floor(10000000 + Math.random() * 90000000).toString(),
-      chemical_name: name.toUpperCase(),
-      cas_number: formattedCas,
-      location: fullLocation,
-      quantity: containerQuantity || 'GOOD',
-      hasWarning: false,
-    };
-
-    setInventoryData((prev) => [newContainer, ...prev]);
-    handleCloseAddModal();
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -295,8 +243,7 @@ const Inventory: React.FC = () => {
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
-                    <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
             </View>
 
