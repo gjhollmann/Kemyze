@@ -83,7 +83,7 @@ const Inventory: React.FC = () => {
     if (lastUsedSearch){
       addMoreSearchContainers();
     }
-  }, [lastUsedSearch, currentIndex, search]);
+  });
     
   // function that adds more containers to list based on search
   const addMoreSearchContainers = async () => {
