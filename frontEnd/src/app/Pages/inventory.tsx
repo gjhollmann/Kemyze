@@ -145,11 +145,20 @@ const Inventory: React.FC = () => {
     // Handler for "Recently Changed" inventory button press.
     const onRecentlyChangedPress = async () => {
       const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
+      setLastUsedSearch(true);
+      setCurrentIndex(10);
       console.log(getRecentSearchURL);
 
       try {
-        const recentSearchResponse = await fetch(getRecentSearchURL, {method: "GET", });
-        console.log(recentSearchResponse)
+        const recentSearchResponse = await fetch(getRecentSearchURL, 
+          {
+            method: "GET", 
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        //console.log(recentSearchResponse)
         
         // Handle assortment of unsuccessful HTTP status codes.
         if (!recentSearchResponse.ok) {
@@ -174,7 +183,7 @@ const Inventory: React.FC = () => {
             return null;
 
           } else { // Fall through; separate backend issue.
-            console.error("Unexpected backend failure.");
+            console.log("We are having issues");
             return null;
           
           }
@@ -184,13 +193,15 @@ const Inventory: React.FC = () => {
         in JS array from backend.
         */
         const recentSearchData = await recentSearchResponse.json();
-        setCount(count + recentSearchData.length); 
+        console.log(recentSearchData);
+        setInventoryData(recentSearchData);
+        //setCount(count + recentSearchData.length); 
           
-      } catch (error) {
+      } catch (error: any) {
         console.log(error.message);
       
       } // try/catch ...
-    } // const onRecentlyChangedPress
+    }; // const onRecentlyChangedPress
 
 
   return (
