@@ -332,12 +332,6 @@ const Inventory: React.FC = () => {
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
-            <TouchableOpacity key={tab} style={styles.pillBtn}
-              onPress={() => {
-                if (tab === 'RECENTLY CHANGED') { 
-                  onRecentlyChangedPress(); // Call handler for recently changed button press.
-                } // Add more conditionals for other tabs here.
-              }}><Text style={styles.pillText}>{tab}</Text>
             <TouchableOpacity
               key={tab} 
               style={[
@@ -348,8 +342,9 @@ const Inventory: React.FC = () => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
                 if (tab === 'SHOW ALL') onFilterPress();
+                if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
               }}
-            ></TouchableOpacity>
+            >
               <Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>
           ))}
