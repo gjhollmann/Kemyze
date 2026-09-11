@@ -131,7 +131,6 @@ const Inventory: React.FC = () => {
   };
     
   const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
-  const [count, setCount] = useState(0); // For pagination, initialize inventory count to 0 and update that value after each set of 10 records.
     
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
