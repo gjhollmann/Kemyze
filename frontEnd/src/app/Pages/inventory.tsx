@@ -81,37 +81,35 @@ const Inventory: React.FC = () => {
     }, 2000);
     console.log("User scrolled to end");
     if (lastUsedSearch){
-      addMoreSearchContainers();
+      addMoreContainers();
     }
   });
-    
-  // function that adds more containers to list based on search
-  const addMoreSearchContainers = async () => {
-    console.log("Adding more containers based on search");
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex;
-    console.log(getSearchURL);
+  
+  // function that adds more containers to list based on current active query
+  const addMoreContainers = async () => {
+    console.log("Adding more containers based on current filter");
+    const queryUrl = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=${isExpiringSoon}&count=${currentIndex}&limit=10`;
+    console.log(queryUrl);
     try {
-      const searchResponse = await fetch(getSearchURL,
-        {
-          method: "GET",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (!searchResponse.ok){
+      const response = await fetch(queryUrl, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+        throw new Error("BAD TIME STATUS: " + response.status);
       }
-      const data = await searchResponse.json();
+      const data = await response.json();
       console.log(data);
-      if (data !== undefined){
-        setCurrentIndex(currentIndex+10);
+      if (data !== undefined && data.length > 0){
+        setCurrentIndex(currentIndex + 10);
         setInventoryData(inventoryData.concat(data));
       }
     } catch (error: any) {
       console.log(error.message);
-    } // try ...
+    }
   };
     
   // function that detects if given is close to the bottom
