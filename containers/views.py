@@ -185,14 +185,10 @@ def getSearch(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
-
+# If user selects 'Recently Changed,' display all RC containers. Include search bar input if present. 
 def getSearchRecent(request):
     if request.method == "GET":
-        #input = request.GET.get("input")
         count = request.GET.get("count")
-
-        #if input == None:
-            #return HttpResponseBadRequest("Missing parameter: 'input'")
 
         if count is None or not count.isdigit():
             count = 0
