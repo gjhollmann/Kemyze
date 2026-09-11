@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db.models import Subquery, OuterRef
-from common.models import Containers, Locations
+from common.models import Containers, Locations, ContainerAuditLog
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
@@ -185,30 +185,62 @@ def getSearch(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
-"""
+
 def getSearchRecent(request):
     if request.method == "GET":
-        search_bar_input = request.GET.get("search", "") # Check search bar for specified chemical name.
+        #input = request.GET.get("input")
+        count = request.GET.get("count")
 
-        # If search bar contains input, query container table for matching chemical name. Else, query all records as targets.
-        if search_bar_input.strip():
-            TargetContainers = Containers.objects.filter(chemical_name__icontains=search_bar_input)
+        #if input == None:
+            #return HttpResponseBadRequest("Missing parameter: 'input'")
+
+        if count is None or not count.isdigit():
+            count = 0
         else:
-            TargetContainers = Containers.objects.all()
-        # if/else ...
+            count = int(count)
 
-        # Query container_audit_log table, associating container_id with the container found in the query above. 
-        # Order by changed_at (most recent change timestamp) in descending order, limiting output to 1 timestamp (for each container).
-        most_recent_audit = ContainerAuditLog.objects.filter(container_id=OuterRef('container_id')).order_by('-changed_at').values('changed_at')[:1]
+        try:
+            recently_changed_data = []
+            search_bar_input = request.GET.get("search", "") # Check search bar for specified chemical name.
 
-        # Use the timestamp returned by most_recent_audit to be represented as most_recent_change. 
-        recently_changed_containers = (
+            # If search bar contains input, query container table for matching chemical name. Else, query all records as targets.
+            if search_bar_input.strip():
+                TargetContainers = Containers.objects.filter(chemical_name__icontains=search_bar_input)
+            else:
+                TargetContainers = Containers.objects.all()
+
+            # Query container_audit_log table, associating container_id with the container found in the query above. 
+            # Order by changed_at (most recent change timestamp) in descending order, limiting output to 1 timestamp (for each container).
+            most_recent_audit = ContainerAuditLog.objects.filter(container_id=OuterRef('container_id')).order_by('-changed_at').values('changed_at')[:1]
+    
+            # Use the timestamp returned by most_recent_audit to be represented as most_recent_change. 
+            recently_changed_containers = (
             TargetContainers
-            .annotate(most_recent_change=Subquery(most_recent_audit))
-            .order_by('-most_recent_change', 'container_id')[:10]
-        )
-        return recently_changed_containers
+                .annotate(most_recent_change=Subquery(most_recent_audit))
+                .order_by('-most_recent_change', 'container_id')
+            )
+    
+            for container in recently_changed_containers[count:count+10]:
+                location = container.location.name
+                found_location = container.location
+    
+                while found_location.parent != None:
+                    found_location = found_location.parent
+                    location = location + ', ' + found_location.name
+
+                recently_changed_data.append({
+                    'container_id': container.container_id,
+                    'chemical_name': container.chemical_name,
+                    'cas_number': container.cas_number,
+                    'most_recent_change': container.most_recent_change,
+                    'expr_date': container.expr_date,
+                    'acqn_date': container.acqn_date,
+                    'location': location,
+                    'quantity': container.quantity,
+                })
+            return JsonResponse(recently_changed_data, safe=False)
+        except Exception as error:
+            return HttpResponseBadRequest(error)
     else:
         return HttpResponseNotAllowed(["GET"])  
 # end def getSearchRecent    
-"""
