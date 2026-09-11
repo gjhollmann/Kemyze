@@ -26,9 +26,9 @@ interface Chemical {
 }
 
 const BASE_URL = "https://kemyze.vercel.app/";
-const router = useRouter();
 
 const Inventory: React.FC = () => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
 
   // Modal display toggle state
@@ -57,7 +57,6 @@ const Inventory: React.FC = () => {
       cas_number: '',
       location: '',
       quantity: 'GOOD',
-      //hasWarning: false
     },
     { 
       container_id: '45645',
@@ -65,55 +64,109 @@ const Inventory: React.FC = () => {
       cas_number: '',
       location: '',
       quantity: 'GOOD',
-      //hasWarning: false
     },
   ];
     
-  // function called when user scrolls to end of inventory
+  // Tracker for query states & pagination
   const [lastUsedSearch, setLastUsedSearch] = useState(false);
+  const [isExpiringSoon, setIsExpiringSoon] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(10);
+  const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
 
+  // function called when user scrolls to end of inventory
   const onScrollAtEnd = useCallback(() => {
     setLoadingMore(true);
     setTimeout(() => {
       setLoadingMore(false);
     }, 2000);
     console.log("User scrolled to end");
-    if (lastUsedSearch){
-      addMoreSearchContainers();
+    if (lastUsedSearch || isExpiringSoon){
+      addMoreContainers();
     }
   });
-    
-  // function that adds more containers to list based on search
-  const addMoreSearchContainers = async () => {
-    console.log("Adding more containers based on search");
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex;
+
+  // function that adds more containers to list based on current active query
+  const addMoreContainers = async () => {
+    console.log("Adding more containers based on current filter");
+    const queryUrl = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=${isExpiringSoon}&count=${currentIndex}&limit=10`;
+    console.log(queryUrl);
+    try {
+      const response = await fetch(queryUrl, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok){
+        console.log("We are having issues");
+        throw new Error("BAD TIME STATUS: " + response.status);
+      }
+      const data = await response.json();
+      console.log(data);
+      if (data !== undefined && data.length > 0){
+        setCurrentIndex(currentIndex + 10);
+        setInventoryData(inventoryData.concat(data));
+      }
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
+
+  // function to handle when expiring soon button is pressed
+  const onExpiringSoonPress = async () => {
+    setIsExpiringSoon(true);
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+
+    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=true&count=0&limit=10`;
     console.log(getSearchURL);
     try {
-      const searchResponse = await fetch(getSearchURL,
-        {
-          method: "GET",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const searchResponse = await fetch(getSearchURL, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       if (!searchResponse.ok){
         console.log("We are having issues");
         throw new Error("BAD TIME STATUS: " + searchResponse.status);
       }
       const data = await searchResponse.json();
       console.log(data);
-      if (data !== undefined){
-        setCurrentIndex(currentIndex+10);
-        setInventoryData(inventoryData.concat(data));
-      }
+      setInventoryData(data);
     } catch (error: any) {
       console.log(error.message);
-    } // try ...
+    }
   };
     
+  // function to handle when the filter button is pressed
+  const onFilterPress = async () => {
+    setIsExpiringSoon(false);
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+
+    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=false&count=0&limit=10`;
+    console.log(getSearchURL);
+    try {
+      const searchResponse = await fetch(getSearchURL, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!searchResponse.ok){
+        console.log("We are having issues");
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+      }
+      const data = await searchResponse.json();
+      console.log(data);
+      setInventoryData(data);
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
+
   // function that detects if given is close to the bottom
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: any) => {
     const paddingToBottom = 20;
@@ -129,36 +182,6 @@ const Inventory: React.FC = () => {
       Alert.alert(title, message);
     }
   };
-    
-  const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
-    
-  // function to handle when the filter button is pressed
-  const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
-    setLastUsedSearch(true);
-    setCurrentIndex(10);
-    console.log(getSearchURL);
-    try {
-      const searchResponse = await fetch(getSearchURL,
-        {
-          method: "GET",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (!searchResponse.ok){
-        console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
-      }
-      console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
-      const data = await searchResponse.json();
-      console.log(data);
-      setInventoryData(data);
-    } catch (error: any) {
-      console.log(error.message);
-    } // try ...
-  }; // const onFilterPress
 
   // function to handle when edit button is pressed
   const onEditPress = (container_id: any) => {
@@ -254,8 +277,15 @@ const Inventory: React.FC = () => {
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
             <TouchableOpacity 
               key={tab} 
-              style={styles.pillBtn}
-              onPress={tab === 'ADD NEW' ? () => setIsAddModalVisible(true) : undefined}
+              style={[
+                styles.pillBtn,
+                tab === 'EXPIRING SOON' && isExpiringSoon ? { backgroundColor: '#3b82f6' } : null
+              ]}
+              onPress={() => {
+                if (tab === 'EXPIRING SOON') onExpiringSoonPress();
+                if (tab === 'ADD NEW') setIsAddModalVisible(true);
+                if (tab === 'SHOW ALL') onFilterPress();
+              }}
             >
               <Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>
@@ -265,8 +295,6 @@ const Inventory: React.FC = () => {
 
       {/* Inventory List */}
       <ScrollView style={styles.list}
-          //Function call when user scrolls to end of list
-          //refreshControl = {<RefreshControl refreshing={loadingMore} onRefresh={onScrollAtEnd}/>}
           onMomentumScrollEnd = {({nativeEvent}) => {
               if (isCloseToBottom(nativeEvent))
                   onScrollAtEnd();
@@ -283,7 +311,6 @@ const Inventory: React.FC = () => {
               </View>
 
               <View style={styles.visualSide}>
-                {/* Placeholder for Beaker Image */}
                 <View style={styles.beakerPlaceholder} />
                 {item.hasWarning && (
                   <View style={styles.warningBox}>
@@ -552,14 +579,8 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 70,
     height: 70,
-    justifyContent: 'center',
+    justify: 'center',
     alignItems: 'center',
-  },
-  hexagonBorder: {
-    borderWidth: 1,
-    borderColor: '#3b82f6',
-    padding: 10,
-    borderRadius: 10, 
   },
   screenTitle: {
     color: 'white',
