@@ -216,7 +216,7 @@ const Inventory: React.FC = () => {
     // Handler for "Recently Changed" inventory button press.
     const onRecentlyChangedPress = async () => {
       //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
-      const getRecentSearchURL = BASE_URL + "containers/getSearchRecent?input=" + search;
+      const getRecentSearchURL = BASE_URL + "containers/getSearchRecent";
       setLastUsedSearch(true);
       setCurrentIndex(10);
       console.log(getRecentSearchURL);
@@ -321,11 +321,11 @@ const Inventory: React.FC = () => {
                   onRecentlyChangedPress(); // Call handler for recently changed button press.
                 } // Add more conditionals for other tabs here.
               }}><Text style={styles.pillText}>{tab}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               key={tab} 
               style={styles.pillBtn}
               onPress={tab === 'ADD NEW' ? () => setIsAddModalVisible(true) : undefined}
-            >
+            ></TouchableOpacity>
               <Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>
           ))}
