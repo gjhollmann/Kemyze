@@ -216,8 +216,7 @@ const Inventory: React.FC = () => {
     // Handler for "Recently Changed" inventory button press.
     const onRecentlyChangedPress = async () => {
       //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
-      //const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
-      const getRecentSearchURL = `http://127.0.0.1:8000/containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+      const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
       setLastUsedSearch(true);
       setCurrentIndex(10);
       console.log(getRecentSearchURL);
