@@ -200,8 +200,14 @@ def getSearchRecent(request):
             search_bar_input = request.GET.get("search", "") # Check search bar for specified chemical name.
 
             # If search bar contains input, query container table for matching chemical name. Else, query all records as targets.
+            # Treat numeric values as container IDS and other types as different identifiers.
             if search_bar_input.strip():
-                TargetContainers = Containers.objects.filter(chemical_name__icontains=search_bar_input)
+                if search_bar_input.isdigit():
+                    TargetContainers = Containers.objects.filter(container_id=search_bar_input)
+
+                else:
+                    TargetContainers = Containers.objects.filter(chemical_name__icontains=search_bar_input)
+
             else:
                 TargetContainers = Containers.objects.all()
 
