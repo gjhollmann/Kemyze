@@ -216,7 +216,8 @@ const Inventory: React.FC = () => {
     // Handler for "Recently Changed" inventory button press.
     const onRecentlyChangedPress = async () => {
       //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
-      const getRecentSearchURL = BASE_URL + "containers/getSearchRecent";
+      //const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+      const getRecentSearchURL = `http://127.0.0.1:8000/containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
       setLastUsedSearch(true);
       setCurrentIndex(10);
       console.log(getRecentSearchURL);
@@ -225,12 +226,8 @@ const Inventory: React.FC = () => {
         const recentSearchResponse = await fetch(getRecentSearchURL, 
           {
             method: "GET", 
-            headers: {
-              'Content-Type': 'application/json',
-            },
           }
         );
-        //console.log(recentSearchResponse)
         
         // Handle assortment of unsuccessful HTTP status codes.
         if (!recentSearchResponse.ok) {
@@ -266,8 +263,7 @@ const Inventory: React.FC = () => {
         */
         const recentSearchData = await recentSearchResponse.json();
         console.log(recentSearchData);
-        setInventoryData(recentSearchData);
-        //setCount(count + recentSearchData.length); 
+        setInventoryData(recentSearchData); 
           
       } catch (error: any) {
         console.log(error.message);
