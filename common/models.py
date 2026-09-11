@@ -25,7 +25,7 @@ class Containers(models.Model):
 # Model for container_audit_log.
 class ContainerAuditLog(models.Model):
     audit_id = models.BigAutoField(primary_key=True)
-    container_id = models.BigIntegerField()
+    container_id = models.IntegerField()
     action_type = models.CharField(max_length=6, choices=[
         ('INSERT', 'INSERT'),
         ('UPDATE', 'UPDATE'),
