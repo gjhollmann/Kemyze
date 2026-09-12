@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Text, 
   View, 
@@ -30,6 +30,7 @@ const router = useRouter();
 
 const Inventory: React.FC = () => {
   const [search, setSearch] = useState('');
+  const [showLow, setShowLow] = useState(false);
 
   // Modal display toggle state
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -88,7 +89,7 @@ const Inventory: React.FC = () => {
   // function that adds more containers to list based on search
   const addMoreSearchContainers = async () => {
     console.log("Adding more containers based on search");
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex;
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
     console.log(getSearchURL);
     try {
       const searchResponse = await fetch(getSearchURL,
@@ -134,7 +135,7 @@ const Inventory: React.FC = () => {
     
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+(showLow ? "&show_low=true" : ""); 
     setLastUsedSearch(true);
     setCurrentIndex(10);
     console.log(getSearchURL);
@@ -159,6 +160,11 @@ const Inventory: React.FC = () => {
       console.log(error.message);
     } // try ...
   }; // const onFilterPress
+
+  // whenever showLow changes, re-runs the filter function to update the inventory list
+  useEffect(() => {
+    onFilterPress();
+  }, [showLow]);
 
   // function to handle when edit button is pressed
   const onEditPress = (container_id: any) => {
@@ -255,7 +261,11 @@ const Inventory: React.FC = () => {
             <TouchableOpacity 
               key={tab} 
               style={styles.pillBtn}
-              onPress={tab === 'ADD NEW' ? () => setIsAddModalVisible(true) : undefined}
+              onPress={
+                tab === 'ADD NEW' ? () => setIsAddModalVisible(true) :
+                tab === 'SHOW LOW' ? () => setShowLow(!showLow) :
+                undefined
+              }
             >
               <Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>

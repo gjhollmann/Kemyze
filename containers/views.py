@@ -151,8 +151,13 @@ def getSearch(request):
     if request.method == "GET":
         input = request.GET.get("input")
         count = request.GET.get("count")
+        show_low = request.GET.get("show_low")
+
         if input == None:
-            return HttpResponseBadRequest("Missing 'input' Parameter")
+            if show_low is not None:
+                input = ""
+            else:
+                return HttpResponseBadRequest("Missing 'input' Parameter")
         if count is None or not count.isdigit():
             count = 0
         else:
@@ -163,6 +168,8 @@ def getSearch(request):
                 FoundSearch = Containers.objects.filter(container_id=input).defer("sds_sheet") | Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
             else:
                 FoundSearch = Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
+            if show_low is not None and show_low.lower() == "true":
+                FoundSearch = FoundSearch.filter(quantity__iexact="low")
             for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
