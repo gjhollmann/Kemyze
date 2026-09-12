@@ -130,9 +130,9 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+        throw new Error("BAD TIME STATUS: " + response.status);
       }
-      const data = await searchResponse.json();
+      const data = await response.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {
@@ -235,6 +235,63 @@ const Inventory: React.FC = () => {
     setInventoryData((prev) => [newContainer, ...prev]);
     handleCloseAddModal();
   };
+    // Handler for "Recently Changed" inventory button press.
+    const onRecentlyChangedPress = async () => {
+      //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
+      const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+      setLastUsedSearch(true);
+      setCurrentIndex(10);
+      console.log(getRecentSearchURL);
+
+      try {
+        const recentSearchResponse = await fetch(getRecentSearchURL, 
+          {
+            method: "GET", 
+          }
+        );
+        
+        // Handle assortment of unsuccessful HTTP status codes.
+        if (!recentSearchResponse.ok) {
+          if (recentSearchResponse.status === 400) {
+            console.error("Invalid query parameters (e.g., count).");
+            return null;
+          
+          } else if (recentSearchResponse.status === 405) {
+            console.error("Method not allowed. Method expected: GET");
+            return null;
+
+          } else if (recentSearchResponse.status === 401) {
+            console.error("Unauthorized; user not authenticated.");
+            return null;
+
+          } else if (recentSearchResponse.status === 404) {
+            console.error("404 Not Found; endpoint incorrect or unavailable.");
+            return null;
+          
+          } else if (recentSearchResponse.status === 403) {
+            console.error("Forbidden; user does not have permission to access.");
+            return null;
+
+          } else { // Fall through; separate backend issue.
+            console.log("We are having issues");
+            return null;
+          
+          }
+        }
+        /* 
+        Update count by the number of recently changed containers returned 
+        in JS array from backend.
+        */
+        const recentSearchData = await recentSearchResponse.json();
+        console.log(recentSearchData);
+        setInventoryData(recentSearchData); 
+          
+      } catch (error: any) {
+        console.log(error.message);
+      
+      } // try/catch ...
+    }; // const onRecentlyChangedPress
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -275,7 +332,7 @@ const Inventory: React.FC = () => {
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={tab} 
               style={[
                 styles.pillBtn,
@@ -285,6 +342,7 @@ const Inventory: React.FC = () => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
                 if (tab === 'SHOW ALL') onFilterPress();
+                if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
               }}
             >
               <Text style={styles.pillText}>{tab}</Text>
