@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Text, 
   View, 
@@ -31,6 +31,7 @@ const BASE_URL = "https://kemyze.vercel.app/";
 const Inventory: React.FC = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [showLow, setShowLow] = useState(false);
 
   // Modal display toggle state
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -86,12 +87,12 @@ const Inventory: React.FC = () => {
       addMoreContainers();
     }
   });
-
-  // function that adds more containers to list based on current active query
-  const addMoreContainers = async () => {
-    console.log("Adding more containers based on current filter");
-    const queryUrl = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=${isExpiringSoon}&count=${currentIndex}&limit=10`;
-    console.log(queryUrl);
+    
+  // function that adds more containers to list based on search
+  const addMoreSearchContainers = async () => {
+    console.log("Adding more containers based on search");
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
+    console.log(getSearchURL);
     try {
       const response = await fetch(queryUrl, {
         method: "GET",
@@ -143,6 +144,7 @@ const Inventory: React.FC = () => {
     
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+(showLow ? "&show_low=true" : ""); 
     setIsExpiringSoon(false);
     setLastUsedSearch(true);
     setCurrentIndex(10);
@@ -183,6 +185,11 @@ const Inventory: React.FC = () => {
       Alert.alert(title, message);
     }
   };
+
+  // whenever showLow changes, re-runs the filter function to update the inventory list
+  useEffect(() => {
+    onFilterPress();
+  }, [showLow]);
 
   // function to handle when edit button is pressed
   const onEditPress = (container_id: any) => {
@@ -362,6 +369,7 @@ const Inventory: React.FC = () => {
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
                 if (tab === 'SHOW ALL') onFilterPress();
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
+                if (tab === 'SHOW LOW') setShowLow(!showLow);
               }}
             >
               <Text style={styles.pillText}>{tab}</Text>
