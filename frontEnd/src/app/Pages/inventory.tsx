@@ -15,6 +15,7 @@ import {
   Modal
 } from "react-native";
 import { useRouter } from 'expo-router';
+import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
 interface Chemical {
   container_id?: string;
@@ -191,6 +192,24 @@ const Inventory: React.FC = () => {
       params: { container_id: container_id },
     });
   };
+
+  // React state for container QR label visibility.
+  const [isQrLabelVisible, setIsQrLabelVisible] = useState(false);
+  const [currentContainerId, setCurrentContainerId] = useState(""); // ID, name state considered strings.
+  const [currentChemicalName, setCurrentChemicalName] = useState("");
+  
+  // Handle 'View QR Label' button press. 
+  const onQRLabelPress = async (container_id: string, chemical_name: string) => {
+    // Safety check for passed container_id.
+    if (!container_id) {
+      showPopup("Error", "No container ID; QR label not retrieved.");
+      return;
+    }
+    
+    setCurrentContainerId(container_id); // Store passed string values.
+    setCurrentChemicalName(chemical_name);
+    setIsQrLabelVisible(true); // Confirm QR visibility.
+  }; // const onQRLabelPress
 
   // Helper functions to handle popup modal close & reset
   const handleCloseAddModal = () => {
@@ -379,7 +398,16 @@ const Inventory: React.FC = () => {
 
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn} 
+                  onPress={() => {
+                    if (!item.container_id || !item.chemical_name) {
+                      showPopup("Error", "Incomplete container information");
+                      return;  
+                    }
+                    
+                    onQRLabelPress(item.container_id, item.chemical_name)}}>
+                    <Text style={styles.actionText}>QR LABEL</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
                     <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
@@ -611,9 +639,19 @@ const Inventory: React.FC = () => {
         <TouchableOpacity style={styles.navItem}><Text style={[styles.navIcon, styles.activeNav]}>📊</Text><Text style={[styles.navText, styles.activeNav]}>Inventory</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Profile</Text></TouchableOpacity>
       </View>
+
+      {/*Popup window for QR label to be opened on 'View QR Label' button press.*/}
+      <QRLabelPopup
+        visible={isQrLabelVisible}
+        onClose={() => setIsQrLabelVisible(false)}
+        containerId={currentContainerId}
+        chemicalName={currentChemicalName}
+      />
     </SafeAreaView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
