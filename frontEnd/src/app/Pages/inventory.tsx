@@ -132,9 +132,9 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + response.status);
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
       }
-      const data = await response.json();
+      const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {
@@ -365,7 +365,7 @@ const Inventory: React.FC = () => {
               onPress={() => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
-                if (tab === 'SHOW ALL') onFilterPress();
+                if (tab === 'SHOW ALL') { setSearch(''); onFilterPress(''); }
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
                 if (tab === 'SHOW LOW') setShowLow(!showLow);
               }}
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 70,
     height: 70,
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   screenTitle: {
