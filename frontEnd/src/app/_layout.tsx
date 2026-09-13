@@ -33,7 +33,7 @@ export default function RootLayout() {
 
         {/* SubPages such as edit_container */}
         <Stack.Screen
-          name="SubPages"
+          name="SubPages/edit_container"
           options={{ headerShown: false }}
         />
       </Stack>

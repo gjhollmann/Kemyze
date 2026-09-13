@@ -9,17 +9,16 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
 import NavBar from '../components/NavBar';
+import GradientButton from '../../../components/GradientButton';
 
-// ==================================================
-// TYPOGRAPHY
-// ==================================================
+// Typography
 
 const FONT = Object.freeze({
   regular: 'JetBrains Mono',
@@ -40,9 +39,7 @@ const FONT_SIZE = Object.freeze({
   arrow: 17,
 } as const);
 
-// ==================================================
-// TYPES
-// ==================================================
+// Types
 
 type SelectorType =
   | 'quantity'
@@ -76,9 +73,7 @@ type ReviewChange = {
   newValue: string;
 };
 
-// ==================================================
-// CONSTANTS
-// ==================================================
+// Constants
 
 const MONTH_NAMES = [
   'January',
@@ -116,49 +111,18 @@ const CAS_CHARACTERS = [
   '7',
   '8',
   '9',
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G',
-  'H',
-  'I',
-  'J',
-  'K',
-  'L',
-  'M',
-  'N',
-  'O',
-  'P',
-  'Q',
-  'R',
-  'S',
-  'T',
-  'U',
-  'V',
-  'W',
-  'X',
-  'Y',
-  'Z',
 ];
 
 const PANEL_GRADIENT: [string, string] = [
-  '#16233A',
-  '#0B1220',
+  'rgba(1, 8, 37, 0.74)',
+  'rgba(1, 8, 37, 0.74)',
 ];
 
-const SAVE_GRADIENT: [string, string] = [
-  '#0C66E4',
-  '#388BFF',
-];
 
-// ==================================================
-// SCREEN
-// ==================================================
+// Screen
 
 export default function Edit_Container() {
+  const { container_id } = useLocalSearchParams();
   const router = useRouter();
 
   const { width, height } = useWindowDimensions();
@@ -166,9 +130,7 @@ export default function Edit_Container() {
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
 
-  // ==================================================
-  // MODAL STATE
-  // ==================================================
+  // Modal state
 
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -179,9 +141,7 @@ export default function Edit_Container() {
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
 
-  // ==================================================
-  // SELECTION STATE
-  // ==================================================
+  // Selection state
 
   const [selectorType, setSelectorType] =
     useState<SelectorType>(null);
@@ -198,9 +158,7 @@ export default function Edit_Container() {
   const [fieldHistoryType, setFieldHistoryType] =
     useState<HistoryType>(null);
 
-  // ==================================================
-  // FIELD STATE
-  // ==================================================
+  // Field state
 
   const [quantity, setQuantity] =
     useState('Select Status');
@@ -223,9 +181,10 @@ export default function Edit_Container() {
   const [shelf, setShelf] =
     useState('XXXX');
 
-  // ==================================================
-  // CAS STATE
-  // ==================================================
+  const [sdsLocation, setSdsLocation] =
+    useState('');
+
+  // CAS state
 
   const [casFirst, setCasFirst] = useState([
     'X',
@@ -243,9 +202,7 @@ export default function Edit_Container() {
     'Z',
   ]);
 
-  // ==================================================
-  // CALENDAR STATE
-  // ==================================================
+  // Calendar state
 
   const currentDate = new Date();
 
@@ -255,15 +212,13 @@ export default function Edit_Container() {
   const [calendarYear, setCalendarYear] =
     useState(currentDate.getFullYear());
 
-  // ==================================================
-  // PLACEHOLDER DATA
-  // ==================================================
+  // Placeholder data
 
   const changeLog = [
     {
       Date: '',
       Time: '',
-      ContainerID: '',
+      ContainerID: String(container_id ?? ''),
       User: '',
       Change: 'Edit',
       Old: '',
@@ -272,7 +227,7 @@ export default function Edit_Container() {
     {
       Date: '',
       Time: '',
-      ContainerID: '',
+      ContainerID: String(container_id ?? ''),
       User: '',
       Change: 'Location',
       Old: '',
@@ -281,7 +236,7 @@ export default function Edit_Container() {
     {
       Date: '',
       Time: '',
-      ContainerID: '',
+      ContainerID: String(container_id ?? ''),
       User: '',
       Change: 'Quantity',
       Old: '',
@@ -290,7 +245,7 @@ export default function Edit_Container() {
     {
       Date: '',
       Time: '',
-      ContainerID: '',
+      ContainerID: String(container_id ?? ''),
       User: '',
       Change: 'SDS',
       Old: '',
@@ -316,9 +271,7 @@ export default function Edit_Container() {
     },
   ];
 
-  // ==================================================
-  // HAPTICS
-  // ==================================================
+  // Haptics
 
   const haptic = () => {
     Haptics.selectionAsync();
@@ -336,9 +289,7 @@ export default function Edit_Container() {
     );
   };
 
-  // ==================================================
-  // GENERAL SELECTORS
-  // ==================================================
+  // General selectors
 
   const openSelector = (type: SelectorType) => {
     haptic();
@@ -447,9 +398,7 @@ export default function Edit_Container() {
     setSelectorType(null);
   };
 
-  // ==================================================
-  // CAS SELECTOR
-  // ==================================================
+  // CAS selector
 
   const openCasSelector = (type: CasSelectorType) => {
     haptic();
@@ -510,9 +459,7 @@ export default function Edit_Container() {
     }
   };
 
-  // ==================================================
-  // CALENDAR
-  // ==================================================
+  // Calendar
 
   const openCalendar = (type: DateSelectorType) => {
     haptic();
@@ -633,9 +580,7 @@ export default function Edit_Container() {
     setDateSelectorType(null);
   };
 
-  // ==================================================
-  // HISTORY
-  // ==================================================
+  // History
 
   const openHistory = () => {
     haptic();
@@ -726,9 +671,7 @@ export default function Edit_Container() {
         historyFilter
     );
 
-  // ==================================================
-  // SAVE FLOW
-  // ==================================================
+  // Save flow
 
   const openReviewChanges = () => {
     mediumHaptic();
@@ -757,9 +700,7 @@ export default function Edit_Container() {
     setCanceledVisible(false);
   };
 
-  // ==================================================
-  // NAVIGATION
-  // ==================================================
+  // Navigation
 
   const navState = {
     index: 1,
@@ -821,7 +762,7 @@ export default function Edit_Container() {
       }
 
       if (name === 'inventory') {
-        router.push(
+        router.replace(
           '/Pages/inventory'
         );
       }
@@ -834,9 +775,7 @@ export default function Edit_Container() {
     },
   } as any;
 
-  // ==================================================
-  // RENDER
-  // ==================================================
+  // Render
 
   return (
     <View style={styles.screen}>
@@ -938,7 +877,7 @@ export default function Edit_Container() {
                 <TextInput
                   style={styles.input}
                   placeholder="Chemical Name"
-                  placeholderTextColor="#8C9BAB"
+                  placeholderTextColor="#C9CFE9"
                   accessibilityLabel="Chemical Name"
                   maxLength={255}
                 />
@@ -1365,64 +1304,34 @@ export default function Edit_Container() {
                       styles.sdsInput,
                     ]}
                     placeholder="File Location"
-                    placeholderTextColor="#8C9BAB"
+                    placeholderTextColor="#C9CFE9"
                     accessibilityLabel="SDS File Location"
+                    value={sdsLocation}
+                    onChangeText={setSdsLocation}
                   />
 
-                  <Pressable
-                    onPress={haptic}
-                    accessibilityRole="button"
-                    accessibilityLabel="Import SDS Sheet"
-                    style={({ pressed }) => [
-                      styles.importButton,
-                      pressed &&
-                        styles.buttonPressed,
-                    ]}
-                  >
-                    <Text
-                      style={
-                        styles.importText
-                      }
-                    >
-                      Import
-                    </Text>
-                  </Pressable>
+                  <GradientButton
+                      title="Import"
+                      onPress={haptic}
+                      width={84}
+                      height={44}
+                      borderRadius={10}
+                    />
                 </View>
               </View>
             </LinearGradient>
           </View>
 
           {/* Save */}
-          <Pressable
-            onPress={openReviewChanges}
-            accessibilityRole="button"
-            accessibilityLabel="Save container changes"
-            accessibilityHint="Opens the review changes window"
-            style={({ pressed }) => [
-              styles.saveButton,
-              pressed &&
-                styles.saveButtonPressed,
-            ]}
-          >
-            <LinearGradient
-              colors={SAVE_GRADIENT}
-              start={{
-                x: 0,
-                y: 0,
-              }}
-              end={{
-                x: 1,
-                y: 0,
-              }}
-              style={
-                StyleSheet.absoluteFillObject
-              }
+          <View style={styles.saveButton}>
+            <GradientButton
+              title="Save"
+              onPress={openReviewChanges}
+              width="100%"
+              height={50}
+              borderRadius={10}
             />
-
-            <Text style={styles.saveText}>
-              Save
-            </Text>
-          </Pressable>
+          </View>
 
           {/* Change Log */}
           <Pressable
@@ -1484,7 +1393,7 @@ export default function Edit_Container() {
                 styles.changeLogText
               }
             >
-              ContainerID: __________
+              ContainerID: {String(container_id ?? '__________')}
             </Text>
 
             <Text
@@ -1603,9 +1512,7 @@ export default function Edit_Container() {
         }}
       />
 
-      {/* ==================================================
-          SELECTOR MODAL
-          ================================================== */}
+      {/* Selector modal */}
 
       <Modal
         visible={selectorVisible}
@@ -1692,6 +1599,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.cancelText
@@ -1704,9 +1632,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          CAS MODAL
-          ================================================== */}
+      {/* CAS modal */}
 
       <Modal
         visible={casSelectorVisible}
@@ -1861,6 +1787,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.casDoneText
@@ -1873,9 +1820,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          CALENDAR MODAL
-          ================================================== */}
+      {/* Calendar modal */}
 
       <Modal
         visible={calendarVisible}
@@ -2061,6 +2006,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.cancelText
@@ -2073,9 +2039,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          CONTAINER HISTORY
-          ================================================== */}
+      {/* Container history */}
 
       <Modal
         visible={historyVisible}
@@ -2182,6 +2146,27 @@ export default function Edit_Container() {
                         styles.filterChipActive,
                     ]}
                   >
+                    <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 20,
+                        }}
+                      />
+                    </LinearGradient>
                     <Text
                       numberOfLines={1}
                       style={[
@@ -2278,9 +2263,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          FIELD HISTORY
-          ================================================== */}
+      {/* Field history */}
 
       <Modal
         visible={fieldHistoryVisible}
@@ -2465,9 +2448,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          REVIEW CHANGES
-          ================================================== */}
+      {/* Review changes */}
 
       <Modal
         visible={reviewVisible}
@@ -2658,6 +2639,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.reviewSaveText
@@ -2679,6 +2681,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.reviewCancelText
@@ -2691,9 +2714,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          SAVED CONFIRMATION
-          ================================================== */}
+      {/* Saved confirmation */}
 
       <Modal
         visible={savedVisible}
@@ -2763,6 +2784,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2775,9 +2817,7 @@ export default function Edit_Container() {
         </View>
       </Modal>
 
-      {/* ==================================================
-          CANCELED CONFIRMATION
-          ================================================== */}
+      {/* Canceled confirmation */}
 
       <Modal
         visible={canceledVisible}
@@ -2847,6 +2887,27 @@ export default function Edit_Container() {
                   styles.buttonPressed,
               ]}
             >
+              <LinearGradient
+                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                      locations={[0, 0.27, 0.49, 0.75, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    >
+                      <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          bottom: 2,
+                          left: 2,
+                          right: 2,
+                          borderRadius: 7,
+                        }}
+                      />
+                    </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2862,14 +2923,12 @@ export default function Edit_Container() {
   );
 }
 
-// ==================================================
-// STYLES
-// ==================================================
+// Styles
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#080E1F',
+    backgroundColor: '#020617',
   },
 
   pageScroll: {
@@ -2895,7 +2954,7 @@ const styles = StyleSheet.create({
   },
 
   backText: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -2914,7 +2973,7 @@ const styles = StyleSheet.create({
   boxGlow: {
     width: '100%',
     borderRadius: 20,
-    shadowColor: '#388BFF',
+    shadowColor: '#06184A',
     shadowOffset: {
       width: 0,
       height: 0,
@@ -2927,7 +2986,7 @@ const styles = StyleSheet.create({
   box: {
     width: '100%',
     borderWidth: 1,
-    borderColor: '#388BFF',
+    borderColor: '#3B82F6',
     borderRadius: 20,
     paddingTop: 10,
     paddingBottom: 10,
@@ -2940,7 +2999,7 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    color: '#F7F8F9',
+    color: '#FFFFFF',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.label,
     lineHeight: 16,
@@ -2951,14 +3010,14 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#738496',
+    borderColor: '#334155',
     borderRadius: 9,
     color: '#FFFFFF',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
     paddingHorizontal: 9,
-    backgroundColor: '#161F2D',
+    backgroundColor: '#09091C',
   },
 
   row: {
@@ -2988,15 +3047,15 @@ const styles = StyleSheet.create({
   casButton: {
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#738496',
+    borderColor: '#334155',
     borderRadius: 9,
-    backgroundColor: '#161F2D',
+    backgroundColor: '#09091C',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   casButtonText: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -3017,7 +3076,7 @@ const styles = StyleSheet.create({
   },
 
   dash: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -3046,9 +3105,9 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#738496',
+    borderColor: '#334155',
     borderRadius: 9,
-    backgroundColor: '#161F2D',
+    backgroundColor: '#09091C',
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
@@ -3062,21 +3121,21 @@ const styles = StyleSheet.create({
   },
 
   placeholderText: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
   },
 
   selectArrow: {
     position: 'absolute',
     right: 6,
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.arrow,
     lineHeight: 22,
   },
 
   selectPressed: {
-    borderColor: '#579DFF',
-    backgroundColor: '#17263A',
+    borderColor: '#3B82F6',
+    backgroundColor: '#131338',
   },
 
   sdsRow: {
@@ -3096,9 +3155,9 @@ const styles = StyleSheet.create({
     minWidth: 74,
     paddingHorizontal: 10,
     borderRadius: 9,
-    backgroundColor: '#0C66E4',
+    backgroundColor: '#3B82F6',
     borderWidth: 1,
-    borderColor: '#579DFF',
+    borderColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3111,24 +3170,9 @@ const styles = StyleSheet.create({
   },
 
   saveButton: {
-    position: 'relative',
     width: '100%',
-    minHeight: 48,
+    height: 50,
     marginTop: 8,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#579DFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#388BFF',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 5,
-    elevation: 4,
   },
 
   saveButtonPressed: {
@@ -3153,8 +3197,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#101827',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     paddingVertical: 9,
     paddingHorizontal: 12,
   },
@@ -3174,7 +3218,7 @@ const styles = StyleSheet.create({
   },
 
   changeLogArrow: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.arrow,
     lineHeight: 22,
@@ -3187,7 +3231,7 @@ const styles = StyleSheet.create({
   },
 
   changeLogText: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3198,11 +3242,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: '#388BFF',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 9,
     overflow: 'hidden',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
   },
 
   containerInsightsTitle: {
@@ -3225,15 +3270,15 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#131F2F',
+    borderColor: '#334155',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 7,
     paddingVertical: 5,
     justifyContent: 'center',
   },
 
   kpiLabel: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.metadata,
     lineHeight: 15,
@@ -3273,7 +3318,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 4,
     borderRadius: 4,
-    backgroundColor: '#63758A',
+    backgroundColor: '#334155',
     alignSelf: 'center',
     marginBottom: 10,
   },
@@ -3292,7 +3337,7 @@ const styles = StyleSheet.create({
   },
 
   sheetSubtitle: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3319,7 +3364,7 @@ const styles = StyleSheet.create({
   },
 
   sheetBackText: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -3329,11 +3374,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 14,
@@ -3349,14 +3394,14 @@ const styles = StyleSheet.create({
 
   optionButton: {
     minHeight: 48,
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#161F2D',
-    justifyContent: 'center',
+    borderColor: '#334155',
+        justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
     marginBottom: 7,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 
   optionText: {
@@ -3369,12 +3414,12 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     minHeight: 46,
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#274567',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
+    overflow: 'hidden',
   },
 
   cancelText: {
@@ -3389,11 +3434,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 14,
     paddingTop: 8,
     paddingBottom: 14,
@@ -3414,16 +3459,16 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#131F2F',
+    borderColor: '#334155',
+    backgroundColor: '#131338',
     overflow: 'hidden',
   },
 
   casSelectedValue: {
     minHeight: 48,
     borderBottomWidth: 1,
-    borderBottomColor: '#388BFF',
-    backgroundColor: '#17263A',
+    borderBottomColor: '#3B82F6',
+    backgroundColor: '#131338',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3450,11 +3495,11 @@ const styles = StyleSheet.create({
   },
 
   casWheelOptionActive: {
-    backgroundColor: '#0C66E4',
+    backgroundColor: '#3B82F6',
   },
 
   casWheelText: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -3468,12 +3513,11 @@ const styles = StyleSheet.create({
 
   casDoneButton: {
     minHeight: 46,
-    borderRadius: 9,
-    backgroundColor: '#0C66E4',
-    borderWidth: 1,
-    borderColor: '#579DFF',
+    borderRadius: 10,
+        borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
 
   casDoneText: {
@@ -3487,11 +3531,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 14,
@@ -3517,7 +3561,7 @@ const styles = StyleSheet.create({
   },
 
   calendarYear: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3532,7 +3576,7 @@ const styles = StyleSheet.create({
   },
 
   calendarArrow: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.arrow,
     lineHeight: 22,
@@ -3558,7 +3602,7 @@ const styles = StyleSheet.create({
   },
 
   calendarWeekText: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.metadata,
     lineHeight: 15,
@@ -3574,7 +3618,7 @@ const styles = StyleSheet.create({
   },
 
   calendarDatePressed: {
-    backgroundColor: '#0C66E4',
+    backgroundColor: '#2983ff',
   },
 
   calendarDateText: {
@@ -3588,11 +3632,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
     paddingTop: 7,
     paddingBottom: 13,
@@ -3611,20 +3655,18 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#161F2D',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
+    overflow: 'hidden',
   },
 
   filterChipActive: {
-    backgroundColor: '#0C66E4',
-    borderColor: '#579DFF',
+    overflow: 'hidden',
   },
 
   filterText: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3650,8 +3692,8 @@ const styles = StyleSheet.create({
     minHeight: 60,
     borderRadius: 9,
     borderWidth: 1,
-    borderColor: '#203A57',
-    backgroundColor: '#131F2F',
+    borderColor: '#334155',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingVertical: 10,
     paddingHorizontal: 10,
     marginBottom: 7,
@@ -3680,7 +3722,7 @@ const styles = StyleSheet.create({
   },
 
   historyValue: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3690,7 +3732,7 @@ const styles = StyleSheet.create({
 
   historyArrow: {
     width: 20,
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.arrow,
     lineHeight: 22,
@@ -3701,11 +3743,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
     paddingTop: 7,
     paddingBottom: 13,
@@ -3742,7 +3784,7 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 6,
-    backgroundColor: '#579DFF',
+    backgroundColor: '#3B82F6',
     marginTop: 4,
   },
 
@@ -3751,15 +3793,15 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#579DFF',
-    backgroundColor: '#101827',
+    borderColor: '#3B82F6',
+    backgroundColor: '#09091C',
     marginTop: 4,
   },
 
   timelineLine: {
     width: 1,
     flex: 1,
-    backgroundColor: '#274567',
+    backgroundColor: '#334155',
     marginTop: 3,
   },
 
@@ -3776,7 +3818,7 @@ const styles = StyleSheet.create({
   },
 
   timelinePlaceholder: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
@@ -3787,11 +3829,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    backgroundColor: '#101827',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: '#274567',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
     paddingTop: 7,
     paddingBottom: 14,
@@ -3810,8 +3852,8 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 9,
     borderWidth: 1,
-    borderColor: '#203A57',
-    backgroundColor: '#131F2F',
+    borderColor: '#334155',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 10,
     marginBottom: 6,
   },
@@ -3836,7 +3878,7 @@ const styles = StyleSheet.create({
   },
 
   reviewValueLabel: {
-    color: '#8C9BAB',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.metadata,
     lineHeight: 15,
@@ -3844,14 +3886,14 @@ const styles = StyleSheet.create({
   },
 
   reviewValue: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
   },
 
   reviewArrow: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.arrow,
     lineHeight: 22,
@@ -3861,13 +3903,12 @@ const styles = StyleSheet.create({
   reviewSaveButton: {
     width: '100%',
     minHeight: 48,
-    borderRadius: 9,
-    backgroundColor: '#0C66E4',
-    borderWidth: 1,
-    borderColor: '#579DFF',
+    borderRadius: 10,
+        borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 6,
+    overflow: 'hidden',
   },
 
   reviewSaveText: {
@@ -3880,16 +3921,16 @@ const styles = StyleSheet.create({
   reviewCancelButton: {
     width: '100%',
     minHeight: 48,
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#274567',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 6,
+    overflow: 'hidden',
   },
 
   reviewCancelText: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
@@ -3907,8 +3948,8 @@ const styles = StyleSheet.create({
     maxWidth: 390,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#274567',
-    backgroundColor: '#101827',
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
     padding: 20,
     alignItems: 'center',
   },
@@ -3918,15 +3959,15 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#579DFF',
-    backgroundColor: '#13243A',
+    borderColor: '#3B82F6',
+    backgroundColor: '#131338',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
 
   confirmCheck: {
-    color: '#579DFF',
+    color: '#3B82F6',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.close,
     lineHeight: 26,
@@ -3937,15 +3978,15 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: '#8C9BAB',
-    backgroundColor: '#161F2D',
+    borderColor: '#C9CFE9',
+    backgroundColor: '#09091C',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
 
   cancelMark: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.close,
     lineHeight: 26,
@@ -3960,7 +4001,7 @@ const styles = StyleSheet.create({
   },
 
   confirmMessage: {
-    color: '#B6C2CF',
+    color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
@@ -3972,12 +4013,11 @@ const styles = StyleSheet.create({
   confirmButton: {
     width: '100%',
     minHeight: 48,
-    borderRadius: 9,
-    backgroundColor: '#0C66E4',
-    borderWidth: 1,
-    borderColor: '#579DFF',
+    borderRadius: 10,
+        borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
 
   confirmButtonText: {
