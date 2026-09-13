@@ -18,36 +18,41 @@ jobs:
 
     steps:
       - name: Send peer review alert
+        uses: actions/github-script@v7
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-        shell: bash
-        run: |
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "DISCORD_WEBHOOK_URL is not configured."
-            exit 1
-          fi
+        with:
+          script: |
+            const webhook = process.env.DISCORD_WEBHOOK_URL;
 
-          payload=$(jq -n \
-            --arg title "$PR_TITLE" \
-            --arg number "$PR_NUMBER" \
-            --arg url "$PR_URL" \
-            --arg author "$PR_AUTHOR" \
-            '{
-              content:
-                "**Ready for peer-review**\n\n" +
-                "PR #" + $number + " - " + $title + "\n" +
-                "Author: " + $author + "\n" +
-                $url,
-              allowed_mentions: {
-                parse: []
-              }
-            }')
+            if (!webhook) {
+              core.setFailed('DISCORD_WEBHOOK_URL is not configured.');
+              return;
+            }
 
-          curl --fail-with-body \
-            -H "Content-Type: application/json" \
-            -d "$payload" \
-            "$DISCORD_WEBHOOK_URL"
+            const pr = context.payload.pull_request;
+
+            const message =
+              `**Ready for peer-review**\n\n` +
+              `PR #${pr.number} - ${pr.title}\n` +
+              `Author: ${pr.user.login}\n` +
+              `${pr.html_url}`;
+
+            const response = await fetch(webhook, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                content: message,
+                allowed_mentions: {
+                  parse: []
+                }
+              })
+            });
+
+            if (!response.ok) {
+              core.setFailed(
+                `Discord returned ${response.status}: ${await response.text()}`
+              );
+            }
