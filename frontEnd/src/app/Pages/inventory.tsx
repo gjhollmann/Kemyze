@@ -89,10 +89,10 @@ const Inventory: React.FC = () => {
   });
     
   // function that adds more containers to list based on search
-  const addMoreSearchContainers = async () => {
+  const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
-    console.log(getSearchURL);
+    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
+    console.log(queryUrl);
     try {
       const response = await fetch(queryUrl, {
         method: "GET",
@@ -144,12 +144,10 @@ const Inventory: React.FC = () => {
     
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+(showLow ? "&show_low=true" : ""); 
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
     setIsExpiringSoon(false);
     setLastUsedSearch(true);
     setCurrentIndex(10);
-
-    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=false&count=0&limit=10`;
     console.log(getSearchURL);
     try {
       const searchResponse = await fetch(getSearchURL, {
