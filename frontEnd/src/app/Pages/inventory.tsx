@@ -15,6 +15,7 @@ import {
   Modal
 } from "react-native";
 import { useRouter } from 'expo-router';
+import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
 interface Chemical {
   container_id?: string;
@@ -130,9 +131,9 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+        throw new Error("BAD TIME STATUS: " + response.status);
       }
-      const data = await searchResponse.json();
+      const data = await response.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {
@@ -192,6 +193,24 @@ const Inventory: React.FC = () => {
     });
   };
 
+  // React state for container QR label visibility.
+  const [isQrLabelVisible, setIsQrLabelVisible] = useState(false);
+  const [currentContainerId, setCurrentContainerId] = useState(""); // ID, name state considered strings.
+  const [currentChemicalName, setCurrentChemicalName] = useState("");
+  
+  // Handle 'QR Label' button press. 
+  const onQRLabelPress = async (container_id: string, chemical_name: string) => {
+    // Safety check for passed container_id.
+    if (!container_id) {
+      showPopup("Error", "No container ID; QR label not retrieved.");
+      return;
+    }
+    
+    setCurrentContainerId(container_id); // Store passed string values.
+    setCurrentChemicalName(chemical_name);
+    setIsQrLabelVisible(true); // Confirm QR visibility.
+  }; // const onQRLabelPress
+
   // Helper functions to handle popup modal close & reset
   const handleCloseAddModal = () => {
     setName('');
@@ -235,6 +254,63 @@ const Inventory: React.FC = () => {
     setInventoryData((prev) => [newContainer, ...prev]);
     handleCloseAddModal();
   };
+    // Handler for "Recently Changed" inventory button press.
+    const onRecentlyChangedPress = async () => {
+      //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
+      const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+      setLastUsedSearch(true);
+      setCurrentIndex(10);
+      console.log(getRecentSearchURL);
+
+      try {
+        const recentSearchResponse = await fetch(getRecentSearchURL, 
+          {
+            method: "GET", 
+          }
+        );
+        
+        // Handle assortment of unsuccessful HTTP status codes.
+        if (!recentSearchResponse.ok) {
+          if (recentSearchResponse.status === 400) {
+            console.error("Invalid query parameters (e.g., count).");
+            return null;
+          
+          } else if (recentSearchResponse.status === 405) {
+            console.error("Method not allowed. Method expected: GET");
+            return null;
+
+          } else if (recentSearchResponse.status === 401) {
+            console.error("Unauthorized; user not authenticated.");
+            return null;
+
+          } else if (recentSearchResponse.status === 404) {
+            console.error("404 Not Found; endpoint incorrect or unavailable.");
+            return null;
+          
+          } else if (recentSearchResponse.status === 403) {
+            console.error("Forbidden; user does not have permission to access.");
+            return null;
+
+          } else { // Fall through; separate backend issue.
+            console.log("We are having issues");
+            return null;
+          
+          }
+        }
+        /* 
+        Update count by the number of recently changed containers returned 
+        in JS array from backend.
+        */
+        const recentSearchData = await recentSearchResponse.json();
+        console.log(recentSearchData);
+        setInventoryData(recentSearchData); 
+          
+      } catch (error: any) {
+        console.log(error.message);
+      
+      } // try/catch ...
+    }; // const onRecentlyChangedPress
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -275,7 +351,7 @@ const Inventory: React.FC = () => {
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={tab} 
               style={[
                 styles.pillBtn,
@@ -285,6 +361,7 @@ const Inventory: React.FC = () => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
                 if (tab === 'SHOW ALL') onFilterPress();
+                if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
               }}
             >
               <Text style={styles.pillText}>{tab}</Text>
@@ -321,7 +398,15 @@ const Inventory: React.FC = () => {
 
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn} 
+                  onPress={() => {
+                    if (!item.container_id || !item.chemical_name) {
+                      showPopup("Error", "Incomplete container information");
+                      return;  
+                    }
+                    onQRLabelPress(item.container_id, item.chemical_name)}}>
+                    <Text style={styles.actionText}>QR LABEL</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
                     <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
@@ -553,9 +638,19 @@ const Inventory: React.FC = () => {
         <TouchableOpacity style={styles.navItem}><Text style={[styles.navIcon, styles.activeNav]}>📊</Text><Text style={[styles.navText, styles.activeNav]}>Inventory</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Profile</Text></TouchableOpacity>
       </View>
+
+      {/*Popup window for QR label to be opened on 'View QR Label' button press.*/}
+      <QRLabelPopup
+        visible={isQrLabelVisible}
+        onClose={() => setIsQrLabelVisible(false)}
+        containerId={currentContainerId}
+        chemicalName={currentChemicalName}
+      />
     </SafeAreaView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {

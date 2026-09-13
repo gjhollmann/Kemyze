@@ -22,6 +22,25 @@ class Containers(models.Model):
         managed = False
         db_table = 'containers'
 
+# Model for container_audit_log.
+class ContainerAuditLog(models.Model):
+    audit_id = models.BigAutoField(primary_key=True)
+    container_id = models.IntegerField()
+    action_type = models.CharField(max_length=6, choices=[
+        ('INSERT', 'INSERT'),
+        ('UPDATE', 'UPDATE'),
+        ('DELETE', 'DELETE'),
+        ] # Match enum values stored in DB.
+    )
+    old_values = models.JSONField()
+    new_values = models.JSONField()
+    changed_by = models.IntegerField()
+    changed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = 'container_audit_log'
+
 class Locations(models.Model):
     location_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
