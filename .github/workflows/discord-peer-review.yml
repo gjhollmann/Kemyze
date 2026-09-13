@@ -1,6 +1,7 @@
 name: Discord Peer Review Alert
 
 on:
+  workflow_dispatch:
   pull_request:
     types:
       - opened
@@ -56,3 +57,4 @@ jobs:
                 `Discord returned ${response.status}: ${await response.text()}`
               );
             }
+
