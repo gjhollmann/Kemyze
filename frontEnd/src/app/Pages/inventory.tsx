@@ -198,7 +198,7 @@ const Inventory: React.FC = () => {
   const [currentContainerId, setCurrentContainerId] = useState(""); // ID, name state considered strings.
   const [currentChemicalName, setCurrentChemicalName] = useState("");
   
-  // Handle 'View QR Label' button press. 
+  // Handle 'QR Label' button press. 
   const onQRLabelPress = async (container_id: string, chemical_name: string) => {
     // Safety check for passed container_id.
     if (!container_id) {
@@ -404,7 +404,6 @@ const Inventory: React.FC = () => {
                       showPopup("Error", "Incomplete container information");
                       return;  
                     }
-                    
                     onQRLabelPress(item.container_id, item.chemical_name)}}>
                     <Text style={styles.actionText}>QR LABEL</Text>
                 </TouchableOpacity>
