@@ -6,8 +6,8 @@ import { Alert } from "react-native";
 type QRLabelPopupProps = {
     visible: boolean;
     onClose: () => void;
-    containerId: String;
-    chemicalName: String;
+    containerId: number;
+    chemicalName: string;
 } // type QRLabelPopupProps
 
 export function QRLabelPopup({
@@ -24,21 +24,32 @@ export function QRLabelPopup({
 
     return(
         <Modal visible={visible} transparent animationType="fade">
-            <View style={styling.container}>
-                <Text>{chemicalName}</Text>
+            <View style={styling.overlay}>
 
+                <View
+                    style={[
+                        styling.container,
+                        {
+                        width: popupWidth,
+                        maxHeight: popupMaxHeight,
+                        },
+                    ]}
+                >
+
+                <Text>{chemicalName}</Text>
                 <View
                     style={[
                         styling.qrLabelArea,
                         {width: qrSize, height: qrSize}
                     ]}
                 />    
+                
                 <Pressable onPress={onClose} style={styling.closeButton}>
-                    <Text>Done</Text>
+                    <Text>Done</Text> 
                 </Pressable>
+                
+                </View>
             </View>
-
-
         </Modal>
     )
 } // export function QRLabelPopup
@@ -54,6 +65,11 @@ const styling = StyleSheet.create({
 
     container: {
         backgroundColor: 'white',
+        borderRadius: 16,
+        paddingTop: 38,
+        paddingHorizontal: 20,
+        paddingBottom: 45,            
+        alignItems: "center",
     },
 
     qrLabelArea: {
@@ -65,9 +81,6 @@ const styling = StyleSheet.create({
         top: 12,
         right: 12,
         zIndex: 1,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        paddingTop: 52,
     },
 }) // const styling
 
