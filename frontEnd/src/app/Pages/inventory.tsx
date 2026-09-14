@@ -12,8 +12,11 @@ import {
   Platform,
   Alert,
   RefreshControl,
-  Linking
+  Linking,
+  Modal
 } from "react-native";
+import { useRouter } from 'expo-router';
+import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -31,73 +34,91 @@ interface Chemical {
 const BASE_URL = "https://kemyze.vercel.app/";
 
 const Inventory: React.FC = () => {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   // True while we're waiting on the very first/full inventory load (KM-106)
   const [loading, setLoading] = useState(true);
+  const [showLow, setShowLow] = useState(false);
 
+  // Modal display toggle state
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
 
-    // function called when user scrolls to end of inventory
-    const [lastUsedSearch, setLastUsedSearch] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(10);
-    const onScrollAtEnd = useCallback(() => {
-        setLoadingMore(true);
-        setTimeout(() => {
-            setLoadingMore(false);
-        }, 2000);
-        console.log("User scrolled to end")
-        if (lastUsedSearch){
-            addMoreSearchContainers();
-        }
-    });
-    
-    // function that adds more containers to list based on search
-    const addMoreSearchContainers = async () => {
-        console.log("Adding more containers based on search");
-        const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex;
-        console.log(getSearchURL);
-        try {
-            const searchResponse = await fetch(getSearchURL,
-              {
-                method: "GET",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-              }
-            );
-            if (!searchResponse.ok){
-                console.log("We are having issues");
-                throw new Error("BAD TIME STATUS: " + searchResponse.status);
-            }
-            const data = await searchResponse.json();
-            console.log(data)
-            if (data !== undefined){
-                setCurrentIndex(currentIndex+10);
-                setInventoryData(inventoryData.concat(data));
-            }
-        } catch (error) {
-            console.log(error.message);
-        } // try ...
-    };
-    
-    // function that detects if given is close to the bottom
-    const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
-        const paddingToBottom = 20;
-        return layoutMeasurement.height + contentOffset.y >=
-          contentSize.height - paddingToBottom;
-      };
-    
-    
-    // function to show popup for error alerts
-    const showPopup = (title: string, message: string) => {
-      if (Platform.OS === "web") {
-        window.alert(`${title}\n\n${message}`);
-      } else {
-        Alert.alert(title, message);
+  // Add Container Form States
+  const [name, setName] = useState('');
+  const [casX, setCasX] = useState('');
+  const [casY, setCasY] = useState('');
+  const [casZ, setCasZ] = useState('');
+  const [containerQuantity, setContainerQuantity] = useState('');
+  const [acquisitionDate, setAcquisitionDate] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [room, setRoom] = useState('');
+  const [cabinet, setCabinet] = useState('');
+  const [shelf, setShelf] = useState('');
+  const [sdsFileLocation, setSdsFileLocation] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Tracker for query states & pagination
+  const [lastUsedSearch, setLastUsedSearch] = useState(false);
+  const [isExpiringSoon, setIsExpiringSoon] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(10);
+  const [inventoryData, setInventoryData] = useState<Chemical[]>([]);
+
+  // function called when user scrolls to end of inventory
+  const onScrollAtEnd = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setLoadingMore(false);
+    }, 2000);
+    console.log("User scrolled to end");
+    if (lastUsedSearch || isExpiringSoon){
+      addMoreContainers();
+    }
+  });
+
+  // function that adds more containers to list based on search
+  const addMoreContainers = async () => {
+    console.log("Adding more containers based on search");
+    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
+    console.log(queryUrl);
+    try {
+      const response = await fetch(queryUrl, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok){
+        console.log("We are having issues");
+        throw new Error("BAD TIME STATUS: " + response.status);
       }
-    };
-    
-  const [inventoryData, setInventoryData] = useState<Chemical[]>([])
+      const data = await response.json();
+      console.log(data);
+      if (data !== undefined && data.length > 0){
+        setCurrentIndex(currentIndex + 10);
+        setInventoryData(inventoryData.concat(data));
+      }
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
+
+  // function that detects if given is close to the bottom
+  const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: any) => {
+    const paddingToBottom = 20;
+    return layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+  };
+
+  // function to show popup for error alerts
+  const showPopup = (title: string, message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
 
   // Fetches every chemical in the inventory (KM-106).
   // Reuses the existing search endpoint with an empty search term, since the
@@ -144,34 +165,188 @@ const Inventory: React.FC = () => {
     fetchAllContainers();
   }, []);
 
-  // function to handle when the filter button is pressed
-    const onFilterPress = async () => {
-        const getSearchURL = BASE_URL+"containers/getSearch?input="+search;
-        setLastUsedSearch(true);
-        setCurrentIndex(10);
-        console.log(getSearchURL);
-        try {
-            const searchResponse = await fetch(getSearchURL,
-              {
-                method: "GET",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-              }
-            );
-            if (!searchResponse.ok){
-                console.log("We are having issues");
-                throw new Error("BAD TIME STATUS: " + searchResponse.status);
-            }
-            console.log("\n\n\n\n\n\n\n\n\nnn\n\n\n\n\n\n");
-            const data = await searchResponse.json();
-            console.log(data);
-            setInventoryData(data);
-        } catch (error) {
-            console.log(error.message);
-        } // try ...
-    } // const onFilterPress
+  // function to handle when expiring soon button is pressed
+  const onExpiringSoonPress = async () => {
+    setIsExpiringSoon(true);
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
 
+    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=true&count=0&limit=10`;
+    console.log(getSearchURL);
+    try {
+      const searchResponse = await fetch(getSearchURL, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!searchResponse.ok){
+        console.log("We are having issues");
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+      }
+      const data = await searchResponse.json();
+      console.log(data);
+      setInventoryData(data);
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
+
+  // function to handle when the filter button is pressed
+  const onFilterPress = async () => {
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
+    setIsExpiringSoon(false);
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+    console.log(getSearchURL);
+    try {
+      const searchResponse = await fetch(getSearchURL, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!searchResponse.ok){
+        console.log("We are having issues");
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
+      }
+      const data = await searchResponse.json();
+      console.log(data);
+      setInventoryData(data);
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
+
+  // whenever showLow changes, re-runs the filter function to update the inventory list
+  useEffect(() => {
+    onFilterPress();
+  }, [showLow]);
+
+  // function to handle when edit button is pressed
+  const onEditPress = (container_id: any) => {
+    console.log("Routing to edit screen for: "+container_id);
+    router.push({
+      pathname: '../SubPages/edit_container',
+      params: { container_id: container_id },
+    });
+  };
+
+  // React state for container QR label visibility.
+  const [isQrLabelVisible, setIsQrLabelVisible] = useState(false);
+  const [currentContainerId, setCurrentContainerId] = useState(""); // ID, name state considered strings.
+  const [currentChemicalName, setCurrentChemicalName] = useState("");
+
+  // Handle 'QR Label' button press.
+  const onQRLabelPress = async (container_id: string, chemical_name: string) => {
+    // Safety check for passed container_id.
+    if (!container_id) {
+      showPopup("Error", "No container ID; QR label not retrieved.");
+      return;
+    }
+
+    setCurrentContainerId(container_id); // Store passed string values.
+    setCurrentChemicalName(chemical_name);
+    setIsQrLabelVisible(true); // Confirm QR visibility.
+  }; // const onQRLabelPress
+
+  // Helper functions to handle popup modal close & reset
+  const handleCloseAddModal = () => {
+    setName('');
+    setCasX('');
+    setCasY('');
+    setCasZ('');
+    setContainerQuantity('');
+    setAcquisitionDate('');
+    setExpirationDate('');
+    setLocationName('');
+    setRoom('');
+    setCabinet('');
+    setShelf('');
+    setSdsFileLocation('');
+    setErrorMessage('');
+    setIsAddModalVisible(false);
+  };
+
+  const handleSaveContainer = () => {
+    if (!name.trim()) {
+      setErrorMessage('*Please enter a chemical name*');
+      return;
+    }
+    if (!locationName.trim()) {
+      setErrorMessage('*Location Name is required*');
+      return;
+    }
+
+    const formattedCas = `${casX}-${casY}-${casZ}`;
+    const fullLocation = `${locationName}${room ? ` - Room ${room}` : ''}`;
+
+    const newContainer: Chemical = {
+      container_id: Math.floor(10000000 + Math.random() * 90000000),
+      chemical_name: name.toUpperCase(),
+      cas_number: formattedCas,
+      expr_date: expirationDate || null,
+      acqn_date: acquisitionDate,
+      location: fullLocation,
+      quantity: containerQuantity || 'GOOD',
+      hasWarning: false,
+    };
+
+    setInventoryData((prev) => [newContainer, ...prev]);
+    handleCloseAddModal();
+  };
+
+  // Handler for "Recently Changed" inventory button press.
+  const onRecentlyChangedPress = async () => {
+    const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+    console.log(getRecentSearchURL);
+
+    try {
+      const recentSearchResponse = await fetch(getRecentSearchURL,
+        {
+          method: "GET",
+        }
+      );
+
+      // Handle assortment of unsuccessful HTTP status codes.
+      if (!recentSearchResponse.ok) {
+        if (recentSearchResponse.status === 400) {
+          console.error("Invalid query parameters (e.g., count).");
+          return null;
+
+        } else if (recentSearchResponse.status === 405) {
+          console.error("Method not allowed. Method expected: GET");
+          return null;
+
+        } else if (recentSearchResponse.status === 401) {
+          console.error("Unauthorized; user not authenticated.");
+          return null;
+
+        } else if (recentSearchResponse.status === 404) {
+          console.error("404 Not Found; endpoint incorrect or unavailable.");
+          return null;
+
+        } else if (recentSearchResponse.status === 403) {
+          console.error("Forbidden; user does not have permission to access.");
+          return null;
+
+        } else { // Fall through; separate backend issue.
+          console.log("We are having issues");
+          return null;
+
+        }
+      }
+      const recentSearchData = await recentSearchResponse.json();
+      console.log(recentSearchData);
+      setInventoryData(recentSearchData);
+
+    } catch (error: any) {
+      console.log(error.message);
+
+    } // try/catch ...
+  }; // const onRecentlyChangedPress
 
   return (
     <SafeAreaView style={styles.container}>
@@ -185,7 +360,7 @@ const Inventory: React.FC = () => {
         
         {/* Logo Placement */}
         <View style={styles.logoContainer}>
-           <View >
+           <View>
               {/*Logo goes here*/}
            </View>
         </View>
@@ -214,10 +389,20 @@ const Inventory: React.FC = () => {
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={styles.pillBtn}
-              // Only "SHOW ALL" is wired up here (KM-106) — the other tabs
-              // belong to other tickets and are left as-is.
-              onPress={tab === 'SHOW ALL' ? () => { setSearch(''); fetchAllContainers(); } : undefined}
+              style={[
+                styles.pillBtn,
+                tab === 'EXPIRING SOON' && isExpiringSoon ? { backgroundColor: '#3b82f6' } : null
+              ]}
+              // Only "SHOW ALL" and "EXPIRING SOON"/"ADD NEW"/"RECENTLY CHANGED"/"SHOW LOW"
+              // are wired up; SHOW ALL clears the search box first (KM-106) so it actually
+              // shows everything instead of staying filtered by leftover search text.
+              onPress={() => {
+                if (tab === 'EXPIRING SOON') onExpiringSoonPress();
+                if (tab === 'ADD NEW') setIsAddModalVisible(true);
+                if (tab === 'SHOW ALL') { setSearch(''); setIsExpiringSoon(false); fetchAllContainers(); }
+                if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
+                if (tab === 'SHOW LOW') setShowLow(!showLow);
+              }}
             >
               <Text style={styles.pillText}>{tab}</Text>
             </TouchableOpacity>
@@ -232,8 +417,7 @@ const Inventory: React.FC = () => {
           onMomentumScrollEnd = {({nativeEvent}) => {
               if (isCloseToBottom(nativeEvent))
                   onScrollAtEnd();
-          }
-          }
+          }}
       >
         {loading && (
           <Text style={styles.emptyText}>Loading your chemicals…</Text>
@@ -259,22 +443,30 @@ const Inventory: React.FC = () => {
                     <Text style={{fontSize: 10}}>💀</Text>
                   </View>
                 )}
-              </View>	
+              </View>
 
               <View style={styles.buttonSide}>
                 <TouchableOpacity style={styles.actionBtn} onPress={() => handleViewSDS(item.container_id)}>
                   <Text style={styles.actionText}>VIEW SDS</Text>
                 </TouchableOpacity>
-                {/* QR LABEL (KM-108) and EDIT INFO (KM-109) are other tickets — left unwired */}
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>QR LABEL</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn}
+                  onPress={() => {
+                    if (!item.container_id || !item.chemical_name) {
+                      showPopup("Error", "Incomplete container information");
+                      return;
+                    }
+                    onQRLabelPress(String(item.container_id), item.chemical_name)}}>
+                    <Text style={styles.actionText}>QR LABEL</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
+                    <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
               </View>
             </View>
 
             <Text style={styles.locationText}>{item.location}</Text>
             <Text style={[
               styles.statusText, 
-              { color: item.quantity === 'high' ? '#4ade80' : '#fbbf24' }
+              { color: item.quantity === 'high' || item.quantity === 'GOOD' ? '#4ade80' : '#fbbf24' }
             ]}>
               {item.quantity}
             </Text>
@@ -282,15 +474,234 @@ const Inventory: React.FC = () => {
         ))}
       </ScrollView>
 
+      {/* Add Container Screen Modal (Popup) */}
+      <Modal
+        visible={isAddModalVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={handleCloseAddModal}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <StatusBar barStyle="light-content" />
+
+          {/* Modal Header */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity style={styles.modalBackBtn} onPress={handleCloseAddModal}>
+              <Text style={styles.backText}>{"< Back"}</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalScreenTitle}>Add Container</Text>
+          </View>
+
+          <ScrollView style={styles.modalScrollArea} contentContainerStyle={{ paddingBottom: 30 }}>
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              <Text style={styles.formLabel}>Name</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.modalTextInput}
+                  placeholder="Chemical Name"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+
+              {/* CAS & Quantity Row */}
+              <View style={styles.formRow}>
+                <View style={{ flex: 1.5, marginRight: 10 }}>
+                  <Text style={styles.formLabel}>CAS Number</Text>
+                  <View style={styles.casRow}>
+                    <View style={[styles.inputWrapper, { flex: 1 }]}>
+                      <TextInput
+                        style={[styles.modalTextInput, { textAlign: 'center' }]}
+                        placeholder="XXXX"
+                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        value={casX}
+                        onChangeText={setCasX}
+                      />
+                    </View>
+                    <Text style={styles.dashText}>-</Text>
+                    <View style={[styles.inputWrapper, { flex: 0.7 }]}>
+                      <TextInput
+                        style={[styles.modalTextInput, { textAlign: 'center' }]}
+                        placeholder="YY"
+                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        value={casY}
+                        onChangeText={setCasY}
+                      />
+                    </View>
+                    <Text style={styles.dashText}>-</Text>
+                    <View style={[styles.inputWrapper, { flex: 0.5 }]}>
+                      <TextInput
+                        style={[styles.modalTextInput, { textAlign: 'center' }]}
+                        placeholder="Z"
+                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        value={casZ}
+                        onChangeText={setCasZ}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.formLabel}>Quantity</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.modalTextInput}
+                      placeholder="Select Status"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={containerQuantity}
+                      onChangeText={setContainerQuantity}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Acquisition & Expiration Date Row */}
+              <View style={styles.formRow}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={styles.formLabel}>Acquisition Date</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.modalTextInput}
+                      placeholder="YYYY/MM/DD"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={acquisitionDate}
+                      onChangeText={setAcquisitionDate}
+                    />
+                  </View>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.formLabel}>Expiration Date</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.modalTextInput}
+                      placeholder="YYYY/MM/DD"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={expirationDate}
+                      onChangeText={setExpirationDate}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Location */}
+              <Text style={styles.formLabel}>Location</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.modalTextInput}
+                  placeholder="Location Name"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  value={locationName}
+                  onChangeText={setLocationName}
+                />
+              </View>
+
+              {/* Room / Cabinet / Shelf Row */}
+              <View style={styles.formRow}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.formLabel}>Room</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.modalTextInput, { textAlign: 'center' }]}
+                      placeholder="XXXX"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={room}
+                      onChangeText={setRoom}
+                    />
+                  </View>
+                </View>
+
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.formLabel}>Cabinet</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.modalTextInput, { textAlign: 'center' }]}
+                      placeholder="XXXX"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={cabinet}
+                      onChangeText={setCabinet}
+                    />
+                  </View>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.formLabel}>Shelf</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={[styles.modalTextInput, { textAlign: 'center' }]}
+                      placeholder="XXXX"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={shelf}
+                      onChangeText={setShelf}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* SDS Sheet Import Row */}
+              <Text style={styles.formLabel}>SDS Sheet</Text>
+              <View style={styles.sdsRow}>
+                <View style={[styles.inputWrapper, { flex: 1, marginRight: 10 }]}>
+                  <TextInput
+                    style={styles.modalTextInput}
+                    placeholder="File Location"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    value={sdsFileLocation}
+                    onChangeText={setSdsFileLocation}
+                  />
+                </View>
+                <TouchableOpacity style={styles.importBtn}>
+                  <Text style={styles.importBtnText}>Import</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {!!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveContainer}>
+              <Text style={styles.saveBtnText}>Save</Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* Modal Bottom Nav */}
+          <View style={styles.bottomNav}>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navIcon}>📷</Text>
+              <Text style={styles.navText}>QR Scanner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={[styles.navIcon, styles.activeNav]}>📊</Text>
+              <Text style={[styles.navText, styles.activeNav]}>Inventory</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navIcon}>👤</Text>
+              <Text style={styles.navText}>Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>📷</Text><Text style={styles.navText}>QR Scanner</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={[styles.navIcon, styles.activeNav]}>📊</Text><Text style={[styles.navText, styles.activeNav]}>Inventory</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Profile</Text></TouchableOpacity>
       </View>
+
+      {/*Popup window for QR label to be opened on 'View QR Label' button press.*/}
+      <QRLabelPopup
+        visible={isQrLabelVisible}
+        onClose={() => setIsQrLabelVisible(false)}
+        containerId={currentContainerId}
+        chemicalName={currentChemicalName}
+      />
     </SafeAreaView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -487,7 +898,109 @@ const styles = StyleSheet.create({
   },
   activeNav: {
     color: '#3b82f6',
-  }
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#020617',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  modalBackBtn: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+  },
+  modalScreenTitle: {
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: 18,
+    letterSpacing: 1,
+  },
+  modalScrollArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  formCard: {
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderRadius: 20,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  formLabel: {
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  inputWrapper: {
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(2, 6, 23, 0.5)',
+  },
+  modalTextInput: {
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: 12,
+  },
+  formRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  casRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dashText: {
+    color: 'white',
+    marginHorizontal: 4,
+    fontFamily: 'monospace',
+  },
+  sdsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  importBtn: {
+    backgroundColor: '#60a5fa',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  importBtnText: {
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#ef4444',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  saveBtn: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  saveBtnText: {
+    color: 'white',
+    fontFamily: 'monospace',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+}
 });
 
 export default Inventory;

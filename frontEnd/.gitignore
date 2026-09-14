@@ -9,3 +9,4 @@ expo-env.d.ts
 frontEnd/node_modules/
 frontEnd/.expo/
 frontEnd/expo-env.d.ts
+# @end expo-cli

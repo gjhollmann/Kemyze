@@ -40,6 +40,7 @@ def forgotPasswordReq(request):
     if request.method == "POST":
         data = json.loads(request.body) # Extract email from JSON payload. 
         user_email = data.get("email")
+        
         if not user_email or not user_email.strip():
             rejection = {
                             "status": "error",
@@ -67,6 +68,11 @@ def forgotPasswordReq(request):
                             "message": "Reset instructions have been sent."
                        } # Generic response (existent or non-existent user).
         return JsonResponse(confirmation, status=200)
+    
     else:
         return HttpResponseNotAllowed(["POST"])
 # end forgotPasswordReq        
+
+
+
+

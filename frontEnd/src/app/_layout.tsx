@@ -1,15 +1,46 @@
-import { Stack } from "expo-router";
+import 'react-native-gesture-handler';
+
+import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // The root layout that wraps the entire app.
-// Stack here means screens slide over each other (like normal mobile navigation).
+// Stack here means screens slide over each other like normal mobile navigation.
 export default function RootLayout() {
-  return (
-    <Stack>
-      {/* The entry point — redirects straight to login, no header needed */}
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+  const [fontsLoaded] = useFonts({
+    'JetBrains Mono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
+    'JetBrains Mono Bold': require('../../assets/fonts/JetBrainsMono-Bold.ttf'),
+    'JetBrains Mono Italic': require('../../assets/fonts/JetBrainsMono-Italic.ttf'),
+  });
 
-      {/* The Pages folder containing login, scanner, inventory, and profile */}
-      <Stack.Screen name="Pages" options={{ headerShown: false }} />
-    </Stack>
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false }}
+        />
+
+        {/* The Pages folder containing scanner, inventory, and profile */}
+        <Stack.Screen
+          name="Pages"
+          options={{ headerShown: false }}
+        />
+
+        {/* SubPages such as add_container and edit_container */}}
+        <Stack.Screen
+          name="SubPages/add_container"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SubPages/edit_container"
+          options={{ headerShown: false }}
+        />  
+      </Stack>
+    </GestureHandlerRootView>
   );
 }
