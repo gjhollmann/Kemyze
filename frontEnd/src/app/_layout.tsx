@@ -31,11 +31,15 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
 
-        {/* SubPages such as edit_container */}
+        {/* SubPages such as add_container and edit_container */}}
+        <Stack.Screen
+          name="SubPages/add_container"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="SubPages/edit_container"
           options={{ headerShown: false }}
-        />
+        />  
       </Stack>
     </GestureHandlerRootView>
   );
