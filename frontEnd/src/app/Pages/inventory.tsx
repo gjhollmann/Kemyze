@@ -1,9 +1,9 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Text, 
-  View, 
-  StyleSheet, 
-  TextInput, 
+  Text,
+  View,
+  StyleSheet,
+  TextInput,
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
@@ -12,18 +12,23 @@ import {
   Platform,
   Alert,
   RefreshControl,
+  Linking,
   Modal
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
+// This matches the JSON shape the Django backend actually sends back
+// (see containers/views.py -> getContainer / getSearch)
 interface Chemical {
-  container_id?: string;
-  chemical_name?: string;
-  cas_number?: string;
-  location?: string;
-  quantity?: string;
-  hasWarning?: boolean;
+  container_id: number;
+  chemical_name: string;
+  cas_number: string | null;
+  expr_date: string | null;
+  acqn_date: string;
+  location: string;
+  quantity: string;
+  hasWarning?: boolean; // not sent by the backend yet, kept optional for later use
 }
 
 const BASE_URL = "https://kemyze.vercel.app/";
@@ -31,6 +36,8 @@ const BASE_URL = "https://kemyze.vercel.app/";
 const Inventory: React.FC = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  // True while we're waiting on the very first/full inventory load (KM-106)
+  const [loading, setLoading] = useState(true);
   const [showLow, setShowLow] = useState(false);
 
   // Modal display toggle state
@@ -51,30 +58,12 @@ const Inventory: React.FC = () => {
   const [sdsFileLocation, setSdsFileLocation] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Mock data based on your screenshot
-  const inventoryDataDefault: Chemical[] = [
-    {
-      container_id: '45645645',
-      chemical_name: '',
-      cas_number: '',
-      location: '',
-      quantity: 'GOOD',
-    },
-    { 
-      container_id: '45645',
-      chemical_name: '',
-      cas_number: '',
-      location: '',
-      quantity: 'GOOD',
-    },
-  ];
-    
   // Tracker for query states & pagination
   const [lastUsedSearch, setLastUsedSearch] = useState(false);
   const [isExpiringSoon, setIsExpiringSoon] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(10);
-  const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
+  const [inventoryData, setInventoryData] = useState<Chemical[]>([]);
 
   // function called when user scrolls to end of inventory
   const onScrollAtEnd = useCallback(() => {
@@ -87,7 +76,7 @@ const Inventory: React.FC = () => {
       addMoreContainers();
     }
   });
-    
+
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
@@ -115,6 +104,67 @@ const Inventory: React.FC = () => {
     }
   };
 
+  // function that detects if given is close to the bottom
+  const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: any) => {
+    const paddingToBottom = 20;
+    return layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+  };
+
+  // function to show popup for error alerts
+  const showPopup = (title: string, message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
+  // Fetches every chemical in the inventory (KM-106).
+  // Reuses the existing search endpoint with an empty search term, since the
+  // backend treats an empty "input" as "match everything" (see getSearch).
+  const fetchAllContainers = async () => {
+    setLoading(true);
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+    const getAllURL = BASE_URL + "containers/getSearch?input=&count=0";
+    console.log(getAllURL);
+    try {
+      const response = await fetch(getAllURL, {
+        method: "GET",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error("BAD TIME STATUS: " + response.status);
+      }
+      const data = await response.json();
+      setInventoryData(data);
+    } catch (error: any) {
+      console.log(error.message);
+      showPopup("Couldn't load inventory", "Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Opens a container's Safety Data Sheet PDF (KM-107).
+  // The backend route returns the PDF directly, so we just open it as a link.
+  const handleViewSDS = async (containerId: number) => {
+    const sdsURL = BASE_URL + "containers/getSDS?kemID=" + containerId;
+    try {
+      await Linking.openURL(sdsURL);
+    } catch (error: any) {
+      showPopup("Error opening SDS", error.message);
+    }
+  };
+
+  // Load the full chemical list as soon as the screen opens (KM-106)
+  useEffect(() => {
+    fetchAllContainers();
+  }, []);
+
   // function to handle when expiring soon button is pressed
   const onExpiringSoonPress = async () => {
     setIsExpiringSoon(true);
@@ -132,16 +182,16 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + response.status);
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
       }
-      const data = await response.json();
+      const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {
       console.log(error.message);
     }
   };
-    
+
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
     const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
@@ -168,22 +218,6 @@ const Inventory: React.FC = () => {
     }
   };
 
-  // function that detects if given is close to the bottom
-  const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: any) => {
-    const paddingToBottom = 20;
-    return layoutMeasurement.height + contentOffset.y >=
-      contentSize.height - paddingToBottom;
-  };
-    
-  // function to show popup for error alerts
-  const showPopup = (title: string, message: string) => {
-    if (Platform.OS === "web") {
-      window.alert(`${title}\n\n${message}`);
-    } else {
-      Alert.alert(title, message);
-    }
-  };
-
   // whenever showLow changes, re-runs the filter function to update the inventory list
   useEffect(() => {
     onFilterPress();
@@ -202,15 +236,15 @@ const Inventory: React.FC = () => {
   const [isQrLabelVisible, setIsQrLabelVisible] = useState(false);
   const [currentContainerId, setCurrentContainerId] = useState(""); // ID, name state considered strings.
   const [currentChemicalName, setCurrentChemicalName] = useState("");
-  
-  // Handle 'QR Label' button press. 
+
+  // Handle 'QR Label' button press.
   const onQRLabelPress = async (container_id: string, chemical_name: string) => {
     // Safety check for passed container_id.
     if (!container_id) {
       showPopup("Error", "No container ID; QR label not retrieved.");
       return;
     }
-    
+
     setCurrentContainerId(container_id); // Store passed string values.
     setCurrentChemicalName(chemical_name);
     setIsQrLabelVisible(true); // Confirm QR visibility.
@@ -248,9 +282,11 @@ const Inventory: React.FC = () => {
     const fullLocation = `${locationName}${room ? ` - Room ${room}` : ''}`;
 
     const newContainer: Chemical = {
-      container_id: Math.floor(10000000 + Math.random() * 90000000).toString(),
+      container_id: Math.floor(10000000 + Math.random() * 90000000),
       chemical_name: name.toUpperCase(),
       cas_number: formattedCas,
+      expr_date: expirationDate || null,
+      acqn_date: acquisitionDate,
       location: fullLocation,
       quantity: containerQuantity || 'GOOD',
       hasWarning: false,
@@ -259,63 +295,58 @@ const Inventory: React.FC = () => {
     setInventoryData((prev) => [newContainer, ...prev]);
     handleCloseAddModal();
   };
-    // Handler for "Recently Changed" inventory button press.
-    const onRecentlyChangedPress = async () => {
-      //const getRecentSearchURL = BASE_URL + "input/getSearchRecent?" + count + "&input=" + search;
-      const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
-      setLastUsedSearch(true);
-      setCurrentIndex(10);
-      console.log(getRecentSearchURL);
 
-      try {
-        const recentSearchResponse = await fetch(getRecentSearchURL, 
-          {
-            method: "GET", 
-          }
-        );
-        
-        // Handle assortment of unsuccessful HTTP status codes.
-        if (!recentSearchResponse.ok) {
-          if (recentSearchResponse.status === 400) {
-            console.error("Invalid query parameters (e.g., count).");
-            return null;
-          
-          } else if (recentSearchResponse.status === 405) {
-            console.error("Method not allowed. Method expected: GET");
-            return null;
+  // Handler for "Recently Changed" inventory button press.
+  const onRecentlyChangedPress = async () => {
+    const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+    setLastUsedSearch(true);
+    setCurrentIndex(10);
+    console.log(getRecentSearchURL);
 
-          } else if (recentSearchResponse.status === 401) {
-            console.error("Unauthorized; user not authenticated.");
-            return null;
-
-          } else if (recentSearchResponse.status === 404) {
-            console.error("404 Not Found; endpoint incorrect or unavailable.");
-            return null;
-          
-          } else if (recentSearchResponse.status === 403) {
-            console.error("Forbidden; user does not have permission to access.");
-            return null;
-
-          } else { // Fall through; separate backend issue.
-            console.log("We are having issues");
-            return null;
-          
-          }
+    try {
+      const recentSearchResponse = await fetch(getRecentSearchURL,
+        {
+          method: "GET",
         }
-        /* 
-        Update count by the number of recently changed containers returned 
-        in JS array from backend.
-        */
-        const recentSearchData = await recentSearchResponse.json();
-        console.log(recentSearchData);
-        setInventoryData(recentSearchData); 
-          
-      } catch (error: any) {
-        console.log(error.message);
-      
-      } // try/catch ...
-    }; // const onRecentlyChangedPress
+      );
 
+      // Handle assortment of unsuccessful HTTP status codes.
+      if (!recentSearchResponse.ok) {
+        if (recentSearchResponse.status === 400) {
+          console.error("Invalid query parameters (e.g., count).");
+          return null;
+
+        } else if (recentSearchResponse.status === 405) {
+          console.error("Method not allowed. Method expected: GET");
+          return null;
+
+        } else if (recentSearchResponse.status === 401) {
+          console.error("Unauthorized; user not authenticated.");
+          return null;
+
+        } else if (recentSearchResponse.status === 404) {
+          console.error("404 Not Found; endpoint incorrect or unavailable.");
+          return null;
+
+        } else if (recentSearchResponse.status === 403) {
+          console.error("Forbidden; user does not have permission to access.");
+          return null;
+
+        } else { // Fall through; separate backend issue.
+          console.log("We are having issues");
+          return null;
+
+        }
+      }
+      const recentSearchData = await recentSearchResponse.json();
+      console.log(recentSearchData);
+      setInventoryData(recentSearchData);
+
+    } catch (error: any) {
+      console.log(error.message);
+
+    } // try/catch ...
+  }; // const onRecentlyChangedPress
 
   return (
     <SafeAreaView style={styles.container}>
@@ -347,7 +378,7 @@ const Inventory: React.FC = () => {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={styles.filterBtn} onPress={onFilterPress}>
+          <TouchableOpacity style={styles.filterBtn} onPress={onFilterPress}>
           <Text style={styles.filterText}>FILTER</Text>
         </TouchableOpacity>
       </View>
@@ -357,15 +388,18 @@ const Inventory: React.FC = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
             <TouchableOpacity
-              key={tab} 
+              key={tab}
               style={[
                 styles.pillBtn,
                 tab === 'EXPIRING SOON' && isExpiringSoon ? { backgroundColor: '#3b82f6' } : null
               ]}
+              // Only "SHOW ALL" and "EXPIRING SOON"/"ADD NEW"/"RECENTLY CHANGED"/"SHOW LOW"
+              // are wired up; SHOW ALL clears the search box first (KM-106) so it actually
+              // shows everything instead of staying filtered by leftover search text.
               onPress={() => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
                 if (tab === 'ADD NEW') setIsAddModalVisible(true);
-                if (tab === 'SHOW ALL') onFilterPress();
+                if (tab === 'SHOW ALL') { setSearch(''); setIsExpiringSoon(false); fetchAllContainers(); }
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
                 if (tab === 'SHOW LOW') setShowLow(!showLow);
               }}
@@ -378,39 +412,50 @@ const Inventory: React.FC = () => {
 
       {/* Inventory List */}
       <ScrollView style={styles.list}
+          //Function call when user scrolls to end of list
+          //refreshControl = {<RefreshControl refreshing={loadingMore} onRefresh={onScrollAtEnd}/>}
           onMomentumScrollEnd = {({nativeEvent}) => {
               if (isCloseToBottom(nativeEvent))
                   onScrollAtEnd();
           }}
       >
-          
-        {inventoryData.map((item, index) => (
-          <View key={item.container_id || index.toString()} style={styles.chemicalCard}>
+        {loading && (
+          <Text style={styles.emptyText}>Loading your chemicals…</Text>
+        )}
+        {!loading && inventoryData.length === 0 && (
+          <Text style={styles.emptyText}>No chemicals found.</Text>
+        )}
+
+        {inventoryData.map((item) => (
+          <View key={item.container_id} style={styles.chemicalCard}>
             <View style={styles.cardMain}>
               <View style={styles.infoSide}>
                 <Text style={styles.chemName}>{item.chemical_name}</Text>
-                <Text style={styles.casText}>{item.cas_number}</Text>
+                <Text style={styles.casText}>{item.cas_number || 'N/A'}</Text>
                 <Text style={styles.idText}>{item.container_id}</Text>
               </View>
 
               <View style={styles.visualSide}>
+                {/* Placeholder for Beaker Image */}
                 <View style={styles.beakerPlaceholder} />
                 {item.hasWarning && (
                   <View style={styles.warningBox}>
                     <Text style={{fontSize: 10}}>💀</Text>
                   </View>
                 )}
-              </View> 
+              </View>
 
               <View style={styles.buttonSide}>
-                <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>VIEW SDS</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} 
+                <TouchableOpacity style={styles.actionBtn} onPress={() => handleViewSDS(item.container_id)}>
+                  <Text style={styles.actionText}>VIEW SDS</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn}
                   onPress={() => {
                     if (!item.container_id || !item.chemical_name) {
                       showPopup("Error", "Incomplete container information");
-                      return;  
+                      return;
                     }
-                    onQRLabelPress(item.container_id, item.chemical_name)}}>
+                    onQRLabelPress(String(item.container_id), item.chemical_name)}}>
                     <Text style={styles.actionText}>QR LABEL</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
@@ -680,8 +725,14 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 70,
     height: 70,
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  hexagonBorder: {
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    padding: 10,
+    borderRadius: 10, 
   },
   screenTitle: {
     color: 'white',
@@ -739,6 +790,12 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 15,
+  },
+  emptyText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    marginTop: 30,
   },
   chemicalCard: {
     backgroundColor: 'rgba(15, 23, 42, 0.5)',
@@ -943,6 +1000,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+}
 });
 
 export default Inventory;
