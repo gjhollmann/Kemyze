@@ -1,27 +1,42 @@
-import { Stack } from "expo-router";
+import 'react-native-gesture-handler';
+
+import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // The root layout that wraps the entire app.
-// Stack here means screens slide over each other (like normal mobile navigation).
+// Stack here means screens slide over each other like normal mobile navigation.
 export default function RootLayout() {
-   const [fontsLoaded] = useFonts({
-      'JetBrains Mono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
-      'JetBrains Mono Bold': require('../../assets/fonts/JetBrainsMono-Bold.ttf'),
-      'JetBrains Mono Italic': require('../../assets/fonts/JetBrainsMono-Italic.ttf'),
-   }); 
+  const [fontsLoaded] = useFonts({
+    'JetBrains Mono': require('../../assets/fonts/JetBrainsMono-Regular.ttf'),
+    'JetBrains Mono Bold': require('../../assets/fonts/JetBrainsMono-Bold.ttf'),
+    'JetBrains Mono Italic': require('../../assets/fonts/JetBrainsMono-Italic.ttf'),
+  });
 
-   if (!fontsLoaded) {
-      return null;
-   }
+  if (!fontsLoaded) {
+    return null;
+  }
 
-   return (
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack>
-         <Stack.Screen name="index" options={{ headerShown: false }} />
-       
-       {/* The Pages folder containing scanner, inventory, and profile */}
-      <Stack.Screen name="Pages" options={{ headerShown: false }} />
-      
-      <Stack.Screen name="SubPages" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false }}
+        />
+
+        {/* The Pages folder containing scanner, inventory, and profile */}
+        <Stack.Screen
+          name="Pages"
+          options={{ headerShown: false }}
+        />
+
+        {/* SubPages such as edit_container */}
+        <Stack.Screen
+          name="SubPages/edit_container"
+          options={{ headerShown: false }}
+        />
       </Stack>
-   );
+    </GestureHandlerRootView>
+  );
 }
