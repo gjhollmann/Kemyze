@@ -161,6 +161,9 @@ export default function Edit_Container() {
 
   // Field state
 
+  const [chemical_name, setChemicalName] =
+    useState('Chemical Name');
+    
   const [quantity, setQuantity] =
     useState('Select Status');
 
@@ -792,10 +795,10 @@ export default function Edit_Container() {
                     method: "GET",
                 })
                 const data = await containerResponse.json();
-                console.log(data.cas_number);
                 // Handle data and set all variables
                 
                 // Field States
+                setChemicalName(data.chemical_name);
                 setQuantity(data.quantity);
                 setAcquisitionDate(data.acqn_date);
                 setExpirationDate(data.expr_date);
@@ -928,6 +931,8 @@ export default function Edit_Container() {
                   placeholder="Chemical Name"
                   placeholderTextColor="#C9CFE9"
                   accessibilityLabel="Chemical Name"
+                  value = {chemical_name}
+                  onChangeText = {setChemicalName}
                   maxLength={255}
                 />
               </View>
