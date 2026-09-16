@@ -101,6 +101,7 @@ const DAY_NAMES = [
 ];
 
 const CAS_CHARACTERS = [
+  ' ',
   '0',
   '1',
   '2',
@@ -187,6 +188,9 @@ export default function Edit_Container() {
   // CAS state
 
   const [casFirst, setCasFirst] = useState([
+    'X',
+    'X',
+    'X',
     'X',
     'X',
     'X',
@@ -414,7 +418,7 @@ export default function Edit_Container() {
 
   const getCasLength = () => {
     if (casSelectorType === 'casFirst') {
-      return 4;
+      return 7;
     }
 
     if (casSelectorType === 'casSecond') {
@@ -776,21 +780,44 @@ export default function Edit_Container() {
   } as any;
 
     // Load inital data
-    const getContainer = async () => {
-        const getContainerURL = "https://kemyze.vercel.app/containers/getContainer?kemID="+container_id+"&accessLevel=1";
-        try {
-            console.log(getContainerURL);
-            const containerResponse = await fetch(getContainerURL,
-            {
-                method: "GET",
-            })
-            const data = await containerResponse.json();
-            console.log("Container is " + data.chemical_name)
-        } catch (error: any) {
-            console.log(error.message);
-        }
-    };
-    getContainer();
+    
+    //Initial fetch
+    useEffect(() => {
+        const getContainer = async () => {
+            const getContainerURL = "https://kemyze.vercel.app/containers/getContainer?kemID="+container_id+"&accessLevel=1";
+            try {
+                console.log(getContainerURL);
+                const containerResponse = await fetch(getContainerURL,
+                                                      {
+                    method: "GET",
+                })
+                const data = await containerResponse.json();
+                console.log(data.cas_number);
+                // Handle data and set all variables
+                
+                // Field States
+                setQuantity(data.quantity);
+                setAcquisitionDate(data.acqn_date);
+                setExpirationDate(data.expr_date);
+                setLocation(data.location);
+                
+                // setRoom();
+                //setCabinet();
+                //setShelf();
+                
+                // CAS state
+                const casTokens = data.cas_number.split("-");
+                setCasFirst(casTokens[0].split(""));
+                setCasSecond(casTokens[1].split(""));
+                setCasThird(casTokens[2].split(""));
+
+                
+            } catch (error: any) {
+                console.log(error.message);
+            }
+        };
+        getContainer();
+    }, []);
 
     
     
@@ -3477,7 +3504,7 @@ const styles = StyleSheet.create({
   casWheelColumn: {
     flex: 1,
     maxWidth: 82,
-    minWidth: 54,
+    minWidth: 32,
     height: 250,
     borderRadius: 10,
     borderWidth: 1,
