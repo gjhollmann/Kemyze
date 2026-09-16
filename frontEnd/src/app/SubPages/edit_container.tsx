@@ -11,7 +11,7 @@ import {
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
@@ -775,6 +775,28 @@ export default function Edit_Container() {
     },
   } as any;
 
+    // Load inital data
+    const getContainer = async () => {
+        const getContainerURL = "https://kemyze.vercel.app/containers/getContainer?kemID="+container_id+"&accessLevel=1";
+        try {
+            console.log(getContainerURL);
+            const containerResponse = await fetch(getContainerURL,
+            {
+                method: "GET",
+            })
+            const data = await containerResponse.json();
+            console.log("Container is " + data.chemical_name)
+        } catch (error: any) {
+            console.log(error.message);
+        }
+    };
+    getContainer();
+
+    
+    
+    
+    
+    
   // Render
 
   return (
