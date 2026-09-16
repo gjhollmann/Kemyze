@@ -339,9 +339,9 @@ export default function Edit_Container() {
   const getOptions = () => {
     if (selectorType === 'quantity') {
       return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
+        'low',
+        'medium',
+        'high',
       ];
     }
 

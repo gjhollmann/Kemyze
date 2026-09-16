@@ -75,17 +75,20 @@ const Inventory: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(10);
   const [inventoryData, setInventoryData] = useState(inventoryDataDefault);
+  const [noMoreData, setNoMoreData] = useState(false);
 
   // function called when user scrolls to end of inventory
   const onScrollAtEnd = useCallback(() => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setLoadingMore(false);
-    }, 2000);
-    console.log("User scrolled to end");
-    if (lastUsedSearch || isExpiringSoon){
-      addMoreContainers();
-    }
+      if (!noMoreData){
+          setLoadingMore(true);
+          setTimeout(() => {
+              setLoadingMore(false);
+          }, 2000);
+          console.log("User scrolled to end");
+          if (lastUsedSearch || isExpiringSoon){
+              addMoreContainers();
+          }
+      }
   });
     
   // function that adds more containers to list based on search
@@ -110,6 +113,9 @@ const Inventory: React.FC = () => {
         setCurrentIndex(currentIndex + 10);
         setInventoryData(inventoryData.concat(data));
       }
+        if (data.length <= 0){
+            setNoMoreData(true);
+        }
     } catch (error: any) {
       console.log(error.message);
     }
@@ -163,6 +169,9 @@ const Inventory: React.FC = () => {
       const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
+        if (data.length <= 0 ){
+            setNoMoreData(true);
+        }
     } catch (error: any) {
       console.log(error.message);
     }
