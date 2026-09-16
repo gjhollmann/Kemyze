@@ -828,12 +828,15 @@ export default function Edit_Container() {
                 //setShelf();
                 
                 // CAS state
-                const casTokens = data.cas_number.split("-");
-                setCasFirst(casTokens[0].split(""));
+                //const casTokens = data.cas_number.split("-");
+                const casTokens = "65425-25-4".split("-");
+                let casTokenFirst = casTokens[0].split("");
+                do {
+                    casTokenFirst = ["", ...casTokenFirst];
+                } while (casTokenFirst.length<7);
+                setCasFirst(casTokenFirst);
                 setCasSecond(casTokens[1].split(""));
                 setCasThird(casTokens[2].split(""));
-
-                
             } catch (error: any) {
                 console.log(error.message);
                 setErrorMsg(error.message);
