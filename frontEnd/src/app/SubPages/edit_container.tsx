@@ -7,6 +7,8 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
+  Button,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -783,6 +785,9 @@ export default function Edit_Container() {
   } as any;
 
     // Load inital data
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("Test Error Message");
     
     //Initial fetch
     useEffect(() => {
@@ -802,7 +807,21 @@ export default function Edit_Container() {
                 setQuantity(data.quantity);
                 setAcquisitionDate(data.acqn_date);
                 setExpirationDate(data.expr_date);
-                setLocation(data.location);
+                
+                // Location
+                const fullLocation = data.location.split(",");
+                if (fullLocation.length < 4) {
+                    setLocation(fullLocation[0]);
+                    setRoom(fullLocation[1]);
+                    setCabinet(fullLocation[2]);
+                    setShelf(fullLocation[3]);
+                } else {
+                    const index = fullLocation.length - 4;
+                    setLocation(fullLocation[index]);
+                    setRoom(fullLocation[index+1]);
+                    setCabinet(fullLocation[index+2]);
+                    setShelf(fullLocation[index+3]);
+                }
                 
                 // setRoom();
                 //setCabinet();
@@ -817,13 +836,51 @@ export default function Edit_Container() {
                 
             } catch (error: any) {
                 console.log(error.message);
+                setErrorMsg(error.message);
+                setLoadError(true);
+            } finally {
+                setIsLoading(false);
             }
         };
         getContainer();
     }, []);
 
+    // Render Loading Screen
     
+    if (isLoading) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style ={styles.center}>
+        <ActivityIndicator size="large" color="#0000ff" />
+               </View>
+        </View>
+        )
+    }
     
+    // Rneder Error Screen
+    
+    if (loadError) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style = {styles.center}>
+               <Text style = {styles.errorText}> Error: {errorMsg} </Text>
+               <Button title = "Go Back"
+               onPress={() => router.back()}
+               />
+               </View>
+        </View>
+        )
+    }
     
     
     
@@ -4079,5 +4136,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
+  },
+    
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  errorText: {
+    color: 'red',
+    fontSize: 16
   },
 });
