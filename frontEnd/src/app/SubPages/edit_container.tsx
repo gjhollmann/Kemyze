@@ -20,6 +20,10 @@ import { BlurView } from 'expo-blur';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+//const BASE_URL = "https://kemyze.vercel.app/";
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49235;
+
 // Typography
 
 const FONT = Object.freeze({
@@ -690,8 +694,40 @@ export default function Edit_Container() {
   const saveReviewedChanges = () => {
     successHaptic();
     setReviewVisible(false);
-    setSavedVisible(true);
+      sendEditContainer()
+      .then(() => {
+          console.log("Save complete");
+          setSavedVisible(true);
+      })
   };
+    
+    const sendEditContainer = async () => {
+        try {
+            const editURL = BASE_URL + "containers/editContainer"
+            console.log("Sending edit URL: " + editURL);
+            const response = await fetch(editURL, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: USER_TEST,
+                    container_id: container_id,
+                    chemical_name: chemical_name,
+                }),
+            });
+            
+            if (!response.ok){
+              console.log("We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            
+        } catch (error) {
+            console.error('Error sending data:', error);
+        }
+    }
 
   const cancelReviewedChanges = () => {
     haptic();
