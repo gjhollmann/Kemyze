@@ -7,16 +7,22 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
+  Button,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+
+//const BASE_URL = "https://kemyze.vercel.app/";
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49235;
 
 // Typography
 
@@ -101,6 +107,7 @@ const DAY_NAMES = [
 ];
 
 const CAS_CHARACTERS = [
+  ' ',
   '0',
   '1',
   '2',
@@ -160,6 +167,9 @@ export default function Edit_Container() {
 
   // Field state
 
+  const [chemical_name, setChemicalName] =
+    useState('Chemical Name');
+    
   const [quantity, setQuantity] =
     useState('Select Status');
 
@@ -187,6 +197,9 @@ export default function Edit_Container() {
   // CAS state
 
   const [casFirst, setCasFirst] = useState([
+    'X',
+    'X',
+    'X',
     'X',
     'X',
     'X',
@@ -330,9 +343,9 @@ export default function Edit_Container() {
   const getOptions = () => {
     if (selectorType === 'quantity') {
       return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
+        'low',
+        'medium',
+        'high',
       ];
     }
 
@@ -414,7 +427,7 @@ export default function Edit_Container() {
 
   const getCasLength = () => {
     if (casSelectorType === 'casFirst') {
-      return 4;
+      return 7;
     }
 
     if (casSelectorType === 'casSecond') {
@@ -681,8 +694,40 @@ export default function Edit_Container() {
   const saveReviewedChanges = () => {
     successHaptic();
     setReviewVisible(false);
-    setSavedVisible(true);
+      sendEditContainer()
+      .then(() => {
+          console.log("Save complete");
+          setSavedVisible(true);
+      })
   };
+    
+    const sendEditContainer = async () => {
+        try {
+            const editURL = BASE_URL + "containers/editContainer"
+            console.log("Sending edit URL: " + editURL);
+            const response = await fetch(editURL, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: USER_TEST,
+                    container_id: container_id,
+                    chemical_name: chemical_name,
+                }),
+            });
+            
+            if (!response.ok){
+              console.log("We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            
+        } catch (error) {
+            console.error('Error sending data:', error);
+        }
+    }
 
   const cancelReviewedChanges = () => {
     haptic();
@@ -775,6 +820,116 @@ export default function Edit_Container() {
     },
   } as any;
 
+    // Load inital data
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("Test Error Message");
+    
+    //Initial fetch
+    useEffect(() => {
+        const getContainer = async () => {
+            const getContainerURL = "https://kemyze.vercel.app/containers/getContainer?kemID="+container_id+"&accessLevel=1";
+            try {
+                console.log(getContainerURL);
+                const containerResponse = await fetch(getContainerURL,
+                                                      {
+                    method: "GET",
+                })
+                
+                if (!containerResponse.ok){
+                  console.log("We are having issues");
+                  const errorText = await containerResponse.text();
+                  throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
+                }
+                
+                const data = await containerResponse.json();
+                // Handle data and set all variables
+                
+                // Field States
+                setChemicalName(data.chemical_name);
+                setQuantity(data.quantity);
+                setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+                setExpirationDate(data.expr_date.replaceAll("-","/"));
+                
+                // Location
+                const fullLocation = data.location.split(",");
+                if (fullLocation.length < 4) {
+                    setLocation(fullLocation[0]);
+                    setRoom(fullLocation[1]);
+                    setCabinet(fullLocation[2]);
+                    setShelf(fullLocation[3]);
+                } else {
+                    let index = fullLocation.length - 1;
+                    let locationInput = "";
+                    do {
+                        locationInput = locationInput + fullLocation[index--];
+                    } while (index > 4);
+                    setLocation(locationInput);
+                    setRoom(fullLocation[index]);
+                    setCabinet(fullLocation[index-1]);
+                    setShelf(fullLocation[index-2]);
+                }
+                
+                // CAS state
+                //const casTokens = data.cas_number.split("-");
+                const casTokens = "65425-25-4".split("-");
+                let casTokenFirst = casTokens[0].split("");
+                do {
+                    casTokenFirst = ["", ...casTokenFirst];
+                } while (casTokenFirst.length<7);
+                setCasFirst(casTokenFirst);
+                setCasSecond(casTokens[1].split(""));
+                setCasThird(casTokens[2].split(""));
+            } catch (error: any) {
+                console.log(error.message);
+                setErrorMsg(error.message);
+                setLoadError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        getContainer();
+    }, []);
+
+    // Render Loading Screen
+    
+    if (isLoading) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style ={styles.center}>
+        <ActivityIndicator size="large" color="#0000ff" />
+               </View>
+        </View>
+        )
+    }
+    
+    // Rneder Error Screen
+    
+    if (loadError) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style = {styles.center}>
+               <Text style = {styles.errorText}> Error: {errorMsg} </Text>
+               <Button title = "Go Back"
+               onPress={() => router.back()}
+               />
+               </View>
+        </View>
+        )
+    }
+    
+    
+    
   // Render
 
   return (
@@ -879,6 +1034,8 @@ export default function Edit_Container() {
                   placeholder="Chemical Name"
                   placeholderTextColor="#C9CFE9"
                   accessibilityLabel="Chemical Name"
+                  value = {chemical_name}
+                  onChangeText = {setChemicalName}
                   maxLength={255}
                 />
               </View>
@@ -3455,7 +3612,7 @@ const styles = StyleSheet.create({
   casWheelColumn: {
     flex: 1,
     maxWidth: 82,
-    minWidth: 54,
+    minWidth: 32,
     height: 250,
     borderRadius: 10,
     borderWidth: 1,
@@ -4025,5 +4182,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
+  },
+    
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  errorText: {
+    color: 'red',
+    fontSize: 16
   },
 });

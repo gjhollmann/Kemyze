@@ -6,5 +6,6 @@ urlpatterns = [
     path('getSDS', views.getSDS, name='getSDS'),
     path('getSearch', views.getSearch, name='getSearch'),
     path('getSearchRecent', views.getSearchRecent, name='getSearchRecent'),
+    path('editContainer', views.editContainer, name='editContainer'),
     path('', views.containersMain, name='containersMain'),
 ]

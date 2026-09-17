@@ -3,11 +3,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db.models import Subquery, OuterRef
-from common.models import Containers, Locations, ContainerAuditLog
+from common.models import Containers, Locations, ContainerAuditLog, Users
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
 import mimetypes
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 """
@@ -253,3 +254,63 @@ def getSearchRecent(request):
     else:
         return HttpResponseNotAllowed(["GET"])  
 # end def getSearchRecent    
+
+
+"""
+View to edit a container.
+Route: /containers/editContainer
+Request Variables:
+Method: POST
+Parameters:
+    user_id
+    container_id
+    key + change combos
+
+Responses:
+    Failures:
+        Status 405: Not a post request
+        Status 400: Missing user_id Paramter
+        Status 403: User does not have access level
+        Status 400: User does not exist
+        Status 400: Container does not exist
+        Status 500: Something broke bad
+    
+"""
+@csrf_exempt
+def editContainer(request):
+    if request.method == "POST":
+        user_id = request.POST.get(user_id)
+        
+        if user_id == None:
+            return HttpResponseBadRequest("Missing 'user_id' Parameter")
+        
+        #Verify User access level
+        try:
+            FoundUser = Users.objects.get(user_id = user_id)
+            if FoundUser.access_level > 3:
+                return HttpResponseForbidden
+        except Users.DoesNotExist:
+            return HttpResponseBadRequest("User does not exist")
+        except Exception as e:
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        
+        # Edit container
+        try:
+            FoundContainer = Containers.objects.get(container_id=request.POST.get(container_id))
+            
+            if (request.POST.get(chemical_name) != None):
+                FoundContainer.chemical_name = request.POST.get(chemical_name)
+            FoundContainer.save()
+            
+            
+            FoundContainer.save()
+            return HttpResponse("Success")
+        except Containers.DoesNotExist:
+            return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        
+        
+        
+    else:
+        return HttpResponseNotAllowed(["POST"])
