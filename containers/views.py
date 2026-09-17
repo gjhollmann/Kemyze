@@ -279,8 +279,8 @@ Responses:
 @csrf_exempt
 def editContainer(request):
     if request.method == "POST":
-        user_id = request.POST.get(user_id)
-        
+        data = json.loads(request.body)
+        user_id = data.get("user_id")
         if user_id == None:
             return HttpResponseBadRequest("Missing 'user_id' Parameter")
         
@@ -292,22 +292,24 @@ def editContainer(request):
         except Users.DoesNotExist:
             return HttpResponseBadRequest("User does not exist")
         except Exception as e:
+            print(e)
             return HttpResponseServerError(f"An unexpected error occurred: {e}")
-        
         # Edit container
         try:
-            FoundContainer = Containers.objects.get(container_id=request.POST.get(container_id))
+            FoundContainer = Containers.objects.get(container_id=data.get("container_id"))
             
-            if (request.POST.get(chemical_name) != None):
-                FoundContainer.chemical_name = request.POST.get(chemical_name)
+            if (data.get("chemical_name") != None):
+                FoundContainer.chemical_name = data.get("chemical_name")
             FoundContainer.save()
             
             
             FoundContainer.save()
             return HttpResponse("Success")
         except Containers.DoesNotExist:
+            print("Could not find container")
             return HttpResponseBadRequest("Container does not exist")
         except Exception as e:
+            print(e)
             return HttpResponseServerError(f"An unexpected error occurred: {e}")
         
         
