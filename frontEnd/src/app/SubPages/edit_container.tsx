@@ -799,14 +799,21 @@ export default function Edit_Container() {
                                                       {
                     method: "GET",
                 })
+                
+                if (!containerResponse.ok){
+                  console.log("We are having issues");
+                  const errorText = await containerResponse.text();
+                  throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
+                }
+                
                 const data = await containerResponse.json();
                 // Handle data and set all variables
                 
                 // Field States
                 setChemicalName(data.chemical_name);
                 setQuantity(data.quantity);
-                setAcquisitionDate(data.acqn_date);
-                setExpirationDate(data.expr_date);
+                setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+                setExpirationDate(data.expr_date.replaceAll("-","/"));
                 
                 // Location
                 const fullLocation = data.location.split(",");
@@ -816,11 +823,15 @@ export default function Edit_Container() {
                     setCabinet(fullLocation[2]);
                     setShelf(fullLocation[3]);
                 } else {
-                    const index = fullLocation.length - 4;
-                    setLocation(fullLocation[index]);
-                    setRoom(fullLocation[index+1]);
-                    setCabinet(fullLocation[index+2]);
-                    setShelf(fullLocation[index+3]);
+                    let index = fullLocation.length - 1;
+                    let locationInput = "";
+                    do {
+                        locationInput = locationInput + fullLocation[index--];
+                    } while (index > 4);
+                    setLocation(locationInput);
+                    setRoom(fullLocation[index]);
+                    setCabinet(fullLocation[index-1]);
+                    setShelf(fullLocation[index-2]);
                 }
                 
                 // setRoom();
