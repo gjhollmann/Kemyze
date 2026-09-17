@@ -169,7 +169,7 @@ export default function Edit_Container() {
 
   const [chemical_name, setChemicalName] =
     useState('Chemical Name');
-    
+
   const [quantity, setQuantity] =
     useState('Select Status');
 
@@ -194,6 +194,36 @@ export default function Edit_Container() {
   const [sdsLocation, setSdsLocation] =
     useState('');
 
+  // Old Field States
+
+  const [old_chemical_name, setOldChemicalName] =
+    useState('Chemical Name');
+
+  const [oldQuantity, setOldQuantity] =
+    useState('Select Status');
+
+  const [oldAcquisitionDate, setOldAcquisitionDate] =
+    useState('YYYY/MM/DD');
+
+  const [oldExpirationDate, setOldExpirationDate] =
+    useState('YYYY/MM/DD');
+
+  const [oldLocation, setOldLocation] =
+    useState('Location Name');
+
+  const [oldRoom, setOldRoom] =
+    useState('XXXX');
+
+  const [oldCabinet, setOldCabinet] =
+    useState('XXXX');
+
+  const [oldShelf, setOldShelf] =
+    useState('XXXX');
+
+  const [sdsOldLocation, setOldSdsLocation] =
+    useState('');
+
+
   // CAS state
 
   const [casFirst, setCasFirst] = useState([
@@ -212,6 +242,28 @@ export default function Edit_Container() {
   ]);
 
   const [casThird, setCasThird] = useState([
+    'Z',
+  ]);
+
+  // OLD CAS state
+
+
+  const [oldCasFirst, setOldCasFirst] = useState([
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+  ]);
+
+  const [oldCasSecond, setOldCasSecond] = useState([
+    'Y',
+    'Y',
+  ]);
+
+  const [oldCasThird, setOldCasThird] = useState([
     'Z',
   ]);
 
@@ -847,17 +899,26 @@ export default function Edit_Container() {
                 
                 // Field States
                 setChemicalName(data.chemical_name);
+                setOldChemicalName(data.chemical_name);
                 setQuantity(data.quantity);
+                setOldQuantity(data.quantity);
                 setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+                setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
                 setExpirationDate(data.expr_date.replaceAll("-","/"));
+                setOldExpirationDate(data.expr_date.replaceAll("-","/"));
+
                 
                 // Location
                 const fullLocation = data.location.split(",");
                 if (fullLocation.length < 4) {
                     setLocation(fullLocation[0]);
+                    setOldLocation(fullLocation[0]);
                     setRoom(fullLocation[1]);
+                    setOldRoom(fullLocation[1]);
                     setCabinet(fullLocation[2]);
+                    setOldCabinet(fullLocation[2]);
                     setShelf(fullLocation[3]);
+                    setOldShelf(fullLocation[3]);
                 } else {
                     let index = fullLocation.length - 1;
                     let locationInput = "";
@@ -865,9 +926,13 @@ export default function Edit_Container() {
                         locationInput = locationInput + fullLocation[index--];
                     } while (index > 4);
                     setLocation(locationInput);
+                    setOldLocation(locationInput);
                     setRoom(fullLocation[index]);
+                    setOldRoom(fullLocation[index]);
                     setCabinet(fullLocation[index-1]);
+                    setOldCabinet(fullLocation[index-1]);
                     setShelf(fullLocation[index-2]);
+                    setOldShelf(fullLocation[index-2]);
                 }
                 
                 // CAS state
@@ -878,8 +943,11 @@ export default function Edit_Container() {
                     casTokenFirst = ["", ...casTokenFirst];
                 } while (casTokenFirst.length<7);
                 setCasFirst(casTokenFirst);
+                setOldCasFirst(casTokenFirst);
                 setCasSecond(casTokens[1].split(""));
+                setOldCasSecond(casTokens[1].split(""));
                 setCasThird(casTokens[2].split(""));
+                setOldCasThird(casTokens[2].split(""));
             } catch (error: any) {
                 console.log(error.message);
                 setErrorMsg(error.message);
