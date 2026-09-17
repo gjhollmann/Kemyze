@@ -280,6 +280,7 @@ Responses:
 def editContainer(request):
     if request.method == "POST":
         data = json.loads(request.body)
+        print(data)
         user_id = data.get("user_id")
         if user_id == None:
             return HttpResponseBadRequest("Missing 'user_id' Parameter")
@@ -300,6 +301,8 @@ def editContainer(request):
             
             if (data.get("chemical_name") != None):
                 FoundContainer.chemical_name = data.get("chemical_name")
+            if (data.get("cas_number") != None):
+                FoundContainer.cas_number = data.get("cas_number")
             FoundContainer.save()
             
             

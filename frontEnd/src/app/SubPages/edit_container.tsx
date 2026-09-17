@@ -754,6 +754,22 @@ export default function Edit_Container() {
   };
     
     const sendEditContainer = async () => {
+        let data = {
+                user_id: USER_TEST,
+                container_id: container_id,
+            };
+
+        // go through all state variables and add any changes
+
+        if (chemical_name != old_chemical_name) {
+            data = {...data, chemical_name: chemical_name}
+            }
+
+        if (casFirst!=oldCasFirst | casSecond != oldCasSecond | casThird!= oldCasThird){
+            data = {...data, cas_number: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join('')}
+            }
+
+
         try {
             const editURL = BASE_URL + "containers/editContainer"
             console.log("Sending edit URL: " + editURL);
@@ -763,11 +779,7 @@ export default function Edit_Container() {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    user_id: USER_TEST,
-                    container_id: container_id,
-                    chemical_name: chemical_name,
-                }),
+                body: JSON.stringify(data),
             });
             
             if (!response.ok){
