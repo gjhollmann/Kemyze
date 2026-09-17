@@ -834,10 +834,6 @@ export default function Edit_Container() {
                     setShelf(fullLocation[index-2]);
                 }
                 
-                // setRoom();
-                //setCabinet();
-                //setShelf();
-                
                 // CAS state
                 //const casTokens = data.cas_number.split("-");
                 const casTokens = "65425-25-4".split("-");
