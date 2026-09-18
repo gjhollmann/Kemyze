@@ -391,6 +391,34 @@ export default function Edit_Container() {
 
     return 'Select Option';
   };
+    
+  // State Variables for Options that are dynamic
+    
+    const [locationOptions, setlocationOptions] = useState([
+        'Test Example 1',
+        'Example 2',
+        'Example 3',
+    ]);
+    
+    const [roomOptions, setRoomOptions] = useState([
+        'Test Example 1',
+        'Example 2',
+        'Example 3',
+    ]);
+    
+    const [cabinetOptions, setCabinetOptions] = useState([
+        'Test Example 1',
+        'Example 2',
+        'Example 3',
+    ]);
+    
+    const [shelfOptions, setShelfOptions] = useState([
+        'Test Example 1',
+        'Example 2',
+        'Example 3',
+    ]);
+    
+    // getOptions for modules
 
   const getOptions = () => {
     if (selectorType === 'quantity') {
@@ -402,35 +430,19 @@ export default function Edit_Container() {
     }
 
     if (selectorType === 'location') {
-      return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
-      ];
+      return locationOptions
     }
 
     if (selectorType === 'room') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return roomOptions
     }
 
     if (selectorType === 'cabinet') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return cabinetOptions
     }
 
     if (selectorType === 'shelf') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return shelfOptions
     }
 
     return [];
