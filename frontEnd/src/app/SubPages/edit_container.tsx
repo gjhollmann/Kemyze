@@ -412,11 +412,7 @@ export default function Edit_Container() {
         'Example 3',
     ]);
     
-    const [shelfOptions, setShelfOptions] = useState([
-        'Test Example 1',
-        'Example 2',
-        'Example 3',
-    ]);
+    const [shelfOptions, setShelfOptions] = useState(null);
     
     // getOptions for modules
 
@@ -997,10 +993,14 @@ export default function Edit_Container() {
             }
         };
         getContainer();
-        loadShelfOptions();
     }, []);
     
     // Load Location data
+    useEffect(() => {
+        if(shelf !== null){
+            loadShelfOptions();
+        }
+    }, [shelf]);
     const loadShelfOptions = async () => {
         const parameters = new URLSearchParams(
                                            {
@@ -1019,9 +1019,7 @@ export default function Edit_Container() {
                 throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             const data = await response.json();
-            console.log(data);
             setShelfOptions(data.map(item => item.name));
-            console.log(shelfOptions);
         } catch (error: any) {
             console.log(error.message);
             setErrorMsg(error.message);
