@@ -273,6 +273,7 @@ Responses:
         Status 403: User does not have access level
         Status 400: User does not exist
         Status 400: Container does not exist
+        Status 400: Location does not exist
         Status 500: Something broke bad
     
 """
@@ -307,6 +308,20 @@ def editContainer(request):
                 FoundContainer.expr_date = data.get("expr_date")
             if (data.get("acqn_date") != None):
                 FoundContainer.acqn_date = data.get("acqn_date")
+            
+            newLocation = data.get("location")
+            newRoom = data.get("room")
+            newCabinet = data.get("cabinet")
+            newShelf = data.get("shelf")
+            if (newLocation != None and newRoom != None and newCabinet != None and newShelf != None):
+                try:
+                    FoundLocation = Locations.objects.get(name=newShelf, parent__name=newCabinet, parent__parent_name=newRoom, parent__parent__parent_name=newLocation)
+                    FoundContainer.location = FoundLocation
+                except FoundLocation.DoesNotExist:
+                    return HttpResponseBadRequest("Location does not exist")
+                except Exception as e:
+                    print(e)
+                    return HttpResponseServerError(f"An unexpected error occurred: {e}")
             FoundContainer.save()
             
             
