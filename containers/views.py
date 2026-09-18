@@ -315,7 +315,7 @@ def editContainer(request):
             newShelf = data.get("shelf")
             if (newLocation != None and newRoom != None and newCabinet != None and newShelf != None):
                 try:
-                    FoundLocation = Locations.objects.get(name=newShelf, parent__name=newCabinet, parent__parent_name=newRoom, parent__parent__parent_name=newLocation)
+                    FoundLocation = Locations.objects.get(name=newShelf, parent__name=newCabinet, parent__parent__name=newRoom, parent__parent__parent__name=newLocation)
                     FoundContainer.location = FoundLocation
                 except FoundLocation.DoesNotExist:
                     return HttpResponseBadRequest("Location does not exist")
@@ -338,3 +338,54 @@ def editContainer(request):
         
     else:
         return HttpResponseNotAllowed(["POST"])
+
+"""
+View to get the children of a location.
+Used to build location input options in edit container 
+Route: /containers/getLocationChildren
+Request Variables:
+Method: GET
+Parameters:
+    location
+    
+Responses:
+    Failures:
+        Status 400: Missing location Paramter
+        Status 400: Location does not exist
+        Status 500: Something broke bad
+"""
+def getLocationChildren(request):
+    if request.method == "GET":
+        location = request.GET.get("location")
+        room = request.GET.get("room")
+        cabinet = request.GET.get("cabinet")
+        shelf = request.GET.get("shelf")
+        if location == None:
+            return HttpResponseBadRequest("Missing 'location' Parameters")
+        try:
+            FoundLocation = None
+            if (shelf!=None):
+                FoundLocation = Locations.objects.get(name=shelf, parent__name=cabinet, parent__parent__name=room, parent__parent__parent__name=location)
+            elif (cabinet!=None):
+                FoundLocation = Locations.objects.get(name=cabinet, parent__name=room, parent__parent__name=location)
+            elif (room!=None):
+                FoundLocation = Locations.objects.get(name=room,parent__name=location)
+            else:
+                FoundLocation = Locations.objects.get(name=location)
+            
+            childLocations = Locations.objects.filter(parent=FoundLocation)
+            data = []
+            for i in childLocations:
+                data.append({
+                    'name': i.name,
+                })
+            return JsonResponse(data, safe=False)
+        except Locations.DoesNotExist:
+            return HttpResponseBadRequest("Location does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["GET"])
+
+
