@@ -303,6 +303,10 @@ def editContainer(request):
                 FoundContainer.chemical_name = data.get("chemical_name")
             if (data.get("cas_number") != None):
                 FoundContainer.cas_number = data.get("cas_number")
+            if (data.get("expr_date") != None):
+                FoundContainer.expr_date = data.get("expr_date")
+            if (data.get("acqn_date") != None):
+                FoundContainer.acqn_date = data.get("acqn_date")
             FoundContainer.save()
             
             

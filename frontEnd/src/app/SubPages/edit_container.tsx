@@ -760,7 +760,6 @@ export default function Edit_Container() {
             };
 
         // go through all state variables and add any changes
-
         if (chemical_name != old_chemical_name) {
             data = {...data, chemical_name: chemical_name}
             }
@@ -768,6 +767,23 @@ export default function Edit_Container() {
         if (casFirst!=oldCasFirst | casSecond != oldCasSecond | casThird!= oldCasThird){
             data = {...data, cas_number: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join('')}
             }
+        
+        if (expirationDate != oldExpirationDate){
+            data = {...data, expr_date: expirationDate.replaceAll("/","-")}
+        }
+        
+        if (acquisitionDate != oldAcquisitionDate){
+            data = {...data, acqn_date: acquisitionDate.replaceAll("/","-")}
+        }
+        
+        if (location!=oldLocation|room!=oldRoom|cabinet!=oldCabinet|shelf!=oldShelf){
+            data = {...data,
+                location: location,
+                room: room,
+                cabinet: cabinet,
+                shelf: shelf
+            }
+        }
 
 
         try {
