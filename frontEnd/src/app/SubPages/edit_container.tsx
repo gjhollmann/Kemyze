@@ -920,7 +920,7 @@ export default function Edit_Container() {
     //Initial fetch
     useEffect(() => {
         const getContainer = async () => {
-            const getContainerURL = "https://kemyze.vercel.app/containers/getContainer?kemID="+container_id+"&accessLevel=1";
+            const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
             try {
                 console.log(getContainerURL);
                 const containerResponse = await fetch(getContainerURL,
@@ -949,7 +949,7 @@ export default function Edit_Container() {
 
                 
                 // Location
-                const fullLocation = data.location.split(",");
+                const fullLocation = data.location.split(", ");
                 if (fullLocation.length < 4) {
                     setLocation(fullLocation[0]);
                     setOldLocation(fullLocation[0]);
@@ -997,10 +997,37 @@ export default function Edit_Container() {
             }
         };
         getContainer();
+        loadShelfOptions();
     }, []);
     
     // Load Location data
-    
+    const loadShelfOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                               room:room,
+                                               cabinet:cabinet,
+                                           }
+                                           ).toString();
+        const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
+        console.log(getLocationChildrenURL);
+        try{
+            const response = await fetch(getLocationChildrenURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            const data = await response.json();
+            console.log(data);
+            setShelfOptions(data.map(item => item.name));
+            console.log(shelfOptions);
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        }
+    }
 
     // Render Loading Screen
     

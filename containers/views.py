@@ -365,19 +365,19 @@ def getLocationChildren(request):
         try:
             FoundLocation = None
             if (shelf!=None):
-                FoundLocation = Locations.objects.get(name=shelf, parent__name=cabinet, parent__parent__name=room, parent__parent__parent__name=location)
+                FoundLocation = Locations.objects.filter(name=shelf, parent__name=cabinet, parent__parent__name=room, parent__parent__parent__name=location).first()
             elif (cabinet!=None):
-                FoundLocation = Locations.objects.get(name=cabinet, parent__name=room, parent__parent__name=location)
+                FoundLocation = Locations.objects.filter(name=cabinet, parent__name=room, parent__parent__name=location).first()
             elif (room!=None):
-                FoundLocation = Locations.objects.get(name=room,parent__name=location)
+                FoundLocation = Locations.objects.filter(name=room,parent__name=location).first()
             else:
                 FoundLocation = Locations.objects.get(name=location)
             
             childLocations = Locations.objects.filter(parent=FoundLocation)
             data = []
-            for i in childLocations:
+            for child in childLocations:
                 data.append({
-                    'name': i.name,
+                    'name': child.name,
                 })
             return JsonResponse(data, safe=False)
         except Locations.DoesNotExist:
