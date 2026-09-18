@@ -997,10 +997,10 @@ export default function Edit_Container() {
     
     // Load Location data
     useEffect(() => {
-        if(shelf !== null){
+        if(cabinet !== null){
             loadShelfOptions();
         }
-    }, [shelf]);
+    }, [cabinet]);
     const loadShelfOptions = async () => {
         const parameters = new URLSearchParams(
                                            {
