@@ -180,16 +180,16 @@ export default function Edit_Container() {
     useState('YYYY/MM/DD');
 
   const [location, setLocation] =
-    useState('Location Name');
+    useState(null);
 
   const [room, setRoom] =
-    useState('XXXX');
+    useState(null);
 
   const [cabinet, setCabinet] =
-    useState('XXXX');
+    useState(null);
 
   const [shelf, setShelf] =
-    useState('XXXX');
+    useState(null);
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -394,17 +394,9 @@ export default function Edit_Container() {
     
   // State Variables for Options that are dynamic
     
-    const [locationOptions, setlocationOptions] = useState([
-        'Test Example 1',
-        'Example 2',
-        'Example 3',
-    ]);
+    const [locationOptions, setlocationOptions] = useState(null);
     
-    const [roomOptions, setRoomOptions] = useState([
-        'Test Example 1',
-        'Example 2',
-        'Example 3',
-    ]);
+    const [roomOptions, setRoomOptions] = useState(null);
     
     const [cabinetOptions, setCabinetOptions] = useState(null);
     
@@ -1026,6 +1018,23 @@ export default function Edit_Container() {
         const data = await loadVarLocationOptions(parameters);
         setCabinetOptions(data.map(item => item.name));
     }
+    
+    useEffect(() => {
+        if (location !== null){
+            loadRoomOptions();
+        }
+    }, [location]);
+    
+    const loadRoomOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                           }
+                                           ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setRoomOptions(data.map(item => item.name));
+    }
+    
     
     const loadVarLocationOptions = async (parameters) => {
         const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
