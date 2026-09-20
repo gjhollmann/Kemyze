@@ -80,6 +80,9 @@ def getContainer(request):
             return JsonResponse(data)
         except Containers.DoesNotExist:
             return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
 
