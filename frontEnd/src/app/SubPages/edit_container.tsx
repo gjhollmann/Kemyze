@@ -394,7 +394,16 @@ export default function Edit_Container() {
     
   // State Variables for Options that are dynamic
     
-    const [locationOptions, setlocationOptions] = useState(null);
+    const [locationOptions, setLocationOptions] = useState([
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+      ]);
+    
     
     const [roomOptions, setRoomOptions] = useState(null);
     
@@ -1033,6 +1042,18 @@ export default function Edit_Container() {
                                            ).toString();
         const data = await loadVarLocationOptions(parameters);
         setRoomOptions(data.map(item => item.name));
+    }
+    
+    useEffect(() => {
+        if (location !== null){
+            loadLocationOptions();
+        }
+    }, [location]);
+    
+    const loadLocationOptions = async () => {
+        const parameters = '';
+        const data = await loadVarLocationOptions(parameters);
+        setLocationOptions(data.map(item => item.name));
     }
     
     

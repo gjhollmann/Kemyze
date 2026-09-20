@@ -350,7 +350,6 @@ Parameters:
     
 Responses:
     Failures:
-        Status 400: Missing location Paramter
         Status 400: Location does not exist
         Status 500: Something broke bad
 """
@@ -360,8 +359,6 @@ def getLocationChildren(request):
         room = request.GET.get("room")
         cabinet = request.GET.get("cabinet")
         shelf = request.GET.get("shelf")
-        if location == None:
-            return HttpResponseBadRequest("Missing 'location' Parameters")
         try:
             FoundLocation = None
             if (shelf!=None):
@@ -370,10 +367,14 @@ def getLocationChildren(request):
                 FoundLocation = Locations.objects.filter(name=cabinet, parent__name=room, parent__parent__name=location).first()
             elif (room!=None):
                 FoundLocation = Locations.objects.filter(name=room,parent__name=location).first()
-            else:
+            elif (location!=None):
                 FoundLocation = Locations.objects.get(name=location)
             
-            childLocations = Locations.objects.filter(parent=FoundLocation)
+            childLocations = None
+            if (FoundLocation != None):
+                childLocations = Locations.objects.filter(parent=FoundLocation)
+            else:
+                childLocations = Locations.objects.filter(parent__isnull=True)
             data = []
             for child in childLocations:
                 data.append({
