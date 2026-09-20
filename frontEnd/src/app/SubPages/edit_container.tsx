@@ -13,7 +13,7 @@ import {
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
@@ -318,23 +318,16 @@ export default function Edit_Container() {
     },
   ];
 
-  const reviewChanges: ReviewChange[] = [
-    {
-      field: 'Quantity',
-      oldValue: '___ mL',
-      newValue: '___ mL',
-    },
-    {
-      field: 'Location',
-      oldValue: '____________',
-      newValue: '____________',
-    },
-    {
-      field: 'Cabinet',
-      oldValue: '____',
-      newValue: '____',
-    },
-  ];
+    const [reviewChanges, setReviewChanges] = useState<ReviewChange>([
+        {
+        field: 'No Changes Detected. \nExample Change shown',
+        oldValue: 'Currently Saved Value goes here',
+        newValue: 'New Value goes here',
+        },
+        ]);
+    
+
+      
 
   // Haptics
 
@@ -745,8 +738,23 @@ export default function Edit_Container() {
 
   const openReviewChanges = () => {
     mediumHaptic();
-    setReviewVisible(true);
+      getChanges().then(()=> {
+          setReviewVisible(true);
+      });
   };
+    
+    const getChanges = async () => {
+        const newChanges = [];
+        if (old_chemical_name != chemical_name){
+            const newReview: ReviewChange = {
+                field: 'Chemical Name',
+                oldValue: old_chemical_name,
+                newValue: chemical_name,
+            }
+            newChanges.push(newReview);
+        }
+        setReviewChanges(newChanges);
+    }
 
   const saveReviewedChanges = () => {
     successHaptic();
