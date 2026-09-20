@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { useState } from "react";
 import { Alert } from "react-native";
+import QRCode from 'react-native-qrcode-svg';
 
 type QRLabelPopupProps = {
     visible: boolean;
@@ -40,9 +41,11 @@ export function QRLabelPopup({
                 <View
                     style={[
                         styling.qrLabelArea,
-                        {width: qrSize, height: qrSize}
+                        {width: qrSize, height: qrSize, alignItems: "center", justifyContent: "center"}
                     ]}
-                />    
+                >
+    <QRCode value={String(containerId)} size={qrSize - 20} />
+</View>   
                 
                 <Pressable onPress={onClose} style={styling.closeButton}>
                     <Text>Done</Text> 
