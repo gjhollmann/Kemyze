@@ -406,11 +406,7 @@ export default function Edit_Container() {
         'Example 3',
     ]);
     
-    const [cabinetOptions, setCabinetOptions] = useState([
-        'Test Example 1',
-        'Example 2',
-        'Example 3',
-    ]);
+    const [cabinetOptions, setCabinetOptions] = useState(null);
     
     const [shelfOptions, setShelfOptions] = useState(null);
     
@@ -1001,6 +997,7 @@ export default function Edit_Container() {
             loadShelfOptions();
         }
     }, [cabinet]);
+    
     const loadShelfOptions = async () => {
         const parameters = new URLSearchParams(
                                            {
@@ -1009,6 +1006,28 @@ export default function Edit_Container() {
                                                cabinet:cabinet,
                                            }
                                            ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setShelfOptions(data.map(item => item.name));
+    }
+    
+    useEffect(() => {
+        if (room !== null){
+            loadCabinetOptions();
+        }
+    }, [room]);
+    
+    const loadCabinetOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                               room:room,
+                                           }
+                                           ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setCabinetOptions(data.map(item => item.name));
+    }
+    
+    const loadVarLocationOptions = async (parameters) => {
         const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
         console.log(getLocationChildrenURL);
         try{
@@ -1019,7 +1038,7 @@ export default function Edit_Container() {
                 throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             const data = await response.json();
-            setShelfOptions(data.map(item => item.name));
+            return data;
         } catch (error: any) {
             console.log(error.message);
             setErrorMsg(error.message);
