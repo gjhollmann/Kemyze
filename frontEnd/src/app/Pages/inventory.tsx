@@ -132,9 +132,9 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + response.status);
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
       }
-      const data = await response.json();
+      const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {

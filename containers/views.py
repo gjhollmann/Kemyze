@@ -153,6 +153,7 @@ def getSearch(request):
         input = request.GET.get("input")
         count = request.GET.get("count")
         show_low = request.GET.get("show_low")
+        expiring_soon = request.GET.get("expiringSoon")
 
         if input == None:
             if show_low is not None:
@@ -171,6 +172,8 @@ def getSearch(request):
                 FoundSearch = Containers.objects.filter(chemical_name__icontains=input).defer("sds_sheet")  | Containers.objects.filter(location__name__icontains=input).defer("sds_sheet")
             if show_low is not None and show_low.lower() == "true":
                 FoundSearch = FoundSearch.filter(quantity__iexact="low")
+            if expiring_soon is not None and expiring_soon.lower() == "true":
+                FoundSearch = FoundSearch.exclude(expr_date__isnull=True).order_by("expr_date")
             for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
