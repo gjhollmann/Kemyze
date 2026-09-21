@@ -572,8 +572,8 @@ export default function Add_Container() {
         name: 'inventory',
       },
       {
-        key: 'profile',
-        name: 'profile',
+        key: 'tertiaryprofilemanagement',
+        name: 'tertiaryprofilemanagement',
       },
     ],
   } as any;
@@ -595,11 +595,11 @@ export default function Add_Container() {
       },
     },
 
-    profile: {
+    tertiaryprofilemanagement: {
       options: {
-        title: 'Profile',
+        title: 'Accounts',
         tabBarAccessibilityLabel:
-          'Profile',
+          'Accounts',
       },
     },
   } as any;
@@ -624,9 +624,9 @@ export default function Add_Container() {
         );
       }
 
-      if (name === 'profile') {
+      if (name === 'tertiaryprofilemanagement') {
         router.push(
-          '/Pages/profile'
+          '/Pages/tertiaryprofilemanagement'
         );
       }
     },

@@ -632,7 +632,7 @@ const Inventory: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.navItem}>
               <Text style={styles.navIcon}>👤</Text>
-              <Text style={styles.navText}>Profile</Text>
+              <Text style={styles.navText}>Accounts</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -642,7 +642,7 @@ const Inventory: React.FC = () => {
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>📷</Text><Text style={styles.navText}>QR Scanner</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={[styles.navIcon, styles.activeNav]}>📊</Text><Text style={[styles.navText, styles.activeNav]}>Inventory</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Accounts</Text></TouchableOpacity>
       </View>
 
       {/*Popup window for QR label to be opened on 'View QR Label' button press.*/}

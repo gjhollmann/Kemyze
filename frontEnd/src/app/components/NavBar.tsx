@@ -31,7 +31,7 @@ function InventoryIcon({ color }: { color: string }) {
   );
 }
 
-function ProfileIcon({ color }: { color: string }) {
+function AccountsIcon({ color }: { color: string }) {
   return (
     <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
       <Path
@@ -48,7 +48,7 @@ function ProfileIcon({ color }: { color: string }) {
 const ICONS: Record<string, (color: string) => React.ReactNode> = {
   scanner:   (c) => <ScannerIcon color={c} />,
   inventory: (c) => <InventoryIcon color={c} />,
-  profile:   (c) => <ProfileIcon color={c} />,
+  tertiaryprofilemanagement: (c) => <AccountsIcon color={c} />,
 };
 
 // ── Nav Bar ────────────────────────────────────────────────────────────────
