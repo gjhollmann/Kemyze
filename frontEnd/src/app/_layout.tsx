@@ -31,13 +31,17 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
 
-        {/* SubPages such as add_container and edit_container */}
+        {/* SubPages such as add_container, edit_container, and editprofile */}
         <Stack.Screen
           name="SubPages/add_container"
           options={{ headerShown: false }}
         />
         <Stack.Screen
           name="SubPages/edit_container"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SubPages/editprofile"
           options={{ headerShown: false }}
         />  
       </Stack>

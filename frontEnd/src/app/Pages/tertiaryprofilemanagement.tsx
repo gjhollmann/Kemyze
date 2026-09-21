@@ -311,6 +311,11 @@ export default function ManagedAccounts() {
 
   // Accounts
 
+  const editAccount = (id: string) => {
+    haptic();
+    router.push(`/SubPages/editprofile?user_id=${id}`);
+  };
+
   const deleteAccount = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAccounts((current) => current.filter((account) => account.id !== id));
@@ -592,7 +597,7 @@ export default function ManagedAccounts() {
                           >
                             <GradientButton
                               title="Edit"
-                              onPress={haptic}
+                              onPress={() => editAccount(account.id)}
                               width={scaled(CARD_BUTTON_WIDTH)}
                               height={scaled(CARD_BUTTON_HEIGHT)}
                               borderRadius={8}
