@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  ScrollView,
   StyleSheet,
-  FlatList,
-  SafeAreaView,
+  useWindowDimensions,
 } from 'react-native';
+
 import { LinearGradient } from 'expo-linear-gradient';
+
+import GradientButton from '../../../components/GradientButton';
+
+// Typography
+
+const FONT = Object.freeze({
+  regular: 'JetBrains Mono',
+  bold: 'JetBrains Mono Bold',
+} as const);
+
+const FONT_SIZE = Object.freeze({
+  pageTitle: 28,
+  sectionTitle: 16,
+  body: 14,
+  secondary: 13,
+} as const);
+
+// Types
 
 type User = {
   id: string;
@@ -16,6 +35,8 @@ type User = {
   location: string;
   privilege: string;
 };
+
+// Constants
 
 const users: User[] = [
   {
@@ -26,234 +47,324 @@ const users: User[] = [
   },
 ];
 
+const PANEL_GRADIENT: [string, string] = [
+  'rgba(1, 8, 37, 0.74)',
+  'rgba(1, 8, 37, 0.74)',
+];
+
+// Each filter carries its own width so the labels are not cut off
+const FILTERS = [
+  {
+    label: 'Show All',
+    width: 110,
+  },
+  {
+    label: 'Recently Active',
+    width: 168,
+  },
+  {
+    label: 'Add New',
+    width: 110,
+  },
+];
+
+// Screen
+
 export default function Profile() {
   const [search, setSearch] = useState('');
 
-  const renderButton = (title: string, onPress?: () => void) => (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <LinearGradient
-        colors={['#38cfff', '#1767ff', '#003fea']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.button}
-      >
-        <Text style={styles.buttonText}>{title}</Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+  const { width, height } = useWindowDimensions();
 
-  const renderUser = ({ item }: { item: User }) => (
-    <View style={styles.userCard}>
-      <View style={styles.userInfo}>
-        <Text style={styles.userText}>
-          Name: {item.name}
-        </Text>
+  const isLandscape = width > height;
+  const isSmallScreen = width < 430;
 
-        <Text style={styles.userText}>
-          Location: {item.location}
-        </Text>
-
-        <Text style={styles.userText}>
-          Privilege Level: {item.privilege}
-        </Text>
-      </View>
-
-      {renderButton('Edit Info')}
-    </View>
-  );
+  // Render
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Managed Accounts</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.pageScroll}
+        contentContainerStyle={[
+          styles.pageContent,
+          {
+            paddingHorizontal:
+              isSmallScreen
+                ? 14
+                : isLandscape
+                  ? 24
+                  : 22,
 
-        {/* Search Section */}
-        <View style={styles.searchPanel}>
-          <View style={styles.searchRow}>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder=""
-              placeholderTextColor="#888"
-              style={styles.searchInput}
-            />
+            paddingTop:
+              isLandscape
+                ? 8
+                : 12,
 
-            {renderButton('Search')}
+            paddingBottom:
+              isLandscape
+                ? 110
+                : 135,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View
+          style={[
+            styles.pageWidth,
+            {
+              maxWidth:
+                isLandscape
+                  ? 980
+                  : 520,
+            },
+          ]}
+        >
+          {/* Title */}
+          <Text style={styles.title}>
+            Managed Accounts
+          </Text>
+
+          {/* Search and filters */}
+          <View style={styles.boxGlow}>
+            <LinearGradient
+              colors={PANEL_GRADIENT}
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 1,
+              }}
+              style={[
+                styles.box,
+                {
+                  paddingHorizontal:
+                    isSmallScreen
+                      ? 10
+                      : 13,
+                },
+              ]}
+            >
+              <View style={styles.searchRow}>
+                <TextInput
+                  style={styles.searchInput}
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Search"
+                  placeholderTextColor="#C9CFE9"
+                  accessibilityLabel="Search managed accounts"
+                />
+
+                <GradientButton
+                  title="Search"
+                  width={96}
+                  height={44}
+                  borderRadius={10}
+                />
+              </View>
+
+              {/* Horizontal scroll keeps the filters reachable on small screens */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterRow}
+              >
+                {FILTERS.map((filter) => (
+                  <GradientButton
+                    key={filter.label}
+                    title={filter.label}
+                    width={filter.width}
+                    height={44}
+                    borderRadius={10}
+                  />
+                ))}
+              </ScrollView>
+            </LinearGradient>
           </View>
 
-          <View style={styles.filterRow}>
-            {renderButton('Show All')}
-            {renderButton('Recently Active')}
-            {renderButton('Add New')}
+          {/* Managed user list */}
+          <View style={styles.listGlow}>
+            <LinearGradient
+              colors={PANEL_GRADIENT}
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 1,
+              }}
+              style={[
+                styles.box,
+                {
+                  paddingHorizontal:
+                    isSmallScreen
+                      ? 10
+                      : 13,
+                },
+              ]}
+            >
+              {users.map((item) => (
+                <View
+                  key={item.id}
+                  style={styles.userCard}
+                >
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userText}>
+                      Name: {item.name}
+                    </Text>
+
+                    <Text style={styles.userText}>
+                      Location: {item.location}
+                    </Text>
+
+                    <Text style={styles.userText}>
+                      Privilege Level: {item.privilege}
+                    </Text>
+                  </View>
+
+                  <GradientButton
+                    title="Edit Info"
+                    width={108}
+                    height={40}
+                    borderRadius={10}
+                    textStyle={styles.editText}
+                  />
+                </View>
+              ))}
+            </LinearGradient>
           </View>
         </View>
-
-        {/* Managed User List */}
-        <View style={styles.listPanel}>
-          <FlatList
-            data={users}
-            keyExtractor={(item) => item.id}
-            renderItem={renderUser}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator
-          />
-        </View>
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screen: {
     flex: 1,
-    backgroundColor: '#050b1d',
+    backgroundColor: '#020617',
   },
 
-  container: {
+  pageScroll: {
     flex: 1,
-    backgroundColor: '#050b1d',
-    paddingHorizontal: 26,
-    paddingTop: 20,
+    width: '100%',
+  },
 
-    // Gives space for the bottom navigation bar
-    paddingBottom: 125,
+  pageContent: {
+    width: '100%',
+    alignItems: 'center',
+  },
+
+  pageWidth: {
+    width: '100%',
+    alignSelf: 'center',
   },
 
   title: {
-    color: '#ffffff',
-    fontSize: 42,
-    fontFamily: 'JetBrains Mono Bold',
-    marginBottom: 30,
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.pageTitle,
+    lineHeight: 36,
+    textAlign: 'center',
+    marginTop: 1,
+    marginBottom: 9,
   },
 
-  searchPanel: {
-    backgroundColor: '#0a1024',
-    borderWidth: 1.5,
-    borderColor: '#5a6075',
-    borderRadius: 24,
-    padding: 14,
-    marginBottom: 26,
-
-    shadowColor: '#008cff',
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
+  boxGlow: {
+    width: '100%',
+    borderRadius: 20,
+    shadowColor: '#06184A',
     shadowOffset: {
       width: 0,
       height: 0,
     },
-
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
     elevation: 5,
+  },
+
+  listGlow: {
+    width: '100%',
+    marginTop: 8,
+    borderRadius: 20,
+    shadowColor: '#06184A',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  box: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+    borderRadius: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+    overflow: 'hidden',
   },
 
   searchRow: {
     flexDirection: 'row',
+    width: '100%',
+    gap: 7,
+    marginBottom: 7,
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
   },
 
   searchInput: {
     flex: 1,
-    height: 48,
-    borderWidth: 1.5,
-    borderColor: '#7e8497',
-    borderRadius: 24,
-    backgroundColor: '#080e20',
-    color: '#ffffff',
-    paddingHorizontal: 18,
-    fontSize: 16,
-    fontFamily: 'JetBrains Mono',
+    minWidth: 0,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 9,
+    color: '#FFFFFF',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    paddingHorizontal: 9,
+    backgroundColor: '#09091C',
   },
 
+  // gap keeps the filters together no matter how wide the screen is
   filterRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-
-  button: {
-    minHeight: 48,
-    minWidth: 92,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    borderRadius: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-
-    shadowColor: '#00c8ff',
-    shadowOpacity: 0.35,
-    shadowRadius: 7,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-
-    elevation: 5,
-  },
-
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontFamily: 'JetBrains Mono Bold',
-    textAlign: 'center',
-  },
-
-  listPanel: {
-    flex: 1,
-    backgroundColor: '#090f21',
-    borderWidth: 1.5,
-    borderColor: '#5a6075',
-    borderRadius: 26,
-    paddingHorizontal: 14,
-    paddingVertical: 16,
-
-    shadowColor: '#008cff',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-
-    elevation: 4,
-  },
-
-  listContent: {
-    paddingBottom: 16,
+    gap: 7,
   },
 
   userCard: {
-    backgroundColor: '#0a1024',
-    borderWidth: 1.5,
-    borderColor: '#5a6075',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 16,
-
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-
-    shadowColor: '#000000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
-    elevation: 4,
+    width: '100%',
+    gap: 8,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
   },
 
   userInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
   },
 
   userText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontFamily: 'JetBrains Mono Bold',
-    marginBottom: 5,
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
+  },
+
+  editText: {
+    fontSize: FONT_SIZE.body,
   },
 });
