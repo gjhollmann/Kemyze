@@ -1134,7 +1134,6 @@ export default function Edit_Container() {
       */}
     
     const loadChangeLog = async () => {
-        setIsLoading(true)
         const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?container_id=" + container_id
         try{
             const response = await fetch(getChangeLogURL,{method: "GET",});
@@ -1784,7 +1783,7 @@ export default function Edit_Container() {
                   styles.changeLogTitle
                 }
               >
-                Change Log
+                Most Recent Change
               </Text>
 
               <Text
@@ -1806,7 +1805,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Date: __________
+                Date: {changeLog[0].Date}
               </Text>
 
               <Text
@@ -1814,7 +1813,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Time: __________
+          Time: {changeLog[0].Time}
               </Text>
             </View>
 
@@ -1831,7 +1830,7 @@ export default function Edit_Container() {
                 styles.changeLogText
               }
             >
-              User: __________
+          User: {changeLog[0].User}
             </Text>
 
             <Text
@@ -1839,7 +1838,7 @@ export default function Edit_Container() {
                 styles.changeLogText
               }
             >
-              Change: __________
+          Change: {changeLog[0].Change}
             </Text>
 
             <View
@@ -1852,7 +1851,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Old: __________
+          Old: {changeLog[0].Old}
               </Text>
 
               <Text
@@ -1860,7 +1859,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                New: __________
+          New: {changeLog[0].New}
               </Text>
             </View>
           </Pressable>
