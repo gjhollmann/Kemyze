@@ -52,7 +52,46 @@ const users: User[] = [
     location: 'Sacramento Lab',
     privilege: 'Tertiary',
   },
+  {
+    id: '2',
+    name: 'Maria Delgado',
+    location: 'Sacramento Lab',
+    privilege: 'Secondary',
+  },
+  {
+    id: '3',
+    name: 'Andre Whitfield',
+    location: 'Davis Lab',
+    privilege: 'Tertiary',
+  },
+  {
+    id: '4',
+    name: 'Priya Raman',
+    location: 'Folsom Lab',
+    privilege: 'Primary',
+  },
+  {
+    id: '5',
+    name: 'Chen Wei',
+    location: 'Davis Lab',
+    privilege: 'Tertiary',
+  },
+  {
+    id: '6',
+    name: 'Rosa Alvarez',
+    location: 'Elk Grove Lab',
+    privilege: 'Secondary',
+  },
+  {
+    id: '7',
+    name: 'Daniel Okafor',
+    location: 'Sacramento Lab',
+    privilege: 'Tertiary',
+  },
 ];
+
+// Search and Add New share one width so the two rows line up
+const ACTION_BUTTON_WIDTH = 110;
 
 const VIEW_OPTIONS = [
   'All',
@@ -205,7 +244,7 @@ export default function Profile() {
 
                 <GradientButton
                   title="Search"
-                  width={96}
+                  width={ACTION_BUTTON_WIDTH}
                   height={44}
                   borderRadius={10}
                 />
@@ -237,7 +276,7 @@ export default function Profile() {
 
                 <GradientButton
                   title="Add New"
-                  width={110}
+                  width={ACTION_BUTTON_WIDTH}
                   height={44}
                   borderRadius={10}
                 />
@@ -547,6 +586,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     gap: 8,
+    marginBottom: 7,
     borderRadius: 11,
     borderWidth: 1,
     borderColor: 'rgba(33, 142, 255, 0.5)',
