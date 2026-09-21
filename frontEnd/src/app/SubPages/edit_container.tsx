@@ -1163,6 +1163,13 @@ export default function Edit_Container() {
             setLoadError(true);
         }
     }
+    
+    // String clamping
+    const clampString = (str, maxLength) => {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.slice(0, maxLength) + "...";
+    }
 
     // Render Loading Screen
     
@@ -2626,7 +2633,7 @@ export default function Edit_Container() {
               {filteredChangeLog.map(
                 (item, index) => (
                   <Pressable
-                    key={`${item.Change}-${index}`}
+                    key={index}
                     onPress={() =>
                       openFieldHistory(
                         item.Change as HistoryType
@@ -2650,10 +2657,10 @@ export default function Edit_Container() {
                           styles.historyName
                         }
                       >
-                        {item.Change ===
+                        {item.Type ===
                         'Edit'
-                          ? 'Container edited'
-                          : `${item.Change} changed`}
+                          ? `${item.Change} changed`
+                          : `Date: ${item.Date}\nChange: ${item.New}`}
                       </Text>
 
                       <View
@@ -2666,13 +2673,11 @@ export default function Edit_Container() {
                             styles.historyValue
                           }
                         >
-                          {item.Change ===
-                          'Edit'
-                            ? '________ → ________ → ________'
-                            : item.Change ===
-                                'Quantity'
-                              ? '___ mL → ___ mL'
-                              : '________ → ________'}
+                                  {item.Type ===
+                                  'Edit'
+                                    ? `Date: ${clampString(item.Date, 15)}\nChange: ${clampString(item.New, 15)}`
+                                    : ``}
+                                  
                         </Text>
 
                         <Text
@@ -2803,7 +2808,7 @@ export default function Edit_Container() {
               {filteredChangeLog.map(
                 (item, index) => (
                   <View
-                    key={item}
+                    key={index}
                     style={
                       styles.timelineItem
                     }
@@ -2821,7 +2826,7 @@ export default function Edit_Container() {
                         }
                       />
 
-                      {index < 3 && (
+                      {index < filteredChangeLog.length && (
                         <View
                           style={
                             styles.timelineLine
@@ -2840,9 +2845,30 @@ export default function Edit_Container() {
                           styles.timelineValue
                         }
                       >
-                        {getFieldHistoryValue(
-                          index
-                        )}
+                                  {item.Change} was changed
+                      </Text>
+                      
+                                  <Text
+                                    style={
+                                      styles.timelinePlaceholder
+                                    }
+                                  >
+                                  Old {item.Change}: {item.Old}
+                                  </Text>
+                                  <Text
+                                    style={
+                                      styles.timelinePlaceholder
+                                    }
+                                  >
+                                  New {item.Change}: {item.New}
+                                  </Text>
+
+                      <Text
+                        style={
+                          styles.timelinePlaceholder
+                        }
+                      >
+                                  User: {item.User}
                       </Text>
 
                       <Text
@@ -2850,7 +2876,7 @@ export default function Edit_Container() {
                           styles.timelinePlaceholder
                         }
                       >
-                        User: __________
+                                  Date: {item.Date}
                       </Text>
 
                       <Text
@@ -2858,15 +2884,7 @@ export default function Edit_Container() {
                           styles.timelinePlaceholder
                         }
                       >
-                        Date: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Time: __________
+                                  Time: {item.Time}
                       </Text>
                     </View>
                   </View>
