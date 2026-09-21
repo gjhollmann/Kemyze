@@ -620,12 +620,13 @@ export default function Edit_Container() {
   };
 
   const openFieldHistory = (
-    type: HistoryType
+    type: HistoryType, index: number
   ) => {
     haptic();
     setFieldHistoryType(type);
     setHistoryVisible(false);
     setFieldHistoryVisible(true);
+    setHistoryIndex(index);
   };
 
   const closeFieldHistory = () => {
@@ -696,6 +697,20 @@ export default function Edit_Container() {
         item.Type ===
         historyFilter
     );
+    
+  // ChangeLog Navigation
+    const scrollViewRef = useRef<ScrollView>(null);
+    const changeLogLayouts = useRef<{[key: number]: number}>({});
+    const [historyIndex, setHistoryIndex] = useState(0);
+    const scrollToLayoutIndex = () => {
+        const yPosition = changeLogLayouts.current[historyIndex];
+        if(yPosition !== undefined && scrollViewRef.current){
+            scrollViewRef.current.scrollTo({
+                y: yPosition,
+                animated: true,
+            });
+        }
+    };
 
   // Save flow
 
@@ -2640,10 +2655,12 @@ export default function Edit_Container() {
                 (item, index) => (
                   <Pressable
                     key={index}
-                    onPress={() =>
-                      openFieldHistory(
-                        item.Change as HistoryType
-                      )
+                                  onPress={() =>{
+                                      openFieldHistory(
+                                                       item.Change as HistoryType,
+                                                       index as index
+                                                       )
+                                      }
                     }
                     accessibilityRole="button"
                     accessibilityLabel={`${item.Change} history`}
@@ -2801,6 +2818,7 @@ export default function Edit_Container() {
             </Text>
 
             <ScrollView
+              ref={scrollViewRef}
               style={
                 styles.fieldHistoryScroll
               }
@@ -2816,8 +2834,14 @@ export default function Edit_Container() {
                   <View
                     key={index}
                     style={
-                      styles.timelineItem
+                      index === historyIndex
+                      ? styles.timelineItemHighlight
+                      : styles.timelineItem
                     }
+                                  onLayout={(event) => {
+                                      changeLogLayouts.current[index] = event.nativeEvent.layout.y;
+                                      scrollToLayoutIndex();
+                                  }}
                   >
                     <View
                       style={
@@ -2826,7 +2850,7 @@ export default function Edit_Container() {
                     >
                       <View
                         style={
-                          index === 0
+                          index === historyIndex
                             ? styles.timelineDotActive
                             : styles.timelineDot
                         }
@@ -4228,6 +4252,12 @@ const styles = StyleSheet.create({
     minHeight: 92,
   },
 
+    timelineItemHighlight: {
+      flexDirection: 'row',
+      minHeight: 92,
+      backgroundColor:'#3f4d8f'
+    },
+    
   timelineColumn: {
     width: 22,
     alignItems: 'center',
