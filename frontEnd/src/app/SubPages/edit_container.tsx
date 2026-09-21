@@ -824,6 +824,9 @@ export default function Edit_Container() {
                 shelf: shelf
             }
         }
+        
+        if (quantity!=oldQuantity)
+            data = {...data, quantity: quantity}
 
 
         try {

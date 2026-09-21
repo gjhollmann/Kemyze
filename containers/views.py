@@ -311,6 +311,8 @@ def editContainer(request):
                 FoundContainer.expr_date = data.get("expr_date")
             if (data.get("acqn_date") != None):
                 FoundContainer.acqn_date = data.get("acqn_date")
+            if (data.get("quantity") != None):
+                FoundContainer.quantity = data.get("quantity")
             
             newLocation = data.get("location")
             newRoom = data.get("room")
@@ -428,7 +430,50 @@ def getContainerChangeLog(request):
                 except Users.DoesNotExist:
                     user_first_name = 'Tester'
                     user_last_name = 'User'
-
+                old_values = log.old_values
+                new_values = log.new_values
+                
+                old_name = old_values.get("chemical_name")
+                new_name = new_values.get("chemical_name")
+                if (old_name!=new_name):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Change': "Edit",
+                    'Old': old_name,
+                    'New': new_name
+                    })
+                    
+                old_cas = old_values.get("cas_number")
+                new_cas = new_values.get("cas_number")
+                if (old_cas!=new_cas):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Change': "Edit",
+                    'Old': old_cas,
+                    'New': new_cas
+                    })
+                
+                old_quantity = old_values.get("quantity")
+                new_quantity = new_values.get("quantity")
+                if (old_quantity!=new_quantity):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Change': "Quantity",
+                    'Old': old_quantity,
+                    'New': new_quantity
+                    })
+                    
+                    
+                """
                 data.append({
                     'Date': log.changed_at.date(),
                     'Time': log.changed_at.time(),
@@ -436,6 +481,7 @@ def getContainerChangeLog(request):
                     'User': user_first_name + " " + user_last_name
                     
                 })
+                """
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")
