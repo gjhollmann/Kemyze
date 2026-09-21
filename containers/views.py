@@ -326,9 +326,12 @@ def editContainer(request):
                     print(e)
                     return HttpResponseServerError(f"An unexpected error occurred: {e}")
             FoundContainer.save()
+            # Update Change log
+            FoundLog = ContainerAuditLog.objects.last()
+            FoundLog.changed_by = user_id
+            FoundLog.save()
             
-            
-            FoundContainer.save()
+            # return Success
             return HttpResponse("Success")
         except Containers.DoesNotExist:
             print("Could not find container")
