@@ -5,11 +5,16 @@ import {
   Text,
   TextInput,
   ScrollView,
+  Pressable,
+  Modal,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
 
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 import GradientButton from '../../../components/GradientButton';
 
@@ -22,9 +27,11 @@ const FONT = Object.freeze({
 
 const FONT_SIZE = Object.freeze({
   pageTitle: 28,
-  sectionTitle: 16,
+  sheetTitle: 20,
   body: 14,
+  button: 14,
   secondary: 13,
+  arrow: 17,
 } as const);
 
 // Types
@@ -47,36 +54,57 @@ const users: User[] = [
   },
 ];
 
+const VIEW_OPTIONS = [
+  'All',
+  'Active',
+  'Inactive',
+];
+
 const PANEL_GRADIENT: [string, string] = [
   'rgba(1, 8, 37, 0.74)',
   'rgba(1, 8, 37, 0.74)',
 ];
 
-// Each filter carries its own width so the labels are not cut off
-const FILTERS = [
-  {
-    label: 'Show All',
-    width: 110,
-  },
-  {
-    label: 'Recently Active',
-    width: 168,
-  },
-  {
-    label: 'Add New',
-    width: 110,
-  },
-];
-
 // Screen
 
 export default function Profile() {
-  const [search, setSearch] = useState('');
+  const router = useRouter();
 
   const { width, height } = useWindowDimensions();
 
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
+
+  const [search, setSearch] = useState('');
+
+  const [view, setView] = useState('All');
+
+  const [viewSelectorVisible, setViewSelectorVisible] =
+    useState(false);
+
+  // Haptics
+
+  const haptic = () => {
+    Haptics.selectionAsync();
+  };
+
+  // View selector
+
+  const openViewSelector = () => {
+    haptic();
+    setViewSelectorVisible(true);
+  };
+
+  const closeViewSelector = () => {
+    haptic();
+    setViewSelectorVisible(false);
+  };
+
+  const selectView = (value: string) => {
+    haptic();
+    setView(value);
+    setViewSelectorVisible(false);
+  };
 
   // Render
 
@@ -119,6 +147,25 @@ export default function Profile() {
             },
           ]}
         >
+          {/* Back */}
+          <Pressable
+            onPress={() => {
+              haptic();
+              router.back();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed &&
+                styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.backText}>
+              ‹ Back
+            </Text>
+          </Pressable>
+
           {/* Title */}
           <Text style={styles.title}>
             Managed Accounts
@@ -164,22 +211,37 @@ export default function Profile() {
                 />
               </View>
 
-              {/* Horizontal scroll keeps the filters reachable on small screens */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}
-              >
-                {FILTERS.map((filter) => (
-                  <GradientButton
-                    key={filter.label}
-                    title={filter.label}
-                    width={filter.width}
-                    height={44}
-                    borderRadius={10}
-                  />
-                ))}
-              </ScrollView>
+              {/* The selector flexes so the row fits any screen width */}
+              <View style={styles.filterRow}>
+                <Pressable
+                  onPress={openViewSelector}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select which accounts to view"
+                  style={({ pressed }) => [
+                    styles.selectInput,
+                    pressed &&
+                      styles.selectPressed,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={styles.selectText}
+                  >
+                    View: {view}
+                  </Text>
+
+                  <Text style={styles.selectArrow}>
+                    ⌄
+                  </Text>
+                </Pressable>
+
+                <GradientButton
+                  title="Add New"
+                  width={110}
+                  height={44}
+                  borderRadius={10}
+                />
+              </View>
             </LinearGradient>
           </View>
 
@@ -237,6 +299,91 @@ export default function Profile() {
           </View>
         </View>
       </ScrollView>
+
+      {/* View selector modal */}
+
+      <Modal
+        visible={viewSelectorVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeViewSelector}
+      >
+        <View style={styles.modalBackground}>
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={StyleSheet.absoluteFillObject}
+          />
+
+          <Pressable
+            style={styles.modalDismiss}
+            onPress={closeViewSelector}
+          />
+
+          <View style={styles.selectorSheet}>
+            <View style={styles.sheetHandle} />
+
+            <Text style={styles.selectorTitle}>
+              Select View
+            </Text>
+
+            {VIEW_OPTIONS.map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => selectView(option)}
+                accessibilityRole="button"
+                accessibilityLabel={option}
+                style={({ pressed }) => [
+                  styles.optionButton,
+                  pressed &&
+                    styles.selectPressed,
+                ]}
+              >
+                <Text style={styles.optionText}>
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
+
+            <Pressable
+              onPress={closeViewSelector}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel selection"
+              style={({ pressed }) => [
+                styles.cancelButton,
+                pressed &&
+                  styles.buttonPressed,
+              ]}
+            >
+              <LinearGradient
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
+
+              <Text style={styles.cancelText}>
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -260,6 +407,20 @@ const styles = StyleSheet.create({
   pageWidth: {
     width: '100%',
     alignSelf: 'center',
+  },
+
+  backButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 2,
+  },
+
+  backText: {
+    color: '#3B82F6',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
   },
 
   title: {
@@ -332,11 +493,53 @@ const styles = StyleSheet.create({
     backgroundColor: '#09091C',
   },
 
-  // gap keeps the filters together no matter how wide the screen is
   filterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    width: '100%',
     gap: 7,
+    alignItems: 'center',
+  },
+
+  selectInput: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 9,
+    backgroundColor: '#09091C',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+
+  selectText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    paddingRight: 14,
+  },
+
+  selectArrow: {
+    position: 'absolute',
+    right: 6,
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.arrow,
+    lineHeight: 22,
+  },
+
+  selectPressed: {
+    borderColor: '#3B82F6',
+  },
+
+  buttonPressed: {
+    opacity: 0.82,
+    transform: [
+      {
+        scale: 0.98,
+      },
+    ],
   },
 
   userCard: {
@@ -366,5 +569,83 @@ const styles = StyleSheet.create({
 
   editText: {
     fontSize: FONT_SIZE.body,
+  },
+
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+
+  modalDismiss: {
+    flex: 1,
+  },
+
+  selectorSheet: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 14,
+  },
+
+  sheetHandle: {
+    width: 42,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: '#334155',
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+
+  selectorTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sheetTitle,
+    lineHeight: 27,
+    marginBottom: 10,
+  },
+
+  optionButton: {
+    minHeight: 48,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 7,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+
+  optionText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+
+  cancelButton: {
+    minHeight: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+
+  cancelText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.button,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });
