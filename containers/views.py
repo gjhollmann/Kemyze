@@ -441,7 +441,8 @@ def getContainerChangeLog(request):
                     'Time': log.changed_at.time(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
-                    'Change': "Edit",
+                    'Type': "Edit",
+                    'Change': "Name",
                     'Old': old_name,
                     'New': new_name
                     })
@@ -454,7 +455,8 @@ def getContainerChangeLog(request):
                     'Time': log.changed_at.time(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
-                    'Change': "Edit",
+                    'Type': "Edit",
+                    'Change': "CAS",
                     'Old': old_cas,
                     'New': new_cas
                     })
@@ -467,11 +469,39 @@ def getContainerChangeLog(request):
                     'Time': log.changed_at.time(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
+                    'Type': "Quantity",
                     'Change': "Quantity",
                     'Old': old_quantity,
                     'New': new_quantity
                     })
                     
+                old_acqn_date = old_values.get("acqn_date")
+                new_acqn_date = new_values.get("acqn_date")
+                if (old_acqn_date!=new_acqn_date):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "Acqn Date",
+                    'Old': old_acqn_date,
+                    'New': new_acqn_date
+                    })
+                    
+                old_expr_date = old_values.get("expr_date")
+                new_expr_date = new_values.get("expr_date")
+                if (old_acqn_date!=new_acqn_date):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "Expr Date",
+                    'Old': old_expr_date,
+                    'New': new_expr_date
+                    })
                     
                 """
                 data.append({

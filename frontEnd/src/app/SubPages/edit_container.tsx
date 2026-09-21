@@ -693,7 +693,7 @@ export default function Edit_Container() {
   const filteredChangeLog =
     changeLog.filter(
       (item) =>
-        item.Change ===
+        item.Type ===
         historyFilter
     );
 
@@ -1125,7 +1125,8 @@ export default function Edit_Container() {
       Time: '',
       ContainerID: String(container_id ?? ''),
       User: '',
-      Change: 'Edit, Location, Quantity, or SDS',
+      Type: 'Edit, Location, Quantity, or SDS',
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS'
       Old: '',
       New: '',
     },
