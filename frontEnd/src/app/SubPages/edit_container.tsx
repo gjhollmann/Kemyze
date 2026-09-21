@@ -794,6 +794,7 @@ export default function Edit_Container() {
   };
     
     const sendEditContainer = async () => {
+        setIsLoading(true);
         let data = {
                 user_id: USER_TEST,
                 container_id: container_id,
@@ -849,6 +850,9 @@ export default function Edit_Container() {
             
         } catch (error) {
             console.error('Error sending data:', error);
+        } finally {
+            getContainer();
+            loadChangeLog();
         }
     }
 
@@ -950,85 +954,87 @@ export default function Edit_Container() {
     
     //Initial fetch
     useEffect(() => {
-        const getContainer = async () => {
-            const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
-            try {
-                const containerResponse = await fetch(getContainerURL,
-                                                      {
-                    method: "GET",
-                })
-                
-                if (!containerResponse.ok){
-                  console.log("We are having issues");
-                  const errorText = await containerResponse.text();
-                  throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
-                }
-                
-                const data = await containerResponse.json();
-                // Handle data and set all variables
-                
-                // Field States
-                setChemicalName(data.chemical_name);
-                setOldChemicalName(data.chemical_name);
-                setQuantity(data.quantity);
-                setOldQuantity(data.quantity);
-                setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
-                setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
-                setExpirationDate(data.expr_date.replaceAll("-","/"));
-                setOldExpirationDate(data.expr_date.replaceAll("-","/"));
-
-                
-                // Location
-                const fullLocation = data.location.split(", ");
-                if (fullLocation.length < 4) {
-                    setLocation(fullLocation[0]);
-                    setOldLocation(fullLocation[0]);
-                    setRoom(fullLocation[1]);
-                    setOldRoom(fullLocation[1]);
-                    setCabinet(fullLocation[2]);
-                    setOldCabinet(fullLocation[2]);
-                    setShelf(fullLocation[3]);
-                    setOldShelf(fullLocation[3]);
-                } else {
-                    let index = fullLocation.length - 1;
-                    let locationInput = "";
-                    do {
-                        locationInput = locationInput + fullLocation[index--];
-                    } while (index > 4);
-                    setLocation(locationInput);
-                    setOldLocation(locationInput);
-                    setRoom(fullLocation[index]);
-                    setOldRoom(fullLocation[index]);
-                    setCabinet(fullLocation[index-1]);
-                    setOldCabinet(fullLocation[index-1]);
-                    setShelf(fullLocation[index-2]);
-                    setOldShelf(fullLocation[index-2]);
-                }
-                
-                // CAS state
-                //const casTokens = data.cas_number.split("-");
-                const casTokens = "65425-25-4".split("-");
-                let casTokenFirst = casTokens[0].split("");
-                do {
-                    casTokenFirst = ["", ...casTokenFirst];
-                } while (casTokenFirst.length<7);
-                setCasFirst(casTokenFirst);
-                setOldCasFirst(casTokenFirst);
-                setCasSecond(casTokens[1].split(""));
-                setOldCasSecond(casTokens[1].split(""));
-                setCasThird(casTokens[2].split(""));
-                setOldCasThird(casTokens[2].split(""));
-            } catch (error: any) {
-                console.log(error.message);
-                setErrorMsg(error.message);
-                setLoadError(true);
-            } finally {
-                setIsLoading(false)
-            }
-        };
         getContainer();
         loadChangeLog();
     }, []);
+    
+    const getContainer = async () => {
+        setIsLoading(true);
+        const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
+        try {
+            const containerResponse = await fetch(getContainerURL,
+                                                  {
+                method: "GET",
+            })
+            
+            if (!containerResponse.ok){
+              console.log("We are having issues");
+              const errorText = await containerResponse.text();
+              throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
+            }
+            
+            const data = await containerResponse.json();
+            // Handle data and set all variables
+            
+            // Field States
+            setChemicalName(data.chemical_name);
+            setOldChemicalName(data.chemical_name);
+            setQuantity(data.quantity);
+            setOldQuantity(data.quantity);
+            setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+            setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+            setExpirationDate(data.expr_date.replaceAll("-","/"));
+            setOldExpirationDate(data.expr_date.replaceAll("-","/"));
+
+            
+            // Location
+            const fullLocation = data.location.split(", ");
+            if (fullLocation.length < 4) {
+                setLocation(fullLocation[0]);
+                setOldLocation(fullLocation[0]);
+                setRoom(fullLocation[1]);
+                setOldRoom(fullLocation[1]);
+                setCabinet(fullLocation[2]);
+                setOldCabinet(fullLocation[2]);
+                setShelf(fullLocation[3]);
+                setOldShelf(fullLocation[3]);
+            } else {
+                let index = fullLocation.length - 1;
+                let locationInput = "";
+                do {
+                    locationInput = locationInput + fullLocation[index--];
+                } while (index > 4);
+                setLocation(locationInput);
+                setOldLocation(locationInput);
+                setRoom(fullLocation[index]);
+                setOldRoom(fullLocation[index]);
+                setCabinet(fullLocation[index-1]);
+                setOldCabinet(fullLocation[index-1]);
+                setShelf(fullLocation[index-2]);
+                setOldShelf(fullLocation[index-2]);
+            }
+            
+            // CAS state
+            //const casTokens = data.cas_number.split("-");
+            const casTokens = "65425-25-4".split("-");
+            let casTokenFirst = casTokens[0].split("");
+            do {
+                casTokenFirst = ["", ...casTokenFirst];
+            } while (casTokenFirst.length<7);
+            setCasFirst(casTokenFirst);
+            setOldCasFirst(casTokenFirst);
+            setCasSecond(casTokens[1].split(""));
+            setOldCasSecond(casTokens[1].split(""));
+            setCasThird(casTokens[2].split(""));
+            setOldCasThird(casTokens[2].split(""));
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        } finally {
+            setIsLoading(false)
+        }
+    };
     
     // Load Location data
     useEffect(() => {
