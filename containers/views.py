@@ -512,6 +512,38 @@ def getContainerChangeLog(request):
                     
                 })
                 """
+                
+                old_location = ''
+                try:
+                    FoundLocation = Locations.objects.get(location_id=old_values.get("location_id"))
+                    old_location = FoundLocation.name
+                    while (FoundLocation.parent != None):
+                        FoundLocation = FoundLocation.parent
+                        old_location = FoundLocation.name + ', ' + old_location
+                except:
+                    old_location = ''
+                new_location = ''
+                try:
+                    FoundLocation = Locations.objects.get(location_id=new_values.get("location_id"))
+                    new_location = FoundLocation.name
+                    while (FoundLocation.parent != None):
+                        FoundLocation = FoundLocation.parent
+                        new_location = FoundLocation.name + ', ' + new_location
+                except:
+                    new_location = ''
+                    
+                if (old_location!=new_location):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Location",
+                    'Change': "Location",
+                    'Old': old_location,
+                    'New': new_location
+                    })
+ 
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")

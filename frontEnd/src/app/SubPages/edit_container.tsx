@@ -1027,6 +1027,7 @@ export default function Edit_Container() {
             }
         };
         getContainer();
+        loadChangeLog();
     }, []);
     
     // Load Location data
@@ -1126,14 +1127,25 @@ export default function Edit_Container() {
       ContainerID: String(container_id ?? ''),
       User: '',
       Type: 'Edit, Location, Quantity, or SDS',
-      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS'
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS',
       Old: '',
       New: '',
     },
       */}
     
     const loadChangeLog = async () => {
-        
+        setChangeLog([
+                      {
+                        Date: '',
+                        Time: '',
+                        ContainerID: String(container_id ?? ''),
+                        User: '',
+                        Type: 'Location',
+                        Change: 'Location',
+                        Old: '',
+                        New: '',
+                      },
+                      ])
     }
 
     // Render Loading Screen
