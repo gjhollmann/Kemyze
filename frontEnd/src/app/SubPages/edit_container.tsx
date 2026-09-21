@@ -753,6 +753,70 @@ export default function Edit_Container() {
             }
             newChanges.push(newReview);
         }
+        if (oldCasFirst != casFirst || oldCasSecond.join('') != casSecond.join('') || oldCasThird.join('') != casThird.join('')){
+            const newReview: ReviewChange = {
+                field: 'CAS Number',
+                oldValue: oldCasFirst.join('')+"-"+oldCasSecond.join('')+"-"+oldCasThird.join(''),
+                newValue: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join(''),
+            }
+            newChanges.push(newReview);
+        }
+        if (oldQuantity != quantity){
+            const newReview: ReviewChange = {
+                field: 'Quantity',
+                oldValue: oldQuantity,
+                newValue: quantity,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldAcquisitionDate != acquisitionDate){
+            const newReview: ReviewChange = {
+                field: 'Acquisition Date',
+                oldValue: oldAcquisitionDate,
+                newValue: acquisitionDate,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldExpirationDate != expirationDate){
+            const newReview: ReviewChange = {
+                field: 'Expiration Date',
+                oldValue: oldExpirationDate,
+                newValue: expirationDate,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldLocation != location){
+            const newReview: ReviewChange = {
+                field: 'Location',
+                oldValue: oldLocation,
+                newValue: location,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldRoom != room){
+            const newReview: ReviewChange = {
+                field: 'Room',
+                oldValue: oldRoom,
+                newValue: room,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldCabinet != cabinet){
+            const newReview: ReviewChange = {
+                field: 'Cabinet',
+                oldValue: oldCabinet,
+                newValue: cabinet,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldShelf != shelf){
+            const newReview: ReviewChange = {
+                field: 'Shelf',
+                oldValue: oldShelf,
+                newValue: shelf,
+            }
+            newChanges.push(newReview);
+        }
         setReviewChanges(newChanges);
     }
 
@@ -1074,7 +1138,6 @@ export default function Edit_Container() {
                 throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             let data = await response.json();
-            console.log(data);
             if (data && Object.keys(data).length === 0){
                 console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
                 data = [{
