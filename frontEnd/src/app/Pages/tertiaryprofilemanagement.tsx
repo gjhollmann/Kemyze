@@ -655,7 +655,14 @@ export default function ManagedAccounts() {
             onPress={closeViewSelector}
           />
 
-          <View style={styles.selectorSheet}>
+          <View
+            style={[
+              styles.selectorSheet,
+              {
+                paddingBottom: 14 + insets.bottom,
+              },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             <Text style={styles.selectorTitle}>

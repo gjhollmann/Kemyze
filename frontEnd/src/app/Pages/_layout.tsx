@@ -6,7 +6,11 @@ import NavBar from '../components/NavBar';
 export default function TabLayout() {
   return (
     // tabBar prop replaces the default bottom bar with our custom NavBar component
-    <Tabs tabBar={(props) => <NavBar {...props} />}>
+    // backBehavior="history" makes Back return to the previously visited tab
+    <Tabs
+      backBehavior="history"
+      tabBar={(props) => <NavBar {...props} />}
+    >
 
       {/* These three screens show up as tabs in the nav bar */}
       <Tabs.Screen name="scanner"   options={{ title: 'QR Scanner', headerShown: false }} />
