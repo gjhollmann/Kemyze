@@ -396,3 +396,52 @@ def getLocationChildren(request):
         return HttpResponseNotAllowed(["GET"])
 
 
+"""
+View to get the last 20 changes of a container.
+Route: /containers/getContainerChangeLog
+Request Variables:
+Method: GET
+Parameters:
+    container_id
+    
+Responses:
+    Failures:
+        Status 400: Missing container_id
+        Status 400: Container not found
+        Status 500: Something broke bad
+"""
+def getContainerChangeLog(request):
+    if request.method == "GET":
+        container_id = request.GET.get("container_id")
+        if container_id == None:
+            return HttpResponseBadRequest("Missing 'container_id' Parameter")
+        try:
+            FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            data = []
+            for log in FoundLogs:
+                user_first_name = ''
+                user_last_name = ''
+                try:
+                    FoundUser = Users.objects.get(user_id=log.changed_by)
+                    user_first_name = FoundUser.first_name
+                    user_last_name = FoundUser.last_name
+                except Users.DoesNotExist:
+                    user_first_name = 'Tester'
+                    user_last_name = 'User'
+
+                data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name
+                    
+                })
+            return JsonResponse(data, safe=False)
+        except Containers.DoesNotExist:
+            print("Could not find container")
+            return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["GET"])

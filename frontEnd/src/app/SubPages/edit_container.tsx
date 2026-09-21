@@ -279,44 +279,7 @@ export default function Edit_Container() {
 
   // Placeholder data
 
-  const changeLog = [
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Edit',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Location',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Quantity',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'SDS',
-      Old: '',
-      New: '',
-    },
-  ];
+  const [changeLog, setChangeLog] = useState([{}]);
 
     const [reviewChanges, setReviewChanges] = useState<ReviewChange>([
         {
@@ -1150,6 +1113,23 @@ export default function Edit_Container() {
             setErrorMsg(error.message);
             setLoadError(true);
         }
+    }
+    
+    // Load Change Log
+    {/* Changes should be in the form below and added to changeLog array
+    {
+      Date: '',
+      Time: '',
+      ContainerID: String(container_id ?? ''),
+      User: '',
+      Change: 'Edit, Location, Quantity, or SDS',
+      Old: '',
+      New: '',
+    },
+      */}
+    
+    const loadChangeLog = async () => {
+        
     }
 
     // Render Loading Screen
@@ -2788,7 +2768,7 @@ export default function Edit_Container() {
                 false
               }
             >
-              {[1, 2, 3, 4].map(
+              {filteredChangeLog.map(
                 (item, index) => (
                   <View
                     key={item}
