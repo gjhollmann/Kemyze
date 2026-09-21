@@ -1023,7 +1023,7 @@ export default function Edit_Container() {
                 setErrorMsg(error.message);
                 setLoadError(true);
             } finally {
-                setIsLoading(false);
+                setIsLoading(false)
             }
         };
         getContainer();
@@ -1134,18 +1134,35 @@ export default function Edit_Container() {
       */}
     
     const loadChangeLog = async () => {
-        setChangeLog([
-                      {
-                        Date: '',
-                        Time: '',
-                        ContainerID: String(container_id ?? ''),
-                        User: '',
-                        Type: 'Location',
-                        Change: 'Location',
-                        Old: '',
-                        New: '',
-                      },
-                      ])
+        setIsLoading(true)
+        const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?container_id=" + container_id
+        try{
+            const response = await fetch(getChangeLogURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, ChangeLog data was empty.\nURL: "+getChangeLogURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    Date: '',
+                    Time: '',
+                    ContainerID: String(container_id ?? ''),
+                    User: '',
+                    Type: 'Edit',
+                    Change: 'Edit',
+                    Old: 'Error loading',
+                    New: 'Change Log',
+                }];
+            }
+            setChangeLog(data)
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        }
     }
 
     // Render Loading Screen
