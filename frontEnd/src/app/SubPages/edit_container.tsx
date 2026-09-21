@@ -1073,7 +1073,14 @@ export default function Edit_Container() {
                 const errorText = await response.text();
                 throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
-            const data = await response.json();
+            let data = await response.json();
+            console.log(data);
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    name: "Error Loading Locations",
+                }];
+            }
             return data;
         } catch (error: any) {
             console.log(error.message);

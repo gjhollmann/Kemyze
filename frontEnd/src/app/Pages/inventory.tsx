@@ -153,6 +153,7 @@ const Inventory: React.FC = () => {
     const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
     setIsExpiringSoon(false);
     setLastUsedSearch(true);
+      setNoMoreData(false);
     setCurrentIndex(10);
     console.log(getSearchURL);
     try {
