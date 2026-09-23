@@ -3,11 +3,12 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, Http
 from common.models import Users
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
+from django.contrib.auth.hashers import check_password
 import json
 
 # Create your views here.
-
-
+"""
+Original function loginMain(...) preserved for validation. 
 def loginMain(request):
     if request.method == "GET":
         User = request.GET.get("User")
@@ -27,6 +28,38 @@ def loginMain(request):
                 return HttpResponseBadRequest("User does not exist")
     else:
         return HttpResponse("Hello from the login backend for Kemyze")
+"""
+
+# Function loginMain(...) modified to compare a passed plaintext password
+# with stored, encoded Django hash using 'check_password.'
+def loginMain(request):
+    if request.method == "GET":
+        User = request.GET.get("User")
+        Password = request.GET.get("Password")
+        if User == None and Password == None:
+            return HttpResponseBadRequest("Missing 'User' and 'Password' Parameters")
+        elif User == None:
+            return HttpResponseBadRequest("Missing 'User' Parameter")
+        elif Password == None:
+            return HttpResponseBadRequest("Missing 'Password' Parameter")
+        else:
+            try:
+                FoundUser = Users.objects.get(email=User)
+
+                if check_password(Password, FoundUser.password):
+                    data = {
+                        'userID': FoundUser.user_id,
+                        'accessLevel': FoundUser.access_level
+                    }
+                    return JsonResponse(data)
+                else: # Return a generic login error if check_password evaluates to False.
+                    return HttpResponseBadRequest("Login failed; invalid information.")
+            except Users.DoesNotExist:
+                return HttpResponseBadRequest("Login failed; invalid information.") # Reproduce generic login error message. 
+    else:
+        return HttpResponse("Hello from the login backend for Kemyze")
+# end loginMain(...)
+
 
 #This function tests to ensure the models for this app work
 def newModelTest(request):
