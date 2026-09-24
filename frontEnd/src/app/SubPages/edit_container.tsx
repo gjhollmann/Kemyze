@@ -7,16 +7,22 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
+  Button,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+
+//const BASE_URL = "https://kemyze.vercel.app/";
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49235;
 
 // Typography
 
@@ -101,6 +107,7 @@ const DAY_NAMES = [
 ];
 
 const CAS_CHARACTERS = [
+  ' ',
   '0',
   '1',
   '2',
@@ -160,6 +167,9 @@ export default function Edit_Container() {
 
   // Field state
 
+  const [chemical_name, setChemicalName] =
+    useState('Chemical Name');
+
   const [quantity, setQuantity] =
     useState('Select Status');
 
@@ -170,23 +180,56 @@ export default function Edit_Container() {
     useState('YYYY/MM/DD');
 
   const [location, setLocation] =
-    useState('Location Name');
+    useState(null);
 
   const [room, setRoom] =
-    useState('XXXX');
+    useState(null);
 
   const [cabinet, setCabinet] =
-    useState('XXXX');
+    useState(null);
 
   const [shelf, setShelf] =
-    useState('XXXX');
+    useState(null);
 
   const [sdsLocation, setSdsLocation] =
     useState('');
 
+  // Old Field States
+
+  const [old_chemical_name, setOldChemicalName] =
+    useState('Chemical Name');
+
+  const [oldQuantity, setOldQuantity] =
+    useState('Select Status');
+
+  const [oldAcquisitionDate, setOldAcquisitionDate] =
+    useState('YYYY/MM/DD');
+
+  const [oldExpirationDate, setOldExpirationDate] =
+    useState('YYYY/MM/DD');
+
+  const [oldLocation, setOldLocation] =
+    useState('Location Name');
+
+  const [oldRoom, setOldRoom] =
+    useState('XXXX');
+
+  const [oldCabinet, setOldCabinet] =
+    useState('XXXX');
+
+  const [oldShelf, setOldShelf] =
+    useState('XXXX');
+
+  const [sdsOldLocation, setOldSdsLocation] =
+    useState('');
+
+
   // CAS state
 
   const [casFirst, setCasFirst] = useState([
+    'X',
+    'X',
+    'X',
     'X',
     'X',
     'X',
@@ -199,6 +242,28 @@ export default function Edit_Container() {
   ]);
 
   const [casThird, setCasThird] = useState([
+    'Z',
+  ]);
+
+  // OLD CAS state
+
+
+  const [oldCasFirst, setOldCasFirst] = useState([
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+  ]);
+
+  const [oldCasSecond, setOldCasSecond] = useState([
+    'Y',
+    'Y',
+  ]);
+
+  const [oldCasThird, setOldCasThird] = useState([
     'Z',
   ]);
 
@@ -253,23 +318,16 @@ export default function Edit_Container() {
     },
   ];
 
-  const reviewChanges: ReviewChange[] = [
-    {
-      field: 'Quantity',
-      oldValue: '___ mL',
-      newValue: '___ mL',
-    },
-    {
-      field: 'Location',
-      oldValue: '____________',
-      newValue: '____________',
-    },
-    {
-      field: 'Cabinet',
-      oldValue: '____',
-      newValue: '____',
-    },
-  ];
+    const [reviewChanges, setReviewChanges] = useState<ReviewChange>([
+        {
+        field: 'No Changes Detected. \nExample Change shown',
+        oldValue: 'Currently Saved Value goes here',
+        newValue: 'New Value goes here',
+        },
+        ]);
+    
+
+      
 
   // Haptics
 
@@ -326,46 +384,51 @@ export default function Edit_Container() {
 
     return 'Select Option';
   };
+    
+  // State Variables for Options that are dynamic
+    
+    const [locationOptions, setLocationOptions] = useState([
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+        'X',
+      ]);
+    
+    
+    const [roomOptions, setRoomOptions] = useState(null);
+    
+    const [cabinetOptions, setCabinetOptions] = useState(null);
+    
+    const [shelfOptions, setShelfOptions] = useState(null);
+    
+    // getOptions for modules
 
   const getOptions = () => {
     if (selectorType === 'quantity') {
       return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
+        'low',
+        'medium',
+        'high',
       ];
     }
 
     if (selectorType === 'location') {
-      return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
-      ];
+      return locationOptions
     }
 
     if (selectorType === 'room') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return roomOptions
     }
 
     if (selectorType === 'cabinet') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return cabinetOptions
     }
 
     if (selectorType === 'shelf') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+      return shelfOptions
     }
 
     return [];
@@ -414,7 +477,7 @@ export default function Edit_Container() {
 
   const getCasLength = () => {
     if (casSelectorType === 'casFirst') {
-      return 4;
+      return 7;
     }
 
     if (casSelectorType === 'casSecond') {
@@ -675,14 +738,153 @@ export default function Edit_Container() {
 
   const openReviewChanges = () => {
     mediumHaptic();
-    setReviewVisible(true);
+      getChanges().then(()=> {
+          setReviewVisible(true);
+      });
   };
+    
+    const getChanges = async () => {
+        const newChanges = [];
+        if (old_chemical_name != chemical_name){
+            const newReview: ReviewChange = {
+                field: 'Chemical Name',
+                oldValue: old_chemical_name,
+                newValue: chemical_name,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldCasFirst != casFirst || oldCasSecond.join('') != casSecond.join('') || oldCasThird.join('') != casThird.join('')){
+            const newReview: ReviewChange = {
+                field: 'CAS Number',
+                oldValue: oldCasFirst.join('')+"-"+oldCasSecond.join('')+"-"+oldCasThird.join(''),
+                newValue: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join(''),
+            }
+            newChanges.push(newReview);
+        }
+        if (oldQuantity != quantity){
+            const newReview: ReviewChange = {
+                field: 'Quantity',
+                oldValue: oldQuantity,
+                newValue: quantity,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldAcquisitionDate != acquisitionDate){
+            const newReview: ReviewChange = {
+                field: 'Acquisition Date',
+                oldValue: oldAcquisitionDate,
+                newValue: acquisitionDate,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldExpirationDate != expirationDate){
+            const newReview: ReviewChange = {
+                field: 'Expiration Date',
+                oldValue: oldExpirationDate,
+                newValue: expirationDate,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldLocation != location){
+            const newReview: ReviewChange = {
+                field: 'Location',
+                oldValue: oldLocation,
+                newValue: location,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldRoom != room){
+            const newReview: ReviewChange = {
+                field: 'Room',
+                oldValue: oldRoom,
+                newValue: room,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldCabinet != cabinet){
+            const newReview: ReviewChange = {
+                field: 'Cabinet',
+                oldValue: oldCabinet,
+                newValue: cabinet,
+            }
+            newChanges.push(newReview);
+        }
+        if (oldShelf != shelf){
+            const newReview: ReviewChange = {
+                field: 'Shelf',
+                oldValue: oldShelf,
+                newValue: shelf,
+            }
+            newChanges.push(newReview);
+        }
+        setReviewChanges(newChanges);
+    }
 
   const saveReviewedChanges = () => {
     successHaptic();
     setReviewVisible(false);
-    setSavedVisible(true);
+      sendEditContainer()
+      .then(() => {
+          console.log("Save complete");
+          setSavedVisible(true);
+      })
   };
+    
+    const sendEditContainer = async () => {
+        let data = {
+                user_id: USER_TEST,
+                container_id: container_id,
+            };
+
+        // go through all state variables and add any changes
+        if (chemical_name != old_chemical_name) {
+            data = {...data, chemical_name: chemical_name}
+            }
+
+        if (casFirst!=oldCasFirst | casSecond != oldCasSecond | casThird!= oldCasThird){
+            data = {...data, cas_number: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join('')}
+            }
+        
+        if (expirationDate != oldExpirationDate){
+            data = {...data, expr_date: expirationDate.replaceAll("/","-")}
+        }
+        
+        if (acquisitionDate != oldAcquisitionDate){
+            data = {...data, acqn_date: acquisitionDate.replaceAll("/","-")}
+        }
+        
+        if (location!=oldLocation|room!=oldRoom|cabinet!=oldCabinet|shelf!=oldShelf){
+            data = {...data,
+                location: location,
+                room: room,
+                cabinet: cabinet,
+                shelf: shelf
+            }
+        }
+
+
+        try {
+            const editURL = BASE_URL + "containers/editContainer"
+            console.log("Sending edit URL: " + editURL);
+            const response = await fetch(editURL, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+            
+            if (!response.ok){
+              console.log("We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            
+        } catch (error) {
+            console.error('Error sending data:', error);
+        }
+    }
 
   const cancelReviewedChanges = () => {
     haptic();
@@ -775,6 +977,219 @@ export default function Edit_Container() {
     },
   } as any;
 
+    // Load inital data
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("Test Error Message");
+    
+    //Initial fetch
+    useEffect(() => {
+        const getContainer = async () => {
+            const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
+            try {
+                const containerResponse = await fetch(getContainerURL,
+                                                      {
+                    method: "GET",
+                })
+                
+                if (!containerResponse.ok){
+                  console.log("We are having issues");
+                  const errorText = await containerResponse.text();
+                  throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
+                }
+                
+                const data = await containerResponse.json();
+                // Handle data and set all variables
+                
+                // Field States
+                setChemicalName(data.chemical_name);
+                setOldChemicalName(data.chemical_name);
+                setQuantity(data.quantity);
+                setOldQuantity(data.quantity);
+                setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+                setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+                setExpirationDate(data.expr_date.replaceAll("-","/"));
+                setOldExpirationDate(data.expr_date.replaceAll("-","/"));
+
+                
+                // Location
+                const fullLocation = data.location.split(", ");
+                if (fullLocation.length < 4) {
+                    setLocation(fullLocation[0]);
+                    setOldLocation(fullLocation[0]);
+                    setRoom(fullLocation[1]);
+                    setOldRoom(fullLocation[1]);
+                    setCabinet(fullLocation[2]);
+                    setOldCabinet(fullLocation[2]);
+                    setShelf(fullLocation[3]);
+                    setOldShelf(fullLocation[3]);
+                } else {
+                    let index = fullLocation.length - 1;
+                    let locationInput = "";
+                    do {
+                        locationInput = locationInput + fullLocation[index--];
+                    } while (index > 4);
+                    setLocation(locationInput);
+                    setOldLocation(locationInput);
+                    setRoom(fullLocation[index]);
+                    setOldRoom(fullLocation[index]);
+                    setCabinet(fullLocation[index-1]);
+                    setOldCabinet(fullLocation[index-1]);
+                    setShelf(fullLocation[index-2]);
+                    setOldShelf(fullLocation[index-2]);
+                }
+                
+                // CAS state
+                //const casTokens = data.cas_number.split("-");
+                const casTokens = "65425-25-4".split("-");
+                let casTokenFirst = casTokens[0].split("");
+                do {
+                    casTokenFirst = ["", ...casTokenFirst];
+                } while (casTokenFirst.length<7);
+                setCasFirst(casTokenFirst);
+                setOldCasFirst(casTokenFirst);
+                setCasSecond(casTokens[1].split(""));
+                setOldCasSecond(casTokens[1].split(""));
+                setCasThird(casTokens[2].split(""));
+                setOldCasThird(casTokens[2].split(""));
+            } catch (error: any) {
+                console.log(error.message);
+                setErrorMsg(error.message);
+                setLoadError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        getContainer();
+    }, []);
+    
+    // Load Location data
+    useEffect(() => {
+        if(cabinet !== null){
+            loadShelfOptions();
+        }
+    }, [cabinet]);
+    
+    const loadShelfOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                               room:room,
+                                               cabinet:cabinet,
+                                           }
+                                           ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setShelfOptions(data.map(item => item.name));
+    }
+    
+    useEffect(() => {
+        if (room !== null){
+            loadCabinetOptions();
+        }
+    }, [room]);
+    
+    const loadCabinetOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                               room:room,
+                                           }
+                                           ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setCabinetOptions(data.map(item => item.name));
+    }
+    
+    useEffect(() => {
+        if (location !== null){
+            loadRoomOptions();
+        }
+    }, [location]);
+    
+    const loadRoomOptions = async () => {
+        const parameters = new URLSearchParams(
+                                           {
+                                               location:location,
+                                           }
+                                           ).toString();
+        const data = await loadVarLocationOptions(parameters);
+        setRoomOptions(data.map(item => item.name));
+    }
+    
+    useEffect(() => {
+        if (location !== null){
+            loadLocationOptions();
+        }
+    }, [location]);
+    
+    const loadLocationOptions = async () => {
+        const parameters = '';
+        const data = await loadVarLocationOptions(parameters);
+        setLocationOptions(data.map(item => item.name));
+    }
+    
+    
+    const loadVarLocationOptions = async (parameters) => {
+        const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
+        try{
+            const response = await fetch(getLocationChildrenURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    name: "Error Loading Locations",
+                }];
+            }
+            return data;
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        }
+    }
+
+    // Render Loading Screen
+    
+    if (isLoading) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style ={styles.center}>
+        <ActivityIndicator size="large" color="#0000ff" />
+               </View>
+        </View>
+        )
+    }
+    
+    // Rneder Error Screen
+    
+    if (loadError) {
+        return(
+        <View style={styles.screen}>
+          <Stack.Screen
+            options={{
+              headerShown: false,
+            }}
+          />
+               <View style = {styles.center}>
+               <Text style = {styles.errorText}> Error: {errorMsg} </Text>
+               <Button title = "Go Back"
+               onPress={() => router.back()}
+               />
+               </View>
+        </View>
+        )
+    }
+    
+    
   // Render
 
   return (
@@ -879,6 +1294,8 @@ export default function Edit_Container() {
                   placeholder="Chemical Name"
                   placeholderTextColor="#C9CFE9"
                   accessibilityLabel="Chemical Name"
+                  value = {chemical_name}
+                  onChangeText = {setChemicalName}
                   maxLength={255}
                 />
               </View>
@@ -3455,7 +3872,7 @@ const styles = StyleSheet.create({
   casWheelColumn: {
     flex: 1,
     maxWidth: 82,
-    minWidth: 54,
+    minWidth: 32,
     height: 250,
     borderRadius: 10,
     borderWidth: 1,
@@ -4025,5 +4442,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
+  },
+    
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  errorText: {
+    color: 'red',
+    fontSize: 16
   },
 });

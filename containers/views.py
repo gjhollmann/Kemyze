@@ -3,11 +3,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db.models import Subquery, OuterRef
-from common.models import Containers, Locations, ContainerAuditLog
+from common.models import Containers, Locations, ContainerAuditLog, Users
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
 import mimetypes
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 """
@@ -79,6 +80,9 @@ def getContainer(request):
             return JsonResponse(data)
         except Containers.DoesNotExist:
             return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
 
@@ -253,3 +257,139 @@ def getSearchRecent(request):
     else:
         return HttpResponseNotAllowed(["GET"])  
 # end def getSearchRecent    
+
+
+"""
+View to edit a container.
+Route: /containers/editContainer
+Request Variables:
+Method: POST
+Parameters:
+    user_id
+    container_id
+    key + change combos
+
+Responses:
+    Failures:
+        Status 405: Not a post request
+        Status 400: Missing user_id Paramter
+        Status 403: User does not have access level
+        Status 400: User does not exist
+        Status 400: Container does not exist
+        Status 400: Location does not exist
+        Status 500: Something broke bad
+    
+"""
+@csrf_exempt
+def editContainer(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        user_id = data.get("user_id")
+        if user_id == None:
+            return HttpResponseBadRequest("Missing 'user_id' Parameter")
+        
+        #Verify User access level
+        try:
+            FoundUser = Users.objects.get(user_id = user_id)
+            if FoundUser.access_level > 3:
+                return HttpResponseForbidden
+        except Users.DoesNotExist:
+            return HttpResponseBadRequest("User does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        # Edit container
+        try:
+            FoundContainer = Containers.objects.get(container_id=data.get("container_id"))
+            
+            if (data.get("chemical_name") != None):
+                FoundContainer.chemical_name = data.get("chemical_name")
+            if (data.get("cas_number") != None):
+                FoundContainer.cas_number = data.get("cas_number")
+            if (data.get("expr_date") != None):
+                FoundContainer.expr_date = data.get("expr_date")
+            if (data.get("acqn_date") != None):
+                FoundContainer.acqn_date = data.get("acqn_date")
+            
+            newLocation = data.get("location")
+            newRoom = data.get("room")
+            newCabinet = data.get("cabinet")
+            newShelf = data.get("shelf")
+            if (newLocation != None and newRoom != None and newCabinet != None and newShelf != None):
+                try:
+                    FoundLocation = Locations.objects.get(name=newShelf, parent__name=newCabinet, parent__parent__name=newRoom, parent__parent__parent__name=newLocation)
+                    FoundContainer.location = FoundLocation
+                except FoundLocation.DoesNotExist:
+                    return HttpResponseBadRequest("Location does not exist")
+                except Exception as e:
+                    print(e)
+                    return HttpResponseServerError(f"An unexpected error occurred: {e}")
+            FoundContainer.save()
+            
+            
+            FoundContainer.save()
+            return HttpResponse("Success")
+        except Containers.DoesNotExist:
+            print("Could not find container")
+            return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        
+        
+        
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+"""
+View to get the children of a location.
+Used to build location input options in edit container 
+Route: /containers/getLocationChildren
+Request Variables:
+Method: GET
+Parameters:
+    location
+    
+Responses:
+    Failures:
+        Status 400: Location does not exist
+        Status 500: Something broke bad
+"""
+def getLocationChildren(request):
+    if request.method == "GET":
+        location = request.GET.get("location")
+        room = request.GET.get("room")
+        cabinet = request.GET.get("cabinet")
+        shelf = request.GET.get("shelf")
+        try:
+            FoundLocation = None
+            if (shelf!=None):
+                FoundLocation = Locations.objects.filter(name=shelf, parent__name=cabinet, parent__parent__name=room, parent__parent__parent__name=location).first()
+            elif (cabinet!=None):
+                FoundLocation = Locations.objects.filter(name=cabinet, parent__name=room, parent__parent__name=location).first()
+            elif (room!=None):
+                FoundLocation = Locations.objects.filter(name=room,parent__name=location).first()
+            elif (location!=None):
+                FoundLocation = Locations.objects.get(name=location)
+            
+            childLocations = None
+            if (FoundLocation != None):
+                childLocations = Locations.objects.filter(parent=FoundLocation)
+            else:
+                childLocations = Locations.objects.filter(parent__isnull=True)
+            data = []
+            for child in childLocations:
+                data.append({
+                    'name': child.name,
+                })
+            return JsonResponse(data, safe=False)
+        except Locations.DoesNotExist:
+            return HttpResponseBadRequest("Location does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["GET"])
+
+
