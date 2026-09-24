@@ -22,13 +22,15 @@ export default function GradientButton({
   onPress,
   width = 200,
   height = 50,
+  backgroundColors = ['#2983ff', '#1b3de9'],
+  borderColors = ['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4'],
   borderRadius = 10,
   style,
   textStyle,
 }: GradientButtonProps) {
   return (
     <LinearGradient
-      colors= {['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+      colors= {borderColors as [string, string, ...string[]]}
       locations = {[0, 0.27, 0.49, 0.75, 1]}
       start= {{ x: 0, y: 0 }}
       end= {{ x: 1, y: 1 }}
@@ -48,7 +50,7 @@ export default function GradientButton({
         style = {{ flex: 1 }}
       >
         <LinearGradient
-          colors = {['#2983ff', '#1b3de9']}
+          colors = {backgroundColors as [string, string, ...string[]]}
           start = {{ x: 0, y: 0 }}
           end = {{ x: 0, y: 1 }}
           style = {[

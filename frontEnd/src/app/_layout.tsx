@@ -25,13 +25,13 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
 
-        {/* The Pages folder containing scanner, inventory, and profile */}
+        {/* The Pages folder containing scanner, inventory, and tertiaryprofilemanagement */}
         <Stack.Screen
           name="Pages"
           options={{ headerShown: false }}
         />
 
-        {/* SubPages such as add_container and edit_container */}}
+        {/* SubPages such as add_container and edit_container */}
         <Stack.Screen
           name="SubPages/add_container"
           options={{ headerShown: false }}
