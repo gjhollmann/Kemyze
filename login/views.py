@@ -31,7 +31,8 @@ def loginMain(request):
 """
 
 # Function loginMain(...) modified to compare a passed plaintext password
-# with stored, encoded Django hash using 'check_password.'
+# with stored, encoded Django hash using 'check_password.' Django in-house
+# hashing API employs SHA-256.
 def loginMain(request):
     if request.method == "GET":
         User = request.GET.get("User")
@@ -46,6 +47,7 @@ def loginMain(request):
             try:
                 FoundUser = Users.objects.get(email=User)
 
+                # Invoke check_password to compare plaintext to hash. 
                 if check_password(Password, FoundUser.password):
                     data = {
                         'userID': FoundUser.user_id,
