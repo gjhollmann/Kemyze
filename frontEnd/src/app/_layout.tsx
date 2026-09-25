@@ -44,6 +44,11 @@ export default function RootLayout() {
           name="SubPages/editprofile"
           options={{ headerShown: false }}
         />  
+        <Stack.Screen
+          name="SubPages/createprofile"
+          options={{ headerShown: false }}
+        />
+
       </Stack>
     </GestureHandlerRootView>
   );

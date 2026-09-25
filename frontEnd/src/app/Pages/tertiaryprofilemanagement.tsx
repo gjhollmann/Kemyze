@@ -494,10 +494,13 @@ export default function ManagedAccounts() {
 
                     <GradientButton
                       title="Add New"
-                      onPress={haptic}
-                      width={ACTION_BUTTON_WIDTH}
-                      height={BUTTON_HEIGHT}
-                      borderRadius={10}
+                      onPress={() => {
+                      haptic();
+                      router.push('/SubPages/createprofile');
+                    }}
+                    width={ACTION_BUTTON_WIDTH}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
                     />
                   </View>
                 </View>
