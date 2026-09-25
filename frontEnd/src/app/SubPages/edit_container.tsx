@@ -1040,8 +1040,7 @@ export default function Edit_Container() {
                 }
                 
                 // CAS state
-                //const casTokens = data.cas_number.split("-");
-                const casTokens = "65425-25-4".split("-");
+                const casTokens = data.cas_number.split("-");
                 let casTokenFirst = casTokens[0].split("");
                 do {
                     casTokenFirst = ["", ...casTokenFirst];
