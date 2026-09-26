@@ -94,7 +94,7 @@ const Inventory: React.FC = () => {
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
-    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
+    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "")+(isExpiringSoon ? "&expiringSoon=true" : "");
     console.log(queryUrl);
     try {
       const response = await fetch(queryUrl, {
@@ -138,9 +138,9 @@ const Inventory: React.FC = () => {
       });
       if (!searchResponse.ok){
         console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + response.status);
+        throw new Error("BAD TIME STATUS: " + searchResponse.status);
       }
-      const data = await response.json();
+      const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
     } catch (error: any) {
