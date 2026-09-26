@@ -4,7 +4,7 @@ import NavBar from '../components/NavBar';
 // This is the layout for all the main app screens (scanner, inventory, tertiaryprofilemanagement).
 // It tells Expo Router to use our custom NavBar instead of the default tab bar.
 export default function TabLayout() {
-  return (
+    return (
     // tabBar prop replaces the default bottom bar with our custom NavBar component
     // backBehavior="history" makes Back return to the previously visited tab
     <Tabs
@@ -19,7 +19,7 @@ export default function TabLayout() {
 
       {/* Login is in this folder but should NOT appear as a tab in the nav bar */}
       <Tabs.Screen name="login" options={{ href: null }} />
-
+    
     </Tabs>
   );
 }
