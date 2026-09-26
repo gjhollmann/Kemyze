@@ -311,6 +311,8 @@ def editContainer(request):
                 FoundContainer.expr_date = data.get("expr_date")
             if (data.get("acqn_date") != None):
                 FoundContainer.acqn_date = data.get("acqn_date")
+            if (data.get("quantity") != None):
+                FoundContainer.quantity = data.get("quantity")
             
             newLocation = data.get("location")
             newRoom = data.get("room")
@@ -326,9 +328,12 @@ def editContainer(request):
                     print(e)
                     return HttpResponseServerError(f"An unexpected error occurred: {e}")
             FoundContainer.save()
+            # Update Change log
+            FoundLog = ContainerAuditLog.objects.last()
+            FoundLog.changed_by = user_id
+            FoundLog.save()
             
-            
-            FoundContainer.save()
+            # return Success
             return HttpResponse("Success")
         except Containers.DoesNotExist:
             print("Could not find container")
@@ -393,3 +398,158 @@ def getLocationChildren(request):
         return HttpResponseNotAllowed(["GET"])
 
 
+"""
+View to get the last 20 changes of a container.
+Route: /containers/getContainerChangeLog
+Request Variables:
+Method: GET
+Parameters:
+    container_id
+    
+Responses:
+    Failures:
+        Status 400: Missing container_id
+        Status 400: Container not found
+        Status 500: Something broke bad
+"""
+def getContainerChangeLog(request):
+    if request.method == "GET":
+        container_id = request.GET.get("container_id")
+        if container_id == None:
+            return HttpResponseBadRequest("Missing 'container_id' Parameter")
+        try:
+            FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            data = []
+            for log in FoundLogs:
+                user_first_name = ''
+                user_last_name = ''
+                try:
+                    FoundUser = Users.objects.get(user_id=log.changed_by)
+                    user_first_name = FoundUser.first_name
+                    user_last_name = FoundUser.last_name
+                except Users.DoesNotExist:
+                    user_first_name = 'Tester'
+                    user_last_name = 'User'
+                old_values = log.old_values
+                new_values = log.new_values
+                
+                old_name = old_values.get("chemical_name")
+                new_name = new_values.get("chemical_name")
+                if (old_name!=new_name):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "Name",
+                    'Old': old_name,
+                    'New': new_name
+                    })
+                    
+                old_cas = old_values.get("cas_number")
+                new_cas = new_values.get("cas_number")
+                if (old_cas!=new_cas):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "CAS",
+                    'Old': old_cas,
+                    'New': new_cas
+                    })
+                
+                old_quantity = old_values.get("quantity")
+                new_quantity = new_values.get("quantity")
+                if (old_quantity!=new_quantity):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Quantity",
+                    'Change': "Quantity",
+                    'Old': old_quantity,
+                    'New': new_quantity
+                    })
+                    
+                old_acqn_date = old_values.get("acqn_date")
+                new_acqn_date = new_values.get("acqn_date")
+                if (old_acqn_date!=new_acqn_date):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "Acqn Date",
+                    'Old': old_acqn_date,
+                    'New': new_acqn_date
+                    })
+                    
+                old_expr_date = old_values.get("expr_date")
+                new_expr_date = new_values.get("expr_date")
+                if (old_acqn_date!=new_acqn_date):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Edit",
+                    'Change': "Expr Date",
+                    'Old': old_expr_date,
+                    'New': new_expr_date
+                    })
+                    
+                """
+                data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name
+                    
+                })
+                """
+                
+                old_location = ''
+                try:
+                    FoundLocation = Locations.objects.get(location_id=old_values.get("location_id"))
+                    old_location = FoundLocation.name
+                    while (FoundLocation.parent != None):
+                        FoundLocation = FoundLocation.parent
+                        old_location = FoundLocation.name + ', ' + old_location
+                except:
+                    old_location = ''
+                new_location = ''
+                try:
+                    FoundLocation = Locations.objects.get(location_id=new_values.get("location_id"))
+                    new_location = FoundLocation.name
+                    while (FoundLocation.parent != None):
+                        FoundLocation = FoundLocation.parent
+                        new_location = FoundLocation.name + ', ' + new_location
+                except:
+                    new_location = ''
+                    
+                if (old_location!=new_location):
+                    data.append({
+                    'Date': log.changed_at.date(),
+                    'Time': log.changed_at.time(),
+                    'ContainerID': container_id,
+                    'User': user_first_name + " " + user_last_name,
+                    'Type': "Location",
+                    'Change': "Location",
+                    'Old': old_location,
+                    'New': new_location
+                    })
+ 
+            return JsonResponse(data, safe=False)
+        except Containers.DoesNotExist:
+            print("Could not find container")
+            return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["GET"])
