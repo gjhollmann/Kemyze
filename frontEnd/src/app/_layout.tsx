@@ -3,6 +3,7 @@ import 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { UserProvider } from '../app/contexts/UserState';
 
 // The root layout that wraps the entire app.
 // Stack here means screens slide over each other like normal mobile navigation.
@@ -19,37 +20,39 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false }}
-        />
+      <UserProvider>
+        <Stack>
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false }}
+          />
 
-        {/* The Pages folder containing scanner, inventory, and tertiaryprofilemanagement */}
-        <Stack.Screen
-          name="Pages"
-          options={{ headerShown: false }}
-        />
+          {/* The Pages folder containing scanner, inventory, and tertiaryprofilemanagement */}
+          <Stack.Screen
+            name="Pages"
+            options={{ headerShown: false }}
+          />
 
-        {/* SubPages such as add_container, edit_container, and editprofile */}
-        <Stack.Screen
-          name="SubPages/add_container"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SubPages/edit_container"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SubPages/editprofile"
-          options={{ headerShown: false }}
-        />  
-        <Stack.Screen
-          name="SubPages/createprofile"
-          options={{ headerShown: false }}
-        />
+          {/* SubPages such as add_container, edit_container, and editprofile */}
+          <Stack.Screen
+            name="SubPages/add_container"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SubPages/edit_container"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SubPages/editprofile"
+            options={{ headerShown: false }}
+          />  
+          <Stack.Screen
+            name="SubPages/createprofile"
+            options={{ headerShown: false }}
+          />
 
-      </Stack>
+        </Stack>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 }
