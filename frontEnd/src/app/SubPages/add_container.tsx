@@ -7,6 +7,9 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  Alert,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 
 import { Stack, useRouter } from 'expo-router';
@@ -14,9 +17,13 @@ import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import * as DocumentPicker from 'expo-document-picker';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+
+const BASE_URL = "https://kemyze.vercel.app/";
+const USER_TEST = 43257; // replace with actual user ID (KM#85)
 
 // Typography
 
@@ -170,6 +177,20 @@ export default function Add_Container() {
 
   const [sdsLocation, setSdsLocation] =
     useState('');
+
+  // SDS upload state
+  
+  const [sdsFile, setSdsFile] 
+    = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  
+  const [sdsBase64, setSdsBase64] 
+    = useState('');
+
+  const [sdsUploaded, setSdsUploaded]
+    = useState(false);
+
+  const [isSdsUploading, setIsSdsUploading]
+    = useState(false);
 
   // CAS state
 
@@ -527,6 +548,103 @@ export default function Add_Container() {
     setCalendarVisible(false);
     setDateSelectorType(null);
   };
+
+  const pickSdsFile = async () => {
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/pdf',
+          copyToCacheDirectory: true,
+          multiple: false,
+        });
+   
+        if (result.canceled || !result.assets || result.assets.length === 0) {
+          return;
+        }
+   
+        const asset = result.assets[0];
+   
+        // Client-side PDF check
+        const looksLikePdf =
+          (asset.mimeType && asset.mimeType === 'application/pdf') ||
+          asset.name?.toLowerCase().endsWith('.pdf');
+   
+        if (!looksLikePdf) {
+          Alert.alert('Please select a PDF file for the SDS.');
+          return;
+        }
+   
+        console.log(`[SDS] File Selected: ${asset.name ?? asset.uri}`);
+        setSdsFile(asset);
+        setSdsLocation(asset.name ?? asset.uri);
+        // A newly picked file hasn't been sent to the backend yet.
+        setSdsUploaded(false);
+        setSdsBase64('');
+      } catch (error: any) {
+        console.log(error.message);
+        Alert.alert('Could not open the file picker.');
+      }
+    };
+  
+    // function to handle SDS file upload (sends PDF file to backend for validation and conversion to base64)
+    const uploadSdsFile = async () => {
+      if (!sdsFile) {
+        Alert.alert('Please locate an SDS PDF before importing.');
+        return;
+      }
+   
+      setIsSdsUploading(true);
+   
+      try {
+        const formData = new FormData();
+        formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+        // No container_id yet - this container doesn't exist in the
+        // database until Save actually creates it (see handleSaveContainer).
+   
+        if (Platform.OS === 'web') {
+          // On web, DocumentPicker gives us a File/Blob directly under `file`.
+          const response = await fetch(sdsFile.uri);
+          const blob = await response.blob();
+          formData.append('sds_file', blob, sdsFile.name ?? 'sds.pdf');
+        } 
+        else {
+          formData.append('sds_file', {
+            uri: sdsFile.uri,
+            name: sdsFile.name ?? 'sds.pdf',
+            type: sdsFile.mimeType ?? 'application/pdf',
+          } as any);
+        }
+   
+        const uploadURL = BASE_URL + "containers/uploadSDS";
+        const uploadResponse = await fetch(uploadURL, {
+          method: 'POST',
+          body: formData,
+        });
+   
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          if (uploadResponse.status === 403) {
+            Alert.alert('Access Denied', "You don't have permission to upload SDS documents.");
+          } else if (uploadResponse.status === 415) {
+            Alert.alert('Invalid File. That file is not a valid PDF.');
+          } else {
+            Alert.alert('Upload Failed. The SDS could not be uploaded. Please try again.');
+          }
+          throw new Error("BAD TIME STATUS: " + uploadResponse.status + "\nError Reason: " + errorText);
+        }
+   
+        const data = await uploadResponse.json();
+        // Backend returns the base64 blob 
+        setSdsBase64(data.sds_base64 ?? '');
+        setSdsUploaded(true);
+      } 
+      catch (error: any) {
+        console.log(error.message);
+      } 
+      finally {
+        setIsSdsUploading(false);
+      }
+    };
 
   // Save flow
 
@@ -1155,24 +1273,35 @@ export default function Add_Container() {
                 </Text>
 
                 <View style={styles.sdsRow}>
-                  <TextInput
-                    style={[
-                      styles.input,
+                  <Pressable
+                    onPress={pickSdsFile}
+                    disabled={isSdsUploading}
+                    accessibilityRole="button"
+                    accessibilityLabel="Locate SDS PDF file"
+                    style={({ pressed }) => [
+                      styles.selectInput,
                       styles.sdsInput,
+                      pressed && styles.selectPressed,
                     ]}
-                    placeholder="File Location"
-                    placeholderTextColor="#C9CFE9"
-                    accessibilityLabel="SDS File Location"
-                    value={sdsLocation}
-                    onChangeText={setSdsLocation}
-                  />
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.selectText,
+                        !sdsLocation && styles.placeholderText,
+                      ]}
+                    >
+                      {sdsLocation || 'Tap to locate PDF file'}
+                    </Text>
+                  </Pressable>
 
                   <GradientButton
-                      title="Import"
-                      onPress={haptic}
-                      width={84}
+                      title={isSdsUploading ? '...' : sdsUploaded ? 'Uploaded ✓' : 'Import'}
+                      onPress={uploadSdsFile}
+                      width={sdsUploaded ? 108 : 84}
                       height={44}
                       borderRadius={10}
+                      disabled={!sdsFile || isSdsUploading || sdsUploaded}
                     />
                 </View>
               </View>
@@ -2996,5 +3125,12 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 18,
+  },
+
+  errorText: {
+    color: '#FF6B6B',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.label,
+    marginTop: 6,
   },
 });
