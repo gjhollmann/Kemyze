@@ -10,4 +10,5 @@ urlpatterns = [
     path('getLocationChildren', views.getLocationChildren,name='getLocationChildren'),
     path('', views.containersMain, name='containersMain'),
     path("uploadSDS", views.uploadSDS, name="uploadSDS"),
+    path("createContainer", views.createContainer, name="createContainer"),
 ]
