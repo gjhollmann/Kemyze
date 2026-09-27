@@ -9,6 +9,7 @@ import json
 import base64
 import mimetypes
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseForbidden, HttpResponseServerError
 
 # Create your views here.
 """
@@ -392,4 +393,90 @@ def getLocationChildren(request):
     else:
         return HttpResponseNotAllowed(["GET"])
 
-
+"""
+View to upload an SDS PDF for a container.
+Route: /containers/uploadSDS
+Request Variables:
+Method: POST (multipart/form-data)
+Parameters:
+    user_id       - required
+    container_id  - optional. Present when attaching to an existing
+                    container (Edit Container flow). Absent when the
+                    container hasn't been created yet (Add Container flow) -
+                    in that case the base64 is just handed back so the
+                    client can include it when it does create the container.
+    sds_file      - required. The PDF itself.
+ 
+Response:
+    data = {
+        'success': True,
+        'sds_base64'  (base64-encoded string of the PDF, matches the same
+                       encoding already used for Containers.sds_sheet)
+    }
+ 
+Failures:
+    Status 405: Not a POST request
+    Status 400: Missing 'user_id' Parameter
+    Status 400: Missing 'sds_file' Parameter
+    Status 400: User does not exist
+    Status 403: User does not have access level
+    Status 400: Container does not exist (only checked when container_id given)
+    Status 415: File is not a valid PDF
+    Status 500: Something broke bad
+"""
+@csrf_exempt
+def uploadSDS(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+ 
+    user_id = request.POST.get("user_id")
+    container_id = request.POST.get("container_id")
+    sds_file = request.FILES.get("sds_file")
+ 
+    if user_id is None:
+        return HttpResponseBadRequest("Missing 'user_id' Parameter")
+    if not sds_file:
+        return HttpResponseBadRequest("Missing 'sds_file' Parameter")
+ 
+    # Verify user access level (same pattern as editContainer)
+    # Change this if you want to allow other access levels to upload SDS files.
+    try:
+        FoundUser = Users.objects.get(user_id=user_id)
+        if FoundUser.access_level > 3:
+            return HttpResponseForbidden("User does not have permission to upload SDS documents")
+    except Users.DoesNotExist:
+        return HttpResponseBadRequest("User does not exist")
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+ 
+    # PDF file validation by checking magic bytes.
+    # stops a renamed non-PDF from getting through.
+    file_bytes = sds_file.read()
+    reported_pdf_mime = sds_file.content_type == "application/pdf"
+    if not reported_pdf_mime or file_bytes[:4] != b"%PDF":
+        return HttpResponse("Uploaded file is not a valid PDF", status=415)
+ 
+    # Same encoding Containers.sds_sheet uses
+    # raw base64 bytes, since sds_sheet is a BinaryField.
+    encoded = base64.b64encode(file_bytes)
+ 
+    # Only attach directly when we already have a real container row
+    # (the Edit Container flow). The Add Container flow doesn't have a
+    # container yet, so there's nothing to attach to until it's created.
+    if container_id:
+        try:
+            FoundContainer = Containers.objects.get(container_id=container_id)
+            FoundContainer.sds_sheet = encoded
+            FoundContainer.save()
+        except Containers.DoesNotExist:
+            return HttpResponseBadRequest("Container does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+ 
+    data = {
+        "success": True,
+        "sds_base64": encoded.decode("utf-8"),
+    }
+    return JsonResponse(data)
