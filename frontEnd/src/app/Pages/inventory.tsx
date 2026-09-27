@@ -489,7 +489,7 @@ const Inventory: React.FC = () => {
               ]}
               onPress={() => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
-                if (tab === 'ADD NEW') setIsAddModalVisible(true);
+                if (tab === 'ADD NEW') router.push('../SubPages/add_container');
                 if (tab === 'SHOW ALL') onFilterPress();
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
                 if (tab === 'SHOW LOW') setShowLow(!showLow);
