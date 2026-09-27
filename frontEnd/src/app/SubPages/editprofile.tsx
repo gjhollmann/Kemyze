@@ -7,23 +7,17 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
-  Alert,
-  Platform,
-  ActivityIndicator,
 } from 'react-native';
 
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import * as DocumentPicker from 'expo-document-picker';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
-
-const BASE_URL = "https://kemyze.vercel.app/";
-const USER_TEST = 43257; // replace with actual user ID (KM#85)
 
 // Typography
 
@@ -49,24 +43,21 @@ const FONT_SIZE = Object.freeze({
 // Types
 
 type SelectorType =
-  | 'quantity'
   | 'location'
-  | 'room'
-  | 'cabinet'
-  | 'shelf'
+  | 'role'
   | null;
 
-type DateSelectorType =
-  | 'acquisitionDate'
-  | 'expirationDate'
+type PhoneSelectorType =
+  | 'phoneArea'
+  | 'phonePrefix'
+  | 'phoneLine'
   | null;
 
-type CasSelectorType =
-  | 'casFirst'
-  | 'casSecond'
-  | 'casThird'
+type HistoryType =
+  | 'Edit'
+  | 'Location'
+  | 'Role'
   | null;
-
 
 type ReviewChange = {
   field: string;
@@ -74,34 +65,42 @@ type ReviewChange = {
   newValue: string;
 };
 
+type ProfileValues = {
+  Name: string;
+  'User ID': string;
+  Location: string;
+  'Phone Number': string;
+  Email: string;
+  Role: string;
+  Password: string;
+};
+
+type ChangeLogEntry = {
+  Date: string;
+  Time: string;
+  KemyzeID: string;
+  User: string;
+  Change: Exclude<HistoryType, null>;
+  Old: string;
+  New: string;
+};
+
 // Constants
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+const LOCATION_OPTIONS = [
+  'Sacramento Lab',
+  'Davis Lab',
+  'Folsom Lab',
+  'Elk Grove Lab',
 ];
 
-const DAY_NAMES = [
-  'Sun',
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
+const ROLE_OPTIONS = [
+  'Primary',
+  'Secondary',
+  'Tertiary',
 ];
 
-const CAS_CHARACTERS = [
+const PHONE_DIGITS = [
   '0',
   '1',
   '2',
@@ -114,27 +113,77 @@ const CAS_CHARACTERS = [
   '9',
 ];
 
+const HISTORY_FILTERS = [
+  'Edit',
+  'Location',
+  'Role',
+];
+
+const EMPTY_PROFILE: ProfileValues = {
+  Name: '',
+  'User ID': '',
+  Location: 'Location Name',
+  'Phone Number': 'XXX - XXX - XXXX',
+  Email: '',
+  Role: 'Role',
+  Password: '',
+};
+
 const PANEL_GRADIENT: [string, string] = [
   'rgba(1, 8, 37, 0.74)',
   'rgba(1, 8, 37, 0.74)',
 ];
 
+// Layout
+
+const NAV_BAR_HEIGHT = 76;
 
 // Screen
 
-export default function Add_Container() {
+export default function Edit_Profile() {
+  const { user_id } = useLocalSearchParams();
   const router = useRouter();
 
   const { width, height } = useWindowDimensions();
 
+  // Safe area
+
+  const insets = useSafeAreaInsets();
+
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
+
+  const pagePadding =
+    isSmallScreen
+      ? 14
+      : isLandscape
+        ? 24
+        : 22;
+
+  const pageMaxWidth =
+    isLandscape
+      ? 980
+      : 520;
+
+  const paddingLeft = Math.max(pagePadding, insets.left + 8);
+  const paddingRight = Math.max(pagePadding, insets.right + 8);
+
+  const paddingTop =
+    insets.top +
+    (isLandscape
+      ? 8
+      : 12);
+
+  // NavBar spacing
+
+  const paddingBottom = NAV_BAR_HEIGHT + (insets.bottom || 14) + 10;
 
   // Modal state
 
   const [selectorVisible, setSelectorVisible] = useState(false);
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const [casSelectorVisible, setCasSelectorVisible] = useState(false);
+  const [phoneSelectorVisible, setPhoneSelectorVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [fieldHistoryVisible, setFieldHistoryVisible] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
@@ -144,101 +193,141 @@ export default function Add_Container() {
   const [selectorType, setSelectorType] =
     useState<SelectorType>(null);
 
-  const [dateSelectorType, setDateSelectorType] =
-    useState<DateSelectorType>(null);
+  const [phoneSelectorType, setPhoneSelectorType] =
+    useState<PhoneSelectorType>(null);
 
-  const [casSelectorType, setCasSelectorType] =
-    useState<CasSelectorType>(null);
+  const [historyFilter, setHistoryFilter] =
+    useState('Edit');
 
-
+  const [fieldHistoryType, setFieldHistoryType] =
+    useState<HistoryType>(null);
 
   // Field state
 
-  const [quantity, setQuantity] =
-    useState('Select Status');
+  const [name, setName] =
+    useState('');
 
-  const [acquisitionDate, setAcquisitionDate] =
-    useState('YYYY/MM/DD');
-
-  const [expirationDate, setExpirationDate] =
-    useState('YYYY/MM/DD');
+  const [userId, setUserId] =
+    useState('');
 
   const [location, setLocation] =
     useState('Location Name');
 
-  const [room, setRoom] =
-    useState('XXXX');
-
-  const [cabinet, setCabinet] =
-    useState('XXXX');
-
-  const [shelf, setShelf] =
-    useState('XXXX');
-
-  const [sdsLocation, setSdsLocation] =
+  const [email, setEmail] =
     useState('');
 
-  // SDS upload state
-  
-  const [sdsFile, setSdsFile] 
-    = useState<DocumentPicker.DocumentPickerAsset | null>(null);
-  
-  const [sdsBase64, setSdsBase64] 
-    = useState('');
+  const [role, setRole] =
+    useState('Role');
 
-  const [sdsUploaded, setSdsUploaded]
-    = useState(false);
+  const [password, setPassword] =
+    useState('');
 
-  const [isSdsUploading, setIsSdsUploading]
-    = useState(false);
+  // Saved state
 
-  // CAS state
+  const [savedProfile, setSavedProfile] =
+    useState<ProfileValues>(EMPTY_PROFILE);
 
-  const [casFirst, setCasFirst] = useState([
-    'X',
+  // Phone state
+
+  const [phoneArea, setPhoneArea] = useState([
     'X',
     'X',
     'X',
   ]);
 
-  const [casSecond, setCasSecond] = useState([
-    'Y',
-    'Y',
+  const [phonePrefix, setPhonePrefix] = useState([
+    'X',
+    'X',
+    'X',
   ]);
 
-  const [casThird, setCasThird] = useState([
-    'Z',
+  const [phoneLine, setPhoneLine] = useState([
+    'X',
+    'X',
+    'X',
+    'X',
   ]);
-
-  // Calendar state
-
-  const currentDate = new Date();
-
-  const [calendarMonth, setCalendarMonth] =
-    useState(currentDate.getMonth());
-
-  const [calendarYear, setCalendarYear] =
-    useState(currentDate.getFullYear());
 
   // Placeholder data
 
-  const reviewChanges: ReviewChange[] = [
+  const changeLog: ChangeLogEntry[] = [
     {
-      field: 'Quantity',
-      oldValue: '___ mL',
-      newValue: '___ mL',
+      Date: '',
+      Time: '',
+      KemyzeID: String(user_id ?? ''),
+      User: '',
+      Change: 'Edit',
+      Old: '',
+      New: '',
     },
     {
-      field: 'Location',
-      oldValue: '____________',
-      newValue: '____________',
+      Date: '',
+      Time: '',
+      KemyzeID: String(user_id ?? ''),
+      User: '',
+      Change: 'Location',
+      Old: '',
+      New: '',
     },
     {
-      field: 'Cabinet',
-      oldValue: '____',
-      newValue: '____',
+      Date: '',
+      Time: '',
+      KemyzeID: String(user_id ?? ''),
+      User: '',
+      Change: 'Role',
+      Old: '',
+      New: '',
     },
   ];
+
+  // Review changes
+
+  const phoneNumber =
+    `${phoneArea.join('')} - ${phonePrefix.join('')} - ${phoneLine.join('')}`;
+
+  const currentProfile: ProfileValues = {
+    Name: name.trim(),
+    'User ID': userId.trim(),
+    Location: location,
+    'Phone Number': phoneNumber,
+    Email: email.trim(),
+    Role: role,
+    Password: password,
+  };
+
+  const getReviewValue = (
+    field: keyof ProfileValues,
+    value: string
+  ) => {
+    if (value === EMPTY_PROFILE[field]) {
+      return '________';
+    }
+
+    if (field === 'Password') {
+      return '••••••••';
+    }
+
+    return value;
+  };
+
+  const reviewChanges: ReviewChange[] =
+    (Object.keys(currentProfile) as (keyof ProfileValues)[])
+      .filter(
+        (field) =>
+          currentProfile[field] !==
+          savedProfile[field]
+      )
+      .map((field) => ({
+        field,
+        oldValue: getReviewValue(
+          field,
+          savedProfile[field]
+        ),
+        newValue: getReviewValue(
+          field,
+          currentProfile[field]
+        ),
+      }));
 
   // Haptics
 
@@ -273,68 +362,24 @@ export default function Add_Container() {
   };
 
   const getSelectorTitle = () => {
-    if (selectorType === 'quantity') {
-      return 'Select Quantity';
-    }
-
     if (selectorType === 'location') {
       return 'Select Location';
     }
 
-    if (selectorType === 'room') {
-      return 'Select Room';
-    }
-
-    if (selectorType === 'cabinet') {
-      return 'Select Cabinet';
-    }
-
-    if (selectorType === 'shelf') {
-      return 'Select Shelf';
+    if (selectorType === 'role') {
+      return 'Select Role';
     }
 
     return 'Select Option';
   };
 
   const getOptions = () => {
-    if (selectorType === 'quantity') {
-      return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
-      ];
-    }
-
     if (selectorType === 'location') {
-      return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
-      ];
+      return LOCATION_OPTIONS;
     }
 
-    if (selectorType === 'room') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
-    }
-
-    if (selectorType === 'cabinet') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
-    }
-
-    if (selectorType === 'shelf') {
-      return [
-        'XXXX',
-        'XXXX XXXX',
-        'XXXX XXXX XXXX',
-      ];
+    if (selectorType === 'role') {
+      return ROLE_OPTIONS;
     }
 
     return [];
@@ -343,308 +388,161 @@ export default function Add_Container() {
   const selectOption = (value: string) => {
     haptic();
 
-    if (selectorType === 'quantity') {
-      setQuantity(value);
-    }
-
     if (selectorType === 'location') {
       setLocation(value);
     }
 
-    if (selectorType === 'room') {
-      setRoom(value);
-    }
-
-    if (selectorType === 'cabinet') {
-      setCabinet(value);
-    }
-
-    if (selectorType === 'shelf') {
-      setShelf(value);
+    if (selectorType === 'role') {
+      setRole(value);
     }
 
     setSelectorVisible(false);
     setSelectorType(null);
   };
 
-  // CAS selector
+  // Phone number selector
 
-  const openCasSelector = (type: CasSelectorType) => {
+  const openPhoneSelector = (type: PhoneSelectorType) => {
     haptic();
-    setCasSelectorType(type);
-    setCasSelectorVisible(true);
+    setPhoneSelectorType(type);
+    setPhoneSelectorVisible(true);
   };
 
-  const closeCasSelector = () => {
+  const closePhoneSelector = () => {
     haptic();
-    setCasSelectorVisible(false);
-    setCasSelectorType(null);
+    setPhoneSelectorVisible(false);
+    setPhoneSelectorType(null);
   };
 
-  const getCasLength = () => {
-    if (casSelectorType === 'casFirst') {
+  const getPhoneLength = () => {
+    if (phoneSelectorType === 'phoneLine') {
       return 4;
     }
 
-    if (casSelectorType === 'casSecond') {
-      return 2;
-    }
-
-    return 1;
+    return 3;
   };
 
-  const getCasValue = () => {
-    if (casSelectorType === 'casFirst') {
-      return casFirst;
+  const getPhoneValue = () => {
+    if (phoneSelectorType === 'phoneArea') {
+      return phoneArea;
     }
 
-    if (casSelectorType === 'casSecond') {
-      return casSecond;
+    if (phoneSelectorType === 'phonePrefix') {
+      return phonePrefix;
     }
 
-    return casThird;
+    return phoneLine;
   };
 
-  const selectCasCharacter = (
+  const selectPhoneDigit = (
     columnIndex: number,
     value: string
   ) => {
     haptic();
 
-    if (casSelectorType === 'casFirst') {
-      const updated = [...casFirst];
+    if (phoneSelectorType === 'phoneArea') {
+      const updated = [...phoneArea];
       updated[columnIndex] = value;
-      setCasFirst(updated);
+      setPhoneArea(updated);
     }
 
-    if (casSelectorType === 'casSecond') {
-      const updated = [...casSecond];
+    if (phoneSelectorType === 'phonePrefix') {
+      const updated = [...phonePrefix];
       updated[columnIndex] = value;
-      setCasSecond(updated);
+      setPhonePrefix(updated);
     }
 
-    if (casSelectorType === 'casThird') {
-      setCasThird([value]);
+    if (phoneSelectorType === 'phoneLine') {
+      const updated = [...phoneLine];
+      updated[columnIndex] = value;
+      setPhoneLine(updated);
     }
   };
 
-  // Calendar
+  // History
 
-  const openCalendar = (type: DateSelectorType) => {
+  const openHistory = (
+    filter: string = 'Edit'
+  ) => {
     haptic();
-    setDateSelectorType(type);
-    setCalendarVisible(true);
+    setHistoryFilter(filter);
+    setHistoryVisible(true);
   };
 
-  const closeCalendar = () => {
+  const closeHistory = () => {
     haptic();
-    setCalendarVisible(false);
-    setDateSelectorType(null);
+    setHistoryVisible(false);
   };
 
-  const previousMonth = () => {
+  const openFieldHistory = (
+    type: HistoryType
+  ) => {
     haptic();
+    setFieldHistoryType(type);
+    setHistoryVisible(false);
+    setFieldHistoryVisible(true);
+  };
 
-    if (calendarMonth === 0) {
-      setCalendarMonth(11);
-      setCalendarYear(
-        (year) => year - 1
-      );
-      return;
+  const closeFieldHistory = () => {
+    haptic();
+    setFieldHistoryVisible(false);
+    setFieldHistoryType(null);
+  };
+
+  const returnToHistory = () => {
+    haptic();
+    setFieldHistoryVisible(false);
+    setFieldHistoryType(null);
+    setHistoryVisible(true);
+  };
+
+  const getFieldHistoryTitle = () => {
+    if (fieldHistoryType === 'Edit') {
+      return 'Profile Edit History';
     }
 
-    setCalendarMonth(
-      (month) => month - 1
+    if (fieldHistoryType === 'Location') {
+      return 'Location History';
+    }
+
+    if (fieldHistoryType === 'Role') {
+      return 'Role History';
+    }
+
+    return 'History';
+  };
+
+  const getFieldHistoryValue = (
+    index: number
+  ) => {
+    if (fieldHistoryType === 'Edit') {
+      return `Example ${index + 1}`;
+    }
+
+    if (fieldHistoryType === 'Location') {
+      return `Example ${index + 1}`;
+    }
+
+    if (fieldHistoryType === 'Role') {
+      return `Example ${index + 1}`;
+    }
+
+    return '________';
+  };
+
+  const selectHistoryFilter = (
+    filter: string
+  ) => {
+    haptic();
+    setHistoryFilter(filter);
+  };
+
+  const filteredChangeLog =
+    changeLog.filter(
+      (item) =>
+        item.Change ===
+        historyFilter
     );
-  };
-
-  const nextMonth = () => {
-    haptic();
-
-    if (calendarMonth === 11) {
-      setCalendarMonth(0);
-      setCalendarYear(
-        (year) => year + 1
-      );
-      return;
-    }
-
-    setCalendarMonth(
-      (month) => month + 1
-    );
-  };
-
-  const getCalendarDays = () => {
-    const firstDay =
-      new Date(
-        calendarYear,
-        calendarMonth,
-        1
-      ).getDay();
-
-    const numberOfDays =
-      new Date(
-        calendarYear,
-        calendarMonth + 1,
-        0
-      ).getDate();
-
-    const days: Array<number | null> = [];
-
-    for (
-      let index = 0;
-      index < firstDay;
-      index += 1
-    ) {
-      days.push(null);
-    }
-
-    for (
-      let day = 1;
-      day <= numberOfDays;
-      day += 1
-    ) {
-      days.push(day);
-    }
-
-    while (
-      days.length % 7 !== 0
-    ) {
-      days.push(null);
-    }
-
-    return days;
-  };
-
-  const selectDate = (day: number) => {
-    haptic();
-
-    const month = String(
-      calendarMonth + 1
-    ).padStart(2, '0');
-
-    const date = String(day).padStart(
-      2,
-      '0'
-    );
-
-    const value =
-      `${calendarYear}/${month}/${date}`;
-
-    if (
-      dateSelectorType ===
-      'acquisitionDate'
-    ) {
-      setAcquisitionDate(value);
-    }
-
-    if (
-      dateSelectorType ===
-      'expirationDate'
-    ) {
-      setExpirationDate(value);
-    }
-
-    setCalendarVisible(false);
-    setDateSelectorType(null);
-  };
-
-  const pickSdsFile = async () => {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: 'application/pdf',
-          copyToCacheDirectory: true,
-          multiple: false,
-        });
-   
-        if (result.canceled || !result.assets || result.assets.length === 0) {
-          return;
-        }
-   
-        const asset = result.assets[0];
-   
-        // Client-side PDF check
-        const looksLikePdf =
-          (asset.mimeType && asset.mimeType === 'application/pdf') ||
-          asset.name?.toLowerCase().endsWith('.pdf');
-   
-        if (!looksLikePdf) {
-          Alert.alert('Please select a PDF file for the SDS.');
-          return;
-        }
-   
-        console.log(`[SDS] File Selected: ${asset.name ?? asset.uri}`);
-        setSdsFile(asset);
-        setSdsLocation(asset.name ?? asset.uri);
-        // A newly picked file hasn't been sent to the backend yet.
-        setSdsUploaded(false);
-        setSdsBase64('');
-      } catch (error: any) {
-        console.log(error.message);
-        Alert.alert('Could not open the file picker.');
-      }
-    };
-  
-    // function to handle SDS file upload (sends PDF file to backend for validation and conversion to base64)
-    const uploadSdsFile = async () => {
-      if (!sdsFile) {
-        Alert.alert('Please locate an SDS PDF before importing.');
-        return;
-      }
-   
-      setIsSdsUploading(true);
-   
-      try {
-        const formData = new FormData();
-        formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
-        // No container_id yet - this container doesn't exist in the
-        // database until Save actually creates it (see handleSaveContainer).
-   
-        if (Platform.OS === 'web') {
-          // On web, DocumentPicker gives us a File/Blob directly under `file`.
-          const response = await fetch(sdsFile.uri);
-          const blob = await response.blob();
-          formData.append('sds_file', blob, sdsFile.name ?? 'sds.pdf');
-        } 
-        else {
-          formData.append('sds_file', {
-            uri: sdsFile.uri,
-            name: sdsFile.name ?? 'sds.pdf',
-            type: sdsFile.mimeType ?? 'application/pdf',
-          } as any);
-        }
-   
-        const uploadURL = BASE_URL + "containers/uploadSDS";
-        const uploadResponse = await fetch(uploadURL, {
-          method: 'POST',
-          body: formData,
-        });
-   
-
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          if (uploadResponse.status === 403) {
-            Alert.alert('Access Denied', "You don't have permission to upload SDS documents.");
-          } else if (uploadResponse.status === 415) {
-            Alert.alert('Invalid File. That file is not a valid PDF.');
-          } else {
-            Alert.alert('Upload Failed. The SDS could not be uploaded. Please try again.');
-          }
-          throw new Error("BAD TIME STATUS: " + uploadResponse.status + "\nError Reason: " + errorText);
-        }
-   
-        const data = await uploadResponse.json();
-        // Backend returns the base64 blob 
-        setSdsBase64(data.sds_base64 ?? '');
-        setSdsUploaded(true);
-      } 
-      catch (error: any) {
-        console.log(error.message);
-      } 
-      finally {
-        setIsSdsUploading(false);
-      }
-    };
 
   // Save flow
 
@@ -655,6 +553,7 @@ export default function Add_Container() {
 
   const saveReviewedChanges = () => {
     successHaptic();
+    setSavedProfile(currentProfile);
     setReviewVisible(false);
     setSavedVisible(true);
   };
@@ -678,7 +577,7 @@ export default function Add_Container() {
   // Navigation
 
   const navState = {
-    index: 1,
+    index: 2,
 
     routes: [
       {
@@ -760,573 +659,533 @@ export default function Add_Container() {
         }}
       />
 
-      <ScrollView
-        style={styles.pageScroll}
-        contentContainerStyle={[
-          styles.pageContent,
+      <View
+        style={[
+          styles.page,
           {
-            paddingHorizontal:
-              isSmallScreen
-                ? 14
-                : isLandscape
-                  ? 24
-                  : 22,
-
-            paddingTop:
-              isLandscape
-                ? 8
-                : 12,
-
-            paddingBottom:
-              isLandscape
-                ? 110
-                : 135,
+            paddingLeft,
+            paddingRight,
+            paddingTop,
+            paddingBottom,
           },
         ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
         <View
           style={[
             styles.pageWidth,
             {
-              maxWidth:
-                isLandscape
-                  ? 980
-                  : 520,
+              maxWidth: pageMaxWidth,
             },
           ]}
         >
-          {/* Back */}
-          <Pressable
-            onPress={() => {
-              haptic();
-              router.back();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed &&
-                styles.buttonPressed,
-            ]}
+          {/* Back and Title */}
+          <View
+            style={
+              isLandscape
+                ? styles.headerRow
+                : undefined
+            }
           >
-            <Text style={styles.backText}>
-              ‹ Back
-            </Text>
-          </Pressable>
-
-          {/* Title */}
-          <Text style={styles.title}>
-            Add Container
-          </Text>
-
-          {/* Container Information */}
-          <View style={styles.boxGlow}>
-            <LinearGradient
-              colors={PANEL_GRADIENT}
-              start={{
-                x: 0,
-                y: 0,
+            <Pressable
+              onPress={() => {
+                haptic();
+                router.back();
               }}
-              end={{
-                x: 1,
-                y: 1,
-              }}
-              style={[
-                styles.box,
-                {
-                  paddingHorizontal:
-                    isSmallScreen
-                      ? 10
-                      : 13,
-                },
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed &&
+                  styles.buttonPressed,
               ]}
             >
-              {/* Name */}
-              <View style={styles.field}>
-                <Text style={styles.label}>
-                  Name
-                </Text>
+              <Text style={styles.backText}>
+                ‹ Back
+              </Text>
+            </Pressable>
 
-                <TextInput
-                  style={styles.input}
-                  placeholder="Chemical Name"
-                  placeholderTextColor="#C9CFE9"
-                  accessibilityLabel="Chemical Name"
-                  maxLength={255}
-                />
-              </View>
+            <Text
+              style={[
+                styles.title,
+                isLandscape && styles.titleInRow,
+              ]}
+            >
+              Edit Profile
+            </Text>
 
-              {/* CAS + Quantity */}
-              <View style={styles.row}>
-                <View style={styles.casSection}>
-                  <Text style={styles.label}>
-                    CAS Number
-                  </Text>
+            {/* Title spacer */}
+            {isLandscape && (
+              <View style={styles.backSpacer} />
+            )}
+          </View>
 
-                  <View style={styles.casRow}>
-                    <Pressable
-                      onPress={() =>
-                        openCasSelector(
-                          'casFirst'
-                        )
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Select CAS Number first section"
-                      style={({ pressed }) => [
-                        styles.casButton,
-                        styles.casLarge,
-                        pressed &&
-                          styles.selectPressed,
-                      ]}
-                    >
-                      <Text
-                        style={
-                          styles.casButtonText
-                        }
-                      >
-                        {casFirst.join('')}
-                      </Text>
-                    </Pressable>
+          <ScrollView
+            style={styles.pageScroll}
+            contentContainerStyle={
+              styles.pageContent
+            }
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Profile Information */}
+            <View style={styles.boxGlow}>
+              <LinearGradient
+                colors={PANEL_GRADIENT}
+                start={{
+                  x: 0,
+                  y: 0,
+                }}
+                end={{
+                  x: 1,
+                  y: 1,
+                }}
+                style={[
+                  styles.box,
+                  {
+                    paddingHorizontal:
+                      isSmallScreen
+                        ? 10
+                        : 13,
+                  },
+                ]}
+              >
+                {/* Name + User ID */}
+                <View
+                  style={
+                    isLandscape
+                      ? styles.fieldRow
+                      : undefined
+                  }
+                >
+                  {/* Name */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      Name
+                    </Text>
 
-                    <Text style={styles.dash}>
-                      -
+                    <TextInput
+                      style={styles.input}
+                      value={name}
+                      onChangeText={setName}
+                      placeholder="Profile Name"
+                      placeholderTextColor="#C9CFE9"
+                      accessibilityLabel="Profile Name"
+                      maxLength={255}
+                    />
+                  </View>
+
+                  {/* User ID */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      User ID
+                    </Text>
+
+                    <TextInput
+                      style={styles.input}
+                      value={userId}
+                      onChangeText={setUserId}
+                      placeholder="User ID"
+                      placeholderTextColor="#C9CFE9"
+                      accessibilityLabel="User ID"
+                      maxLength={255}
+                    />
+                  </View>
+                </View>
+
+                {/* Location + Phone Number */}
+                <View
+                  style={
+                    isLandscape
+                      ? styles.fieldRow
+                      : undefined
+                  }
+                >
+                  {/* Location */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      Location
                     </Text>
 
                     <Pressable
                       onPress={() =>
-                        openCasSelector(
-                          'casSecond'
+                        openSelector(
+                          'location'
                         )
                       }
                       accessibilityRole="button"
-                      accessibilityLabel="Select CAS Number second section"
+                      accessibilityLabel="Select location"
                       style={({ pressed }) => [
-                        styles.casButton,
-                        styles.casSmall,
+                        styles.selectInput,
                         pressed &&
                           styles.selectPressed,
                       ]}
                     >
                       <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.selectText,
+                          location ===
+                            'Location Name' &&
+                            styles.placeholderText,
+                        ]}
+                      >
+                        {location}
+                      </Text>
+
+                      <Text
                         style={
-                          styles.casButtonText
+                          styles.selectArrow
                         }
                       >
-                        {casSecond.join('')}
+                        ⌄
                       </Text>
                     </Pressable>
+                  </View>
 
-                    <Text style={styles.dash}>
-                      -
+                  {/* Phone Number */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      Phone Number
+                    </Text>
+
+                    <View style={styles.phoneRow}>
+                      <Pressable
+                        onPress={() =>
+                          openPhoneSelector(
+                            'phoneArea'
+                          )
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel="Select phone number area code"
+                        style={({ pressed }) => [
+                          styles.phoneButton,
+                          styles.phoneArea,
+                          pressed &&
+                            styles.selectPressed,
+                        ]}
+                      >
+                        <Text
+                          style={
+                            styles.phoneButtonText
+                          }
+                        >
+                          {phoneArea.join('')}
+                        </Text>
+                      </Pressable>
+
+                      <Text style={styles.dash}>
+                        -
+                      </Text>
+
+                      <Pressable
+                        onPress={() =>
+                          openPhoneSelector(
+                            'phonePrefix'
+                          )
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel="Select phone number prefix"
+                        style={({ pressed }) => [
+                          styles.phoneButton,
+                          styles.phonePrefix,
+                          pressed &&
+                            styles.selectPressed,
+                        ]}
+                      >
+                        <Text
+                          style={
+                            styles.phoneButtonText
+                          }
+                        >
+                          {phonePrefix.join('')}
+                        </Text>
+                      </Pressable>
+
+                      <Text style={styles.dash}>
+                        -
+                      </Text>
+
+                      <Pressable
+                        onPress={() =>
+                          openPhoneSelector(
+                            'phoneLine'
+                          )
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel="Select phone number line number"
+                        style={({ pressed }) => [
+                          styles.phoneButton,
+                          styles.phoneLine,
+                          pressed &&
+                            styles.selectPressed,
+                        ]}
+                      >
+                        <Text
+                          style={
+                            styles.phoneButtonText
+                          }
+                        >
+                          {phoneLine.join('')}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Email + Role */}
+                <View
+                  style={
+                    isLandscape
+                      ? styles.fieldRow
+                      : undefined
+                  }
+                >
+                  {/* Email */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      Email
+                    </Text>
+
+                    <TextInput
+                      style={styles.input}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="Email"
+                      placeholderTextColor="#C9CFE9"
+                      accessibilityLabel="Email"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      maxLength={255}
+                    />
+                  </View>
+
+                  {/* Role */}
+                  <View
+                    style={[
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
+                    ]}
+                  >
+                    <Text style={styles.label}>
+                      Role
                     </Text>
 
                     <Pressable
                       onPress={() =>
-                        openCasSelector(
-                          'casThird'
+                        openSelector(
+                          'role'
                         )
                       }
                       accessibilityRole="button"
-                      accessibilityLabel="Select CAS Number third section"
+                      accessibilityLabel="Select role"
                       style={({ pressed }) => [
-                        styles.casButton,
-                        styles.casLast,
+                        styles.selectInput,
                         pressed &&
                           styles.selectPressed,
                       ]}
                     >
                       <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.selectText,
+                          role ===
+                            'Role' &&
+                            styles.placeholderText,
+                        ]}
+                      >
+                        {role}
+                      </Text>
+
+                      <Text
                         style={
-                          styles.casButtonText
+                          styles.selectArrow
                         }
                       >
-                        {casThird.join('')}
+                        ⌄
                       </Text>
                     </Pressable>
                   </View>
                 </View>
 
+                {/* Password + Spacer */}
                 <View
                   style={
-                    styles.quantitySection
+                    isLandscape
+                      ? styles.fieldRow
+                      : undefined
                   }
                 >
-                  <Text style={styles.label}>
-                    Quantity
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openSelector(
-                        'quantity'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select quantity"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.selectText,
-                        quantity ===
-                          'Select Status' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {quantity}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* Dates */}
-              <View style={styles.row}>
-                <View
-                  style={
-                    styles.halfSection
-                  }
-                >
-                  <Text style={styles.label}>
-                    Acquisition Date
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openCalendar(
-                        'acquisitionDate'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select acquisition date"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.selectText,
-                        acquisitionDate ===
-                          'YYYY/MM/DD' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {acquisitionDate}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View
-                  style={
-                    styles.halfSection
-                  }
-                >
-                  <Text style={styles.label}>
-                    Expiration Date
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openCalendar(
-                        'expirationDate'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select expiration date"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.selectText,
-                        expirationDate ===
-                          'YYYY/MM/DD' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {expirationDate}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* Location - Full Width */}
-              <View style={styles.field}>
-                <Text style={styles.label}>
-                  Location
-                </Text>
-
-                <Pressable
-                  onPress={() =>
-                    openSelector(
-                      'location'
-                    )
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Select location"
-                  style={({ pressed }) => [
-                    styles.selectInput,
-                    pressed &&
-                      styles.selectPressed,
-                  ]}
-                >
-                  <Text
-                    numberOfLines={1}
+                  {/* Password */}
+                  <View
                     style={[
-                      styles.selectText,
-                      location ===
-                        'Location Name' &&
-                        styles.placeholderText,
+                      styles.field,
+                      isLandscape && styles.fieldHalf,
                     ]}
                   >
-                    {location}
-                  </Text>
+                    <Text style={styles.label}>
+                      Password
+                    </Text>
 
-                  <Text
-                    style={
-                      styles.selectArrow
-                    }
-                  >
-                    ⌄
-                  </Text>
-                </Pressable>
-              </View>
+                    <TextInput
+                      style={styles.input}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Password"
+                      placeholderTextColor="#C9CFE9"
+                      accessibilityLabel="Password"
+                      secureTextEntry
+                      autoCapitalize="none"
+                      maxLength={255}
+                    />
+                  </View>
 
-              {/* Room / Cabinet / Shelf */}
+                  {isLandscape && (
+                    <View style={styles.fieldHalf} />
+                  )}
+                </View>
+              </LinearGradient>
+            </View>
+
+            {/* Save */}
+            <View style={styles.saveButton}>
+              <GradientButton
+                title="Save"
+                onPress={openReviewChanges}
+                width="100%"
+                height={50}
+                borderRadius={10}
+              />
+            </View>
+
+            {/* Change Log */}
+            <Pressable
+              onPress={() => openHistory()}
+              accessibilityRole="button"
+              accessibilityLabel="Open Change Log"
+              style={({ pressed }) => [
+                styles.changeLogCard,
+                pressed &&
+                  styles.cardPressed,
+              ]}
+            >
               <View
                 style={
-                  styles.roomCabinetShelfRow
+                  styles.changeLogHeader
                 }
               >
-                <View
+                <Text
                   style={
-                    styles.roomCabinetShelfSection
+                    styles.changeLogTitle
                   }
                 >
-                  <Text style={styles.label}>
-                    Room
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openSelector(
-                        'room'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select room"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.selectText,
-                        room === 'XXXX' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {room}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View
-                  style={
-                    styles.roomCabinetShelfSection
-                  }
-                >
-                  <Text style={styles.label}>
-                    Cabinet
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openSelector(
-                        'cabinet'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select cabinet"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.selectText,
-                        cabinet === 'XXXX' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {cabinet}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <View
-                  style={
-                    styles.roomCabinetShelfSection
-                  }
-                >
-                  <Text style={styles.label}>
-                    Shelf
-                  </Text>
-
-                  <Pressable
-                    onPress={() =>
-                      openSelector(
-                        'shelf'
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Select shelf"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      pressed &&
-                        styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.selectText,
-                        shelf === 'XXXX' &&
-                          styles.placeholderText,
-                      ]}
-                    >
-                      {shelf}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.selectArrow
-                      }
-                    >
-                      ⌄
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* SDS */}
-              <View style={styles.field}>
-                <Text style={styles.label}>
-                  SDS Sheet
+                  Change Log
                 </Text>
 
-                <View style={styles.sdsRow}>
-                  <Pressable
-                    onPress={pickSdsFile}
-                    disabled={isSdsUploading}
-                    accessibilityRole="button"
-                    accessibilityLabel="Locate SDS PDF file"
-                    style={({ pressed }) => [
-                      styles.selectInput,
-                      styles.sdsInput,
-                      pressed && styles.selectPressed,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.selectText,
-                        !sdsLocation && styles.placeholderText,
-                      ]}
-                    >
-                      {sdsLocation || 'Tap to locate PDF file'}
-                    </Text>
-                  </Pressable>
-
-                  <GradientButton
-                      title={isSdsUploading ? '...' : sdsUploaded ? 'Uploaded ✓' : 'Import'}
-                      onPress={uploadSdsFile}
-                      width={sdsUploaded ? 108 : 84}
-                      height={44}
-                      borderRadius={10}
-                      disabled={!sdsFile || isSdsUploading || sdsUploaded}
-                    />
-                </View>
+                <Text
+                  style={
+                    styles.changeLogArrow
+                  }
+                >
+                  ›
+                </Text>
               </View>
-            </LinearGradient>
-          </View>
 
-          {/* Save */}
-          <View style={styles.saveButton}>
-            <GradientButton
-              title="Save"
-              onPress={openReviewChanges}
-              width="100%"
-              height={50}
-              borderRadius={10}
-            />
-          </View>
+              <View
+                style={
+                  styles.changeLogRow
+                }
+              >
+                <Text
+                  style={
+                    styles.changeLogText
+                  }
+                >
+                  Date: __________
+                </Text>
 
-          {/* New container information */}
-          <View style={styles.addInfoCard}>
-            <Text style={styles.addInfoText}>
-              A new container record will be created with the information provided above.
-            </Text>
-          </View>
+                <Text
+                  style={
+                    styles.changeLogText
+                  }
+                >
+                  Time: __________
+                </Text>
+              </View>
+
+              <Text
+                style={
+                  styles.changeLogText
+                }
+              >
+                Kemyze ID: {String(user_id ?? '__________')}
+              </Text>
+
+              <Text
+                style={
+                  styles.changeLogText
+                }
+              >
+                User: __________
+              </Text>
+
+              <Text
+                style={
+                  styles.changeLogText
+                }
+              >
+                Change: __________
+              </Text>
+
+              <View
+                style={
+                  styles.changeLogRow
+                }
+              >
+                <Text
+                  style={
+                    styles.changeLogText
+                  }
+                >
+                  Old: __________
+                </Text>
+
+                <Text
+                  style={
+                    styles.changeLogText
+                  }
+                >
+                  New: __________
+                </Text>
+              </View>
+            </Pressable>
+          </ScrollView>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Existing NavBar */}
       <NavBar
@@ -1370,9 +1229,13 @@ export default function Add_Container() {
           />
 
           <View
-            style={
-              styles.selectorSheet
-            }
+            style={[
+              styles.selectorSheet,
+              {
+                paddingBottom:
+                  14 + insets.bottom,
+              },
+            ]}
           >
             <View
               style={
@@ -1461,14 +1324,14 @@ export default function Add_Container() {
         </View>
       </Modal>
 
-      {/* CAS modal */}
+      {/* Phone number modal */}
 
       <Modal
-        visible={casSelectorVisible}
+        visible={phoneSelectorVisible}
         transparent
         animationType="slide"
         onRequestClose={
-          closeCasSelector
+          closePhoneSelector
         }
       >
         <View
@@ -1489,14 +1352,18 @@ export default function Add_Container() {
               styles.modalDismiss
             }
             onPress={
-              closeCasSelector
+              closePhoneSelector
             }
           />
 
           <View
-            style={
-              styles.casSelectorSheet
-            }
+            style={[
+              styles.phoneSelectorSheet,
+              {
+                paddingBottom:
+                  14 + insets.bottom,
+              },
+            ]}
           >
             <View
               style={
@@ -1509,40 +1376,40 @@ export default function Add_Container() {
                 styles.selectorTitle
               }
             >
-              Select CAS Number
+              Select Phone Number
             </Text>
 
             <View
               style={
-                styles.casWheelRow
+                styles.phoneWheelRow
               }
             >
               {Array.from({
                 length:
-                  getCasLength(),
+                  getPhoneLength(),
               }).map(
                 (
                   _,
                   columnIndex
                 ) => (
                   <View
-                    key={`cas-column-${columnIndex}`}
+                    key={`phone-column-${columnIndex}`}
                     style={
-                      styles.casWheelColumn
+                      styles.phoneWheelColumn
                     }
                   >
                     <View
                       style={
-                        styles.casSelectedValue
+                        styles.phoneSelectedValue
                       }
                     >
                       <Text
                         style={
-                          styles.casSelectedText
+                          styles.phoneSelectedText
                         }
                       >
                         {
-                          getCasValue()[
+                          getPhoneValue()[
                             columnIndex
                           ]
                         }
@@ -1551,23 +1418,23 @@ export default function Add_Container() {
 
                     <ScrollView
                       style={
-                        styles.casWheelScroll
+                        styles.phoneWheelScroll
                       }
                       showsVerticalScrollIndicator={
                         false
                       }
                       contentContainerStyle={
-                        styles.casWheelContent
+                        styles.phoneWheelContent
                       }
                     >
-                      {CAS_CHARACTERS.map(
+                      {PHONE_DIGITS.map(
                         (
                           character
                         ) => (
                           <Pressable
                             key={`${columnIndex}-${character}`}
                             onPress={() =>
-                              selectCasCharacter(
+                              selectPhoneDigit(
                                 columnIndex,
                                 character
                               )
@@ -1575,22 +1442,22 @@ export default function Add_Container() {
                             accessibilityRole="button"
                             accessibilityLabel={`Select ${character}`}
                             style={[
-                              styles.casWheelOption,
-                              getCasValue()[
+                              styles.phoneWheelOption,
+                              getPhoneValue()[
                                 columnIndex
                               ] ===
                                 character &&
-                                styles.casWheelOptionActive,
+                                styles.phoneWheelOptionActive,
                             ]}
                           >
                             <Text
                               style={[
-                                styles.casWheelText,
-                                getCasValue()[
+                                styles.phoneWheelText,
+                                getPhoneValue()[
                                   columnIndex
                                 ] ===
                                   character &&
-                                  styles.casWheelTextActive,
+                                  styles.phoneWheelTextActive,
                               ]}
                             >
                               {character}
@@ -1606,12 +1473,12 @@ export default function Add_Container() {
 
             <Pressable
               onPress={
-                closeCasSelector
+                closePhoneSelector
               }
               accessibilityRole="button"
-              accessibilityLabel="Done selecting CAS Number"
+              accessibilityLabel="Done selecting phone number"
               style={({ pressed }) => [
-                styles.casDoneButton,
+                styles.phoneDoneButton,
                 pressed &&
                   styles.buttonPressed,
               ]}
@@ -1639,7 +1506,7 @@ export default function Add_Container() {
                     </LinearGradient>
               <Text
                 style={
-                  styles.casDoneText
+                  styles.phoneDoneText
                 }
               >
                 Done
@@ -1649,13 +1516,13 @@ export default function Add_Container() {
         </View>
       </Modal>
 
-      {/* Calendar modal */}
+      {/* Profile history */}
 
       <Modal
-        visible={calendarVisible}
+        visible={historyVisible}
         transparent
         animationType="slide"
-        onRequestClose={closeCalendar}
+        onRequestClose={closeHistory}
       >
         <View
           style={
@@ -1674,13 +1541,19 @@ export default function Add_Container() {
             style={
               styles.modalDismiss
             }
-            onPress={closeCalendar}
+            onPress={closeHistory}
           />
 
           <View
-            style={
-              styles.calendarSheet
-            }
+            style={[
+              styles.historySheet,
+              {
+                maxHeight:
+                  height * 0.82,
+                paddingBottom:
+                  13 + insets.bottom,
+              },
+            ]}
           >
             <View
               style={
@@ -1690,152 +1563,64 @@ export default function Add_Container() {
 
             <View
               style={
-                styles.calendarHeader
+                styles.sheetHeader
               }
             >
-              <Pressable
-                onPress={previousMonth}
-                accessibilityRole="button"
-                accessibilityLabel="Previous month"
+              <Text
                 style={
-                  styles.calendarArrowButton
+                  styles.sheetTitle
                 }
               >
-                <Text
-                  style={
-                    styles.calendarArrow
-                  }
-                >
-                  ‹
-                </Text>
-              </Pressable>
-
-              <View
-                style={
-                  styles.calendarTitleArea
-                }
-              >
-                <Text
-                  style={
-                    styles.calendarTitle
-                  }
-                >
-                  {
-                    MONTH_NAMES[
-                      calendarMonth
-                    ]
-                  }
-                </Text>
-
-                <Text
-                  style={
-                    styles.calendarYear
-                  }
-                >
-                  {calendarYear}
-                </Text>
-              </View>
+                Profile History
+              </Text>
 
               <Pressable
-                onPress={nextMonth}
+                onPress={closeHistory}
                 accessibilityRole="button"
-                accessibilityLabel="Next month"
+                accessibilityLabel="Close Profile History"
                 style={
-                  styles.calendarArrowButton
+                  styles.closeButton
                 }
               >
                 <Text
                   style={
-                    styles.calendarArrow
+                    styles.closeText
                   }
                 >
-                  ›
+                  ×
                 </Text>
               </Pressable>
             </View>
 
             <View
               style={
-                styles.calendarWeek
+                styles.filterRow
               }
             >
-              {DAY_NAMES.map(
-                (dayName) => (
-                  <View
-                    key={dayName}
-                    style={
-                      styles.calendarCell
+              {HISTORY_FILTERS.map(
+                (filter) => (
+                  <Pressable
+                    key={filter}
+                    onPress={() =>
+                      selectHistoryFilter(
+                        filter
+                      )
                     }
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show ${filter} history`}
+                    accessibilityState={{
+                      selected:
+                        historyFilter ===
+                        filter,
+                    }}
+                    style={[
+                      styles.filterChip,
+                      historyFilter ===
+                        filter &&
+                        styles.filterChipActive,
+                    ]}
                   >
-                    <Text
-                      style={
-                        styles.calendarWeekText
-                      }
-                    >
-                      {dayName}
-                    </Text>
-                  </View>
-                )
-              )}
-            </View>
-
-            <View
-              style={
-                styles.calendarGrid
-              }
-            >
-              {getCalendarDays().map(
-                (day, index) => (
-                  <View
-                    key={`day-${index}`}
-                    style={
-                      styles.calendarCell
-                    }
-                  >
-                    {day !== null && (
-                      <Pressable
-                        onPress={() =>
-                          selectDate(
-                            day
-                          )
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel={`${
-                          MONTH_NAMES[
-                            calendarMonth
-                          ]
-                        } ${day}, ${calendarYear}`}
-                        style={({ pressed }) => [
-                          styles.calendarDateButton,
-                          pressed &&
-                            styles.calendarDatePressed,
-                        ]}
-                      >
-                        <Text
-                          style={
-                            styles.calendarDateText
-                          }
-                        >
-                          {day}
-                        </Text>
-                      </Pressable>
-                    )}
-                  </View>
-                )
-              )}
-            </View>
-
-            <Pressable
-              onPress={closeCalendar}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel date selection"
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed &&
-                  styles.buttonPressed,
-              ]}
-            >
-              <LinearGradient
+                    <LinearGradient
                       colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
                       locations={[0, 0.27, 0.49, 0.75, 1]}
                       start={{ x: 0, y: 0 }}
@@ -1852,18 +1637,286 @@ export default function Add_Container() {
                           bottom: 2,
                           left: 2,
                           right: 2,
-                          borderRadius: 7,
+                          borderRadius: 20,
                         }}
                       />
                     </LinearGradient>
-              <Text
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.filterText,
+                        historyFilter ===
+                          filter &&
+                          styles.filterTextActive,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </Pressable>
+                )
+              )}
+            </View>
+
+            <ScrollView
+              style={
+                styles.historyScroll
+              }
+              contentContainerStyle={
+                styles.historyContent
+              }
+              showsVerticalScrollIndicator={
+                false
+              }
+            >
+              {filteredChangeLog.map(
+                (item, index) => (
+                  <Pressable
+                    key={`${item.Change}-${index}`}
+                    onPress={() =>
+                      openFieldHistory(
+                        item.Change as HistoryType
+                      )
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.Change} history`}
+                    style={({ pressed }) => [
+                      styles.historyCard,
+                      pressed &&
+                        styles.cardPressed,
+                    ]}
+                  >
+                    <View
+                      style={
+                        styles.historyCardRow
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.historyName
+                        }
+                      >
+                        {item.Change ===
+                        'Edit'
+                          ? 'Profile edited'
+                          : `${item.Change} changed`}
+                      </Text>
+
+                      <View
+                        style={
+                          styles.historyRight
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.historyValue
+                          }
+                        >
+                          {item.Change ===
+                          'Edit'
+                            ? '________ → ________ → ________'
+                            : '________ → ________'}
+                        </Text>
+
+                        <Text
+                          style={
+                            styles.historyArrow
+                          }
+                        >
+                          ›
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                )
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Field history */}
+
+      <Modal
+        visible={fieldHistoryVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={
+          closeFieldHistory
+        }
+      >
+        <View
+          style={
+            styles.modalBackground
+          }
+        >
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={
+              StyleSheet.absoluteFillObject
+            }
+          />
+
+          <Pressable
+            style={
+              styles.modalDismiss
+            }
+            onPress={
+              closeFieldHistory
+            }
+          />
+
+          <View
+            style={[
+              styles.fieldHistorySheet,
+              {
+                maxHeight:
+                  height * 0.82,
+                paddingBottom:
+                  13 + insets.bottom,
+              },
+            ]}
+          >
+            <View
+              style={
+                styles.sheetHandle
+              }
+            />
+
+            <View
+              style={
+                styles.sheetHeader
+              }
+            >
+              <Pressable
+                onPress={returnToHistory}
+                accessibilityRole="button"
+                accessibilityLabel="Return to Profile History"
                 style={
-                  styles.cancelText
+                  styles.sheetBackButton
                 }
               >
-                Cancel
-              </Text>
-            </Pressable>
+                <Text
+                  style={
+                    styles.sheetBackText
+                  }
+                >
+                  ‹ History
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={
+                  closeFieldHistory
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Close History"
+                style={
+                  styles.closeButton
+                }
+              >
+                <Text
+                  style={
+                    styles.closeText
+                  }
+                >
+                  ×
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text
+              style={
+                styles.fieldHistoryTitle
+              }
+            >
+              {getFieldHistoryTitle()}
+            </Text>
+
+            <ScrollView
+              style={
+                styles.fieldHistoryScroll
+              }
+              contentContainerStyle={
+                styles.fieldHistoryContent
+              }
+              showsVerticalScrollIndicator={
+                false
+              }
+            >
+              {[1, 2, 3, 4].map(
+                (item, index) => (
+                  <View
+                    key={item}
+                    style={
+                      styles.timelineItem
+                    }
+                  >
+                    <View
+                      style={
+                        styles.timelineColumn
+                      }
+                    >
+                      <View
+                        style={
+                          index === 0
+                            ? styles.timelineDotActive
+                            : styles.timelineDot
+                        }
+                      />
+
+                      {index < 3 && (
+                        <View
+                          style={
+                            styles.timelineLine
+                          }
+                        />
+                      )}
+                    </View>
+
+                    <View
+                      style={
+                        styles.timelineDetails
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.timelineValue
+                        }
+                      >
+                        {getFieldHistoryValue(
+                          index
+                        )}
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.timelinePlaceholder
+                        }
+                      >
+                        User: __________
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.timelinePlaceholder
+                        }
+                      >
+                        Date: __________
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.timelinePlaceholder
+                        }
+                      >
+                        Time: __________
+                      </Text>
+                    </View>
+                  </View>
+                )
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1906,6 +1959,8 @@ export default function Add_Container() {
               {
                 maxHeight:
                   height * 0.82,
+                paddingBottom:
+                  14 + insets.bottom,
               },
             ]}
           >
@@ -1926,7 +1981,7 @@ export default function Add_Container() {
                     styles.sheetTitle
                   }
                 >
-                  Add Container Review
+                  Review Changes
                 </Text>
 
                 <Text
@@ -2044,6 +2099,22 @@ export default function Add_Container() {
                     </View>
                   </View>
                 )
+              )}
+
+              {reviewChanges.length === 0 && (
+                <View
+                  style={
+                    styles.reviewCard
+                  }
+                >
+                  <Text
+                    style={
+                      styles.reviewEmpty
+                    }
+                  >
+                    No changes to review.
+                  </Text>
+                </View>
               )}
             </ScrollView>
 
@@ -2181,7 +2252,7 @@ export default function Add_Container() {
                 styles.confirmTitle
               }
             >
-              Container Added
+              Changes Saved
             </Text>
 
             <Text
@@ -2189,7 +2260,7 @@ export default function Add_Container() {
                 styles.confirmMessage
               }
             >
-              New container was added successfully.
+              Profile changes were saved successfully.
             </Text>
 
             <Pressable
@@ -2284,7 +2355,7 @@ export default function Add_Container() {
                 styles.confirmTitle
               }
             >
-              Add Container Canceled
+              Changes Canceled
             </Text>
 
             <Text
@@ -2292,7 +2363,7 @@ export default function Add_Container() {
                 styles.confirmMessage
               }
             >
-              No new container was added.
+              No profile changes were saved.
             </Text>
 
             <Pressable
@@ -2346,10 +2417,37 @@ export default function Add_Container() {
 // Styles
 
 const styles = StyleSheet.create({
-
   screen: {
     flex: 1,
     backgroundColor: '#020617',
+  },
+
+  page: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+  },
+
+  pageWidth: {
+    flex: 1,
+    width: '100%',
+    alignSelf: 'center',
+  },
+
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+
+  backSpacer: {
+    width: 60,
+  },
+
+  titleInRow: {
+    flex: 1,
+    marginTop: 0,
+    marginBottom: 0,
   },
 
   pageScroll: {
@@ -2358,13 +2456,7 @@ const styles = StyleSheet.create({
   },
 
   pageContent: {
-    width: '100%',
-    alignItems: 'center',
-  },
-
-  pageWidth: {
-    width: '100%',
-    alignSelf: 'center',
+    paddingBottom: 4,
   },
 
   backButton: {
@@ -2419,6 +2511,17 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
 
+  fieldRow: {
+    flexDirection: 'row',
+    gap: 7,
+  },
+
+  fieldHalf: {
+    flex: 1,
+    width: 'auto',
+    minWidth: 0,
+  },
+
   label: {
     color: '#FFFFFF',
     fontFamily: FONT.regular,
@@ -2441,31 +2544,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#09091C',
   },
 
-  row: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 7,
-    marginBottom: 7,
-    alignItems: 'flex-start',
-  },
-
-  casSection: {
-    flex: 1.42,
-    minWidth: 0,
-  },
-
-  quantitySection: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  casRow: {
+  phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
   },
 
-  casButton: {
+  phoneButton: {
     minHeight: 44,
     borderWidth: 1,
     borderColor: '#334155',
@@ -2475,7 +2560,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  casButtonText: {
+  phoneButtonText: {
     color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
@@ -2483,17 +2568,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  casLarge: {
-    flex: 1,
+  phoneArea: {
+    flex: 3,
     minWidth: 0,
   },
 
-  casSmall: {
-    width: 52,
+  phonePrefix: {
+    flex: 3,
+    minWidth: 0,
   },
 
-  casLast: {
-    width: 44,
+  phoneLine: {
+    flex: 4,
+    minWidth: 0,
   },
 
   dash: {
@@ -2502,24 +2589,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
     marginHorizontal: 3,
-  },
-
-  halfSection: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  roomCabinetShelfRow: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 7,
-    marginBottom: 7,
-    alignItems: 'flex-start',
-  },
-
-  roomCabinetShelfSection: {
-    flex: 1,
-    minWidth: 0,
   },
 
   selectInput: {
@@ -2559,22 +2628,55 @@ const styles = StyleSheet.create({
     backgroundColor: '#131338',
   },
 
-  sdsRow: {
-    flexDirection: 'row',
-    gap: 7,
+  changeLogCard: {
     width: '100%',
-    alignItems: 'center',
-  },
-
-  sdsInput: {
-    flex: 1,
-    minWidth: 0,
+    marginTop: 8,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
   },
 
   saveButton: {
     width: '100%',
     height: 50,
     marginTop: 8,
+  },
+
+  changeLogHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+
+  changeLogTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sectionTitle,
+    lineHeight: 22,
+  },
+
+  changeLogArrow: {
+    color: '#3B82F6',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.arrow,
+    lineHeight: 22,
+  },
+
+  changeLogRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+
+  changeLogText: {
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
   },
 
   buttonPressed: {
@@ -2584,6 +2686,10 @@ const styles = StyleSheet.create({
         scale: 0.98,
       },
     ],
+  },
+
+  cardPressed: {
+    opacity: 0.86,
   },
 
   modalBackground: {
@@ -2637,6 +2743,18 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.close,
     lineHeight: 26,
+  },
+
+  sheetBackButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+
+  sheetBackText: {
+    color: '#3B82F6',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
   },
 
   selectorSheet: {
@@ -2699,7 +2817,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  casSelectorSheet: {
+  phoneSelectorSheet: {
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
@@ -2713,7 +2831,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
 
-  casWheelRow: {
+  phoneWheelRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
@@ -2721,7 +2839,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  casWheelColumn: {
+  phoneWheelColumn: {
     flex: 1,
     maxWidth: 82,
     minWidth: 54,
@@ -2733,7 +2851,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  casSelectedValue: {
+  phoneSelectedValue: {
     minHeight: 48,
     borderBottomWidth: 1,
     borderBottomColor: '#3B82F6',
@@ -2742,32 +2860,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  casSelectedText: {
+  phoneSelectedText: {
     color: '#FFFFFF',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.sectionTitle,
     lineHeight: 22,
   },
 
-  casWheelScroll: {
+  phoneWheelScroll: {
     flex: 1,
   },
 
-  casWheelContent: {
+  phoneWheelContent: {
     paddingVertical: 4,
   },
 
-  casWheelOption: {
+  phoneWheelOption: {
     minHeight: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  casWheelOptionActive: {
+  phoneWheelOptionActive: {
     backgroundColor: '#3B82F6',
   },
 
-  casWheelText: {
+  phoneWheelText: {
     color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
@@ -2775,12 +2893,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  casWheelTextActive: {
+  phoneWheelTextActive: {
     color: '#FFFFFF',
     fontFamily: FONT.bold,
   },
 
-  casDoneButton: {
+  phoneDoneButton: {
     minHeight: 46,
     borderRadius: 10,
         borderWidth: 1,
@@ -2789,14 +2907,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  casDoneText: {
+  phoneDoneText: {
     color: '#FFFFFF',
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
   },
 
-  calendarSheet: {
+  historySheet: {
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
@@ -2806,95 +2924,191 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(33, 142, 255, 0.5)',
     paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 14,
+    paddingTop: 7,
+    paddingBottom: 13,
   },
 
-  calendarHeader: {
+  filterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    width: '100%',
+    gap: 5,
+    paddingVertical: 8,
   },
 
-  calendarTitleArea: {
+  filterChip: {
     flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 4,
+    overflow: 'hidden',
   },
 
-  calendarTitle: {
-    color: '#FFFFFF',
-    fontFamily: FONT.bold,
-    fontSize: FONT_SIZE.sheetTitle,
-    lineHeight: 27,
+  filterChipActive: {
+    overflow: 'hidden',
   },
 
-  calendarYear: {
+  filterText: {
     color: '#C9CFE9',
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
-    marginTop: 2,
+    textAlign: 'center',
   },
 
-  calendarArrowButton: {
-    width: 44,
-    height: 44,
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.secondary,
+  },
+
+  historyScroll: {
+    flexGrow: 0,
+  },
+
+  historyContent: {
+    paddingBottom: 1,
+  },
+
+  historyCard: {
+    width: '100%',
+    minHeight: 60,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginBottom: 7,
     justifyContent: 'center',
+  },
+
+  historyCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+
+  historyName: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+  },
+
+  historyRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    maxWidth: '68%',
+  },
+
+  historyValue: {
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
+    textAlign: 'right',
+    marginRight: 10,
+  },
+
+  historyArrow: {
+    width: 20,
+    color: '#3B82F6',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.arrow,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+
+  fieldHistorySheet: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(1, 8, 37, 0.74)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 142, 255, 0.5)',
+    paddingHorizontal: 12,
+    paddingTop: 7,
+    paddingBottom: 13,
+  },
+
+  fieldHistoryTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sheetTitle,
+    lineHeight: 27,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+
+  fieldHistoryScroll: {
+    flexGrow: 0,
+  },
+
+  fieldHistoryContent: {
+    paddingBottom: 3,
+  },
+
+  timelineItem: {
+    flexDirection: 'row',
+    minHeight: 92,
+  },
+
+  timelineColumn: {
+    width: 22,
     alignItems: 'center',
   },
 
-  calendarArrow: {
-    color: '#3B82F6',
+  timelineDotActive: {
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#3B82F6',
+    marginTop: 4,
+  },
+
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    backgroundColor: '#09091C',
+    marginTop: 4,
+  },
+
+  timelineLine: {
+    width: 1,
+    flex: 1,
+    backgroundColor: '#334155',
+    marginTop: 3,
+  },
+
+  timelineDetails: {
+    flex: 1,
+    paddingBottom: 12,
+  },
+
+  timelineValue: {
+    color: '#FFFFFF',
     fontFamily: FONT.bold,
-    fontSize: FONT_SIZE.arrow,
+    fontSize: FONT_SIZE.sectionTitle,
     lineHeight: 22,
   },
 
-  calendarWeek: {
-    flexDirection: 'row',
-    width: '100%',
-    marginBottom: 4,
-  },
-
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
-    marginBottom: 8,
-  },
-
-  calendarCell: {
-    width: '14.2857%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  calendarWeekText: {
+  timelinePlaceholder: {
     color: '#C9CFE9',
     fontFamily: FONT.regular,
-    fontSize: FONT_SIZE.metadata,
-    lineHeight: 15,
-  },
-
-  calendarDateButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-
-  calendarDatePressed: {
-    backgroundColor: '#2983ff',
-  },
-
-  calendarDateText: {
-    color: '#FFFFFF',
-    fontFamily: FONT.regular,
-    fontSize: FONT_SIZE.body,
-    lineHeight: 20,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
+    marginTop: 3,
   },
 
   reviewSheet: {
@@ -2928,6 +3142,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 10,
     marginBottom: 6,
+  },
+
+  reviewEmpty: {
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 
   reviewField: {
@@ -3097,40 +3319,5 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
-  },
-
-  errorMessage: {
-    width: '100%',
-    color: '#FF3B30',
-    fontFamily: FONT.regular,
-    fontSize: FONT_SIZE.secondary,
-    fontStyle: 'italic',
-    marginTop: 8,
-    marginBottom: 2,
-  },
-
-  addInfoCard: {
-    width: '100%',
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(33, 142, 255, 0.5)',
-    borderRadius: 10,
-    backgroundColor: 'rgba(1, 8, 37, 0.74)',
-  },
-
-  addInfoText: {
-    color: '#C9CFE9',
-    fontFamily: FONT.regular,
-    fontSize: FONT_SIZE.secondary,
-    lineHeight: 18,
-  },
-
-  errorText: {
-    color: '#FF6B6B',
-    fontFamily: FONT.regular,
-    fontSize: FONT_SIZE.label,
-    marginTop: 6,
   },
 });

@@ -18,6 +18,7 @@ import { handleContainerResponse } from "../../../utils/ScanResUtils";
 import { openBase64Pdf } from "../../../utils/PDFUtils";
 import { Linking } from "react-native";
 import GradientButton from "../../../components/GradientButton";
+import { useUserState } from '../contexts/UserState';
 
 export default function Scanner() {
     
