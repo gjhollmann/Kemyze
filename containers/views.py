@@ -294,7 +294,7 @@ def editContainer(request):
         try:
             FoundUser = Users.objects.get(user_id = user_id)
             if FoundUser.access_level > 3:
-                return HttpResponseForbidden
+                return HttpResponseForbidden()
         except Users.DoesNotExist:
             return HttpResponseBadRequest("User does not exist")
         except Exception as e:
@@ -478,5 +478,123 @@ def uploadSDS(request):
     data = {
         "success": True,
         "sds_base64": encoded.decode("utf-8"),
+    }
+    return JsonResponse(data)
+
+"""
+View to create a new container.
+Route: /containers/createContainer
+Request Variables:
+Method: POST (application/json, same convention as editContainer)
+Parameters:
+    user_id        - required
+    chemical_name  - required
+    cas_number     - optional
+    expr_date      - optional (YYYY-MM-DD), container has no expiration if omitted
+    acqn_date      - required (YYYY-MM-DD)
+    quantity       - required
+    location       - required. Top-level location name (matches editContainer's
+                     "location" param - the root of the location hierarchy)
+    room           - required
+    cabinet        - required
+    shelf          - required
+    sds_base64     - required. The base64 string returned by uploadSDS's
+                     response when it was called without a container_id
+                     (Add Container flow always uploads the SDS first).
+ 
+Response:
+    data = {
+        'success': True,
+        'container_id': <the new container's id>
+    }
+ 
+Failures:
+    Status 405: Not a POST request
+    Status 400: Missing 'user_id' Parameter
+    Status 400: Missing '<field>' Parameter (chemical_name, acqn_date,
+                quantity, sds_base64, or the location fields)
+    Status 400: User does not exist
+    Status 403: User does not have access level
+    Status 400: Location does not exist
+    Status 500: Something broke bad
+"""
+@csrf_exempt
+def createContainer(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+ 
+    data = json.loads(request.body)
+    user_id = data.get("user_id")
+    if user_id is None:
+        return HttpResponseBadRequest("Missing 'user_id' Parameter")
+ 
+    # Verify user access level
+    # access levels > 3 are not allowed to create containers
+    # chnage this if needed
+    try:
+        FoundUser = Users.objects.get(user_id=user_id)
+        if FoundUser.access_level > 3:
+            return HttpResponseForbidden("User does not have permission to create containers")
+    except Users.DoesNotExist:
+        return HttpResponseBadRequest("User does not exist")
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+ 
+    chemical_name = data.get("chemical_name")
+    acqn_date = data.get("acqn_date")
+    quantity = data.get("quantity")
+    sds_base64 = data.get("sds_base64")
+    location_name = data.get("location")
+    room = data.get("room")
+    cabinet = data.get("cabinet")
+    shelf = data.get("shelf")
+ 
+    if not chemical_name:
+        return HttpResponseBadRequest("Missing 'chemical_name' Parameter")
+    if not acqn_date:
+        return HttpResponseBadRequest("Missing 'acqn_date' Parameter")
+    if not quantity:
+        return HttpResponseBadRequest("Missing 'quantity' Parameter")
+    if not sds_base64:
+        return HttpResponseBadRequest("Missing 'sds_base64' Parameter")
+    if not (location_name and room and cabinet and shelf):
+        return HttpResponseBadRequest("Missing location fields")
+ 
+    # Resolve the leaf Locations row (same lookup pattern as editContainer)
+    try:
+        FoundLocation = Locations.objects.get(
+            name=shelf,
+            parent__name=cabinet,
+            parent__parent__name=room,
+            parent__parent__parent__name=location_name,
+        )
+    except Locations.DoesNotExist:
+        return HttpResponseBadRequest("Location does not exist")
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+ 
+    try:
+        # sds_base64 arrives as a JSON string (uploadSDS already decoded it
+        # to utf-8 str for its own response), so it needs to be re-encoded
+        # back to bytes here - sds_sheet stores the same raw base64 bytes
+        # uploadSDS/getContainer use everywhere else in this file.
+        NewContainer = Containers.objects.create(
+            chemical_name=chemical_name,
+            cas_number=data.get("cas_number"),
+            expr_date=data.get("expr_date"),
+            acqn_date=acqn_date,
+            location=FoundLocation,
+            quantity=quantity,
+            sds_sheet=sds_base64.encode("utf-8"),
+        )
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+ 
+    data = {
+        "success": True,
+        "container_id": NewContainer.container_id,
     }
     return JsonResponse(data)
