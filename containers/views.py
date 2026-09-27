@@ -547,8 +547,8 @@ def getContainerChangeLog(request):
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")
-  else:
-    return HttpResponseNotAllowed(["GET"])
+    else:
+        return HttpResponseNotAllowed(["GET"])
 
 """
 View to upload an SDS PDF for a container.
