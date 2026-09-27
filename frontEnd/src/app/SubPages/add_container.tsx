@@ -18,12 +18,12 @@ import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from "../../app/contexts/UserState";
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
 const BASE_URL = "https://kemyze.vercel.app/";
-const USER_TEST = 43257; // replace with actual user ID (KM#85)
 
 // Typography
 
@@ -124,6 +124,7 @@ const PANEL_GRADIENT: [string, string] = [
 
 export default function Add_Container() {
   const router = useRouter();
+  const { activeUser } = useUserState();
 
   const { width, height } = useWindowDimensions();
 
@@ -596,7 +597,7 @@ export default function Add_Container() {
    
       try {
         const formData = new FormData();
-        formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+        formData.append('user_id', String(activeUser?.userID)); // replace with actual user ID (KM#85)
         // No container_id yet - this container doesn't exist in the
         // database until Save actually creates it (see handleSaveContainer).
    

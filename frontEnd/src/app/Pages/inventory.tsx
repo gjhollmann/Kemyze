@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from "../../app/contexts/UserState";
 
 interface Chemical {
   container_id?: string;
@@ -31,10 +32,9 @@ interface Chemical {
 
 const BASE_URL = "https://kemyze.vercel.app/";
 
-// const USER_TEST = 49035; // replace with actual user ID (KM#85)
-
 const Inventory: React.FC = () => {
   const router = useRouter();
+  const { activeUser } = useUserState();
   const [search, setSearch] = useState('');
   const [showLow, setShowLow] = useState(false);
 
@@ -284,7 +284,7 @@ const Inventory: React.FC = () => {
  
     try {
       const formData = new FormData();
-      formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+      formData.append('user_id', String(activeUser?.userID)); // replace with actual user ID (KM#85)
       // No container_id yet - this container doesn't exist in the
       // database until Save actually creates it (see handleSaveContainer).
  

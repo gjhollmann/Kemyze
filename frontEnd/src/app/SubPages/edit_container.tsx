@@ -18,12 +18,12 @@ import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from "../../app/contexts/UserState";
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "http://127.0.0.1:8000/";
-const USER_TEST = 9873243; // replace with actual user ID (KM#85)
+const BASE_URL = "https://kemyze.vercel.app/";
 
 // Typography
 
@@ -132,6 +132,7 @@ const PANEL_GRADIENT: [string, string] = [
 export default function Edit_Container() {
   const { container_id } = useLocalSearchParams();
   const router = useRouter();
+  const { activeUser } = useUserState();
 
   const { width, height } = useWindowDimensions();
 
@@ -790,11 +791,12 @@ export default function Edit_Container() {
       Alert.alert('No file selected', 'Please select an SDS PDF before importing');
     }
 
+    
     setIsSdsUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append('user_id', String(USER_TEST));
+      formData.append('user_id', String(activeUser?.userID));
       formData.append('container_id', String(container_id ?? ''));
       formData.append('sds_file', {
         uri: sdsFile.uri,
@@ -932,7 +934,7 @@ export default function Edit_Container() {
     
     const sendEditContainer = async () => {
         let data = {
-                user_id: USER_TEST,
+                user_id: activeUser?.userID,
                 container_id: container_id,
             };
 
