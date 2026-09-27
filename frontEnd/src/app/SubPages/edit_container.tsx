@@ -294,44 +294,7 @@ export default function Edit_Container() {
 
   // Placeholder data
 
-  const changeLog = [
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Edit',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Location',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'Quantity',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      ContainerID: String(container_id ?? ''),
-      User: '',
-      Change: 'SDS',
-      Old: '',
-      New: '',
-    },
-  ];
+  const [changeLog, setChangeLog] = useState([{}]);
 
     const [reviewChanges, setReviewChanges] = useState<ReviewChange>([
         {
@@ -672,12 +635,13 @@ export default function Edit_Container() {
   };
 
   const openFieldHistory = (
-    type: HistoryType
+    type: HistoryType, index: number
   ) => {
     haptic();
     setFieldHistoryType(type);
     setHistoryVisible(false);
     setFieldHistoryVisible(true);
+    setHistoryIndex(index);
   };
 
   const closeFieldHistory = () => {
@@ -745,9 +709,109 @@ export default function Edit_Container() {
   const filteredChangeLog =
     changeLog.filter(
       (item) =>
-        item.Change ===
+        item.Type ===
         historyFilter
     );
+    
+  // ChangeLog Navigation
+    const scrollViewRef = useRef<ScrollView>(null);
+    const changeLogLayouts = useRef<{[key: number]: number}>({});
+    const [historyIndex, setHistoryIndex] = useState(0);
+    const scrollToLayoutIndex = () => {
+        const yPosition = changeLogLayouts.current[historyIndex];
+        if(yPosition !== undefined && scrollViewRef.current){
+            scrollViewRef.current.scrollTo({
+                y: yPosition,
+                animated: true,
+            });
+        }
+    };
+
+  // SDS upload
+
+  const pickSdsFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      const looksLikePdf =
+        (asset.mimeType && asset.mimeType === 'application/pdf') ||
+        asset.name?.toLowerCase().endsWith('.pdf');
+
+      if (!looksLikePdf) {
+        Alert.alert('Invalid File', 'Please select a PDF file for the SDS.');
+
+        return;
+      }
+
+      haptic();
+      setSdsFile(asset);
+      setSdsLocation(asset.name ?? asset.uri);
+      setSdsUploaded(false);
+      setSdsBase64('');
+    } catch (error: any) {
+      console.log(error.message);
+      Alert.alert('Error', 'Could not open the file picker.');
+    }
+  };
+
+  const uploadSdsFile = async () => {
+    if (!sdsFile) {
+      Alert.alert('No file selected', 'Please select an SDS PDF before importing');
+    }
+
+    setIsSdsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('user_id', String(USER_TEST));
+      formData.append('container_id', String(container_id ?? ''));
+      formData.append('sds_file', {
+        uri: sdsFile.uri,
+        name: sdsFile.name ?? 'sds.pdf',
+        type: sdsFile.mimeType ?? 'application/pdf',
+      } as any);
+
+      const uploadURL = BASE_URL + "containers/uploadSDS";
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        if (uploadResponse.status === 403) {
+          Alert.alert('Access Denied', "You don't have permission to upload SDS documents.");
+        } else if (uploadResponse.status === 415) {
+          Alert.alert('Invalid File', 'That file is not a valid PDF.');
+        } else {
+          Alert.alert('Upload Failed', 'The SDS could not be uploaded. Please try again.');
+        }
+        throw new Error("BAD TIME STATUS: " + uploadResponse.status + "\nError Reason: " + errorText);
+      }
+
+      const data = await uploadResponse.json();
+      setSdsBase64(data.sds_base64 ?? '');
+      setSdsUploaded(true);
+
+      successHaptic();
+      setOldSdsLocation(sdsLocation);
+      setSdsFile(null);
+    } catch (error: any) {
+      console.log(error.message);
+    } finally {
+      setIsSdsUploading(false);
+    }
+  };
 
   // SDS upload
 
@@ -933,6 +997,7 @@ export default function Edit_Container() {
   };
     
     const sendEditContainer = async () => {
+        setIsLoading(true);
         let data = {
                 user_id: activeUser?.userID,
                 container_id: container_id,
@@ -963,6 +1028,9 @@ export default function Edit_Container() {
                 shelf: shelf
             }
         }
+        
+        if (quantity!=oldQuantity)
+            data = {...data, quantity: quantity}
 
 
         try {
@@ -985,6 +1053,9 @@ export default function Edit_Container() {
             
         } catch (error) {
             console.error('Error sending data:', error);
+        } finally {
+            getContainer();
+            loadChangeLog();
         }
     }
 
@@ -1086,84 +1157,86 @@ export default function Edit_Container() {
     
     //Initial fetch
     useEffect(() => {
-        const getContainer = async () => {
-            const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
-            try {
-                const containerResponse = await fetch(getContainerURL,
-                                                      {
-                    method: "GET",
-                })
-                
-                if (!containerResponse.ok){
-                  console.log("We are having issues");
-                  const errorText = await containerResponse.text();
-                  throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
-                }
-                
-                const data = await containerResponse.json();
-                // Handle data and set all variables
-                
-                // Field States
-                setChemicalName(data.chemical_name);
-                setOldChemicalName(data.chemical_name);
-                setQuantity(data.quantity);
-                setOldQuantity(data.quantity);
-                setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
-                setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
-                setExpirationDate(data.expr_date.replaceAll("-","/"));
-                setOldExpirationDate(data.expr_date.replaceAll("-","/"));
-
-                
-                // Location
-                const fullLocation = data.location.split(", ");
-                if (fullLocation.length < 4) {
-                    setLocation(fullLocation[0]);
-                    setOldLocation(fullLocation[0]);
-                    setRoom(fullLocation[1]);
-                    setOldRoom(fullLocation[1]);
-                    setCabinet(fullLocation[2]);
-                    setOldCabinet(fullLocation[2]);
-                    setShelf(fullLocation[3]);
-                    setOldShelf(fullLocation[3]);
-                } else {
-                    let index = fullLocation.length - 1;
-                    let locationInput = "";
-                    do {
-                        locationInput = locationInput + fullLocation[index--];
-                    } while (index > 4);
-                    setLocation(locationInput);
-                    setOldLocation(locationInput);
-                    setRoom(fullLocation[index]);
-                    setOldRoom(fullLocation[index]);
-                    setCabinet(fullLocation[index-1]);
-                    setOldCabinet(fullLocation[index-1]);
-                    setShelf(fullLocation[index-2]);
-                    setOldShelf(fullLocation[index-2]);
-                }
-                
-                // CAS state
-                //const casTokens = data.cas_number.split("-");
-                const casTokens = "65425-25-4".split("-");
-                let casTokenFirst = casTokens[0].split("");
-                do {
-                    casTokenFirst = ["", ...casTokenFirst];
-                } while (casTokenFirst.length<7);
-                setCasFirst(casTokenFirst);
-                setOldCasFirst(casTokenFirst);
-                setCasSecond(casTokens[1].split(""));
-                setOldCasSecond(casTokens[1].split(""));
-                setCasThird(casTokens[2].split(""));
-                setOldCasThird(casTokens[2].split(""));
-            } catch (error: any) {
-                console.log(error.message);
-                setErrorMsg(error.message);
-                setLoadError(true);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         getContainer();
+        loadChangeLog();
     }, []);
+    
+    const getContainer = async () => {
+        setIsLoading(true);
+        const getContainerURL = BASE_URL + "containers/getContainer?kemID="+container_id+"&accessLevel=1";
+        try {
+            const containerResponse = await fetch(getContainerURL,
+                                                  {
+                method: "GET",
+            })
+            
+            if (!containerResponse.ok){
+              console.log("We are having issues");
+              const errorText = await containerResponse.text();
+              throw new Error("BAD TIME STATUS: " + containerResponse.status + "\nError Reason: " + errorText);
+            }
+            
+            const data = await containerResponse.json();
+            // Handle data and set all variables
+            
+            // Field States
+            setChemicalName(data.chemical_name);
+            setOldChemicalName(data.chemical_name);
+            setQuantity(data.quantity);
+            setOldQuantity(data.quantity);
+            setAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+            setOldAcquisitionDate(data.acqn_date.replaceAll("-","/"));
+            setExpirationDate(data.expr_date.replaceAll("-","/"));
+            setOldExpirationDate(data.expr_date.replaceAll("-","/"));
+
+            
+            // Location
+            const fullLocation = data.location.split(", ");
+            if (fullLocation.length < 4) {
+                setLocation(fullLocation[0]);
+                setOldLocation(fullLocation[0]);
+                setRoom(fullLocation[1]);
+                setOldRoom(fullLocation[1]);
+                setCabinet(fullLocation[2]);
+                setOldCabinet(fullLocation[2]);
+                setShelf(fullLocation[3]);
+                setOldShelf(fullLocation[3]);
+            } else {
+                let index = fullLocation.length - 1;
+                let locationInput = "";
+                do {
+                    locationInput = locationInput + fullLocation[index--];
+                } while (index > 4);
+                setLocation(locationInput);
+                setOldLocation(locationInput);
+                setRoom(fullLocation[index]);
+                setOldRoom(fullLocation[index]);
+                setCabinet(fullLocation[index-1]);
+                setOldCabinet(fullLocation[index-1]);
+                setShelf(fullLocation[index-2]);
+                setOldShelf(fullLocation[index-2]);
+            }
+            
+            // CAS state
+            const casTokens = data.cas_number.split("-");
+            let casTokenFirst = casTokens[0].split("");
+            do {
+                casTokenFirst = ["", ...casTokenFirst];
+            } while (casTokenFirst.length<7);
+            setCasFirst(casTokenFirst);
+            setOldCasFirst(casTokenFirst);
+            setCasSecond(casTokens[1].split(""));
+            setOldCasSecond(casTokens[1].split(""));
+            setCasThird(casTokens[2].split(""));
+            setOldCasThird(casTokens[2].split(""));
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        } finally {
+            setIsLoading(false)
+        }
+    };
     
     // Load Location data
     useEffect(() => {
@@ -1252,6 +1325,58 @@ export default function Edit_Container() {
             setErrorMsg(error.message);
             setLoadError(true);
         }
+    }
+    
+    // Load Change Log
+    {/* Changes should be in the form below and added to changeLog array
+    {
+      Date: '',
+      Time: '',
+      ContainerID: String(container_id ?? ''),
+      User: '',
+      Type: 'Edit, Location, Quantity, or SDS',
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS',
+      Old: '',
+      New: '',
+    },
+      */}
+    
+    const loadChangeLog = async () => {
+        const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?container_id=" + container_id
+        try{
+            const response = await fetch(getChangeLogURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, ChangeLog data was empty.\nURL: "+getChangeLogURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    Date: '',
+                    Time: '',
+                    ContainerID: String(container_id ?? ''),
+                    User: '',
+                    Type: 'Edit',
+                    Change: 'Edit',
+                    Old: 'Error loading',
+                    New: 'Change Log',
+                }];
+            }
+            setChangeLog(data)
+        } catch (error: any) {
+            console.log(error.message);
+            setErrorMsg(error.message);
+            setLoadError(true);
+        }
+    }
+    
+    // String clamping
+    const clampString = (str, maxLength) => {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.slice(0, maxLength) + "...";
     }
 
     // Render Loading Screen
@@ -1885,7 +2010,7 @@ export default function Edit_Container() {
                   styles.changeLogTitle
                 }
               >
-                Change Log
+                Most Recent Change
               </Text>
 
               <Text
@@ -1907,7 +2032,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Date: __________
+                Date: {changeLog[0].Date}
               </Text>
 
               <Text
@@ -1915,7 +2040,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Time: __________
+          Time: {changeLog[0].Time}
               </Text>
             </View>
 
@@ -1932,7 +2057,7 @@ export default function Edit_Container() {
                 styles.changeLogText
               }
             >
-              User: __________
+          User: {changeLog[0].User}
             </Text>
 
             <Text
@@ -1940,7 +2065,7 @@ export default function Edit_Container() {
                 styles.changeLogText
               }
             >
-              Change: __________
+          Change: {changeLog[0].Change}
             </Text>
 
             <View
@@ -1953,7 +2078,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                Old: __________
+          Old: {changeLog[0].Old}
               </Text>
 
               <Text
@@ -1961,7 +2086,7 @@ export default function Edit_Container() {
                   styles.changeLogText
                 }
               >
-                New: __________
+          New: {changeLog[0].New}
               </Text>
             </View>
           </Pressable>
@@ -2728,11 +2853,13 @@ export default function Edit_Container() {
               {filteredChangeLog.map(
                 (item, index) => (
                   <Pressable
-                    key={`${item.Change}-${index}`}
-                    onPress={() =>
-                      openFieldHistory(
-                        item.Change as HistoryType
-                      )
+                    key={index}
+                                  onPress={() =>{
+                                      openFieldHistory(
+                                                       item.Change as HistoryType,
+                                                       index as index
+                                                       )
+                                      }
                     }
                     accessibilityRole="button"
                     accessibilityLabel={`${item.Change} history`}
@@ -2752,10 +2879,10 @@ export default function Edit_Container() {
                           styles.historyName
                         }
                       >
-                        {item.Change ===
+                        {item.Type ===
                         'Edit'
-                          ? 'Container edited'
-                          : `${item.Change} changed`}
+                          ? `${item.Change} changed`
+                          : `Date: ${item.Date}\nChange: ${item.New}`}
                       </Text>
 
                       <View
@@ -2768,13 +2895,11 @@ export default function Edit_Container() {
                             styles.historyValue
                           }
                         >
-                          {item.Change ===
-                          'Edit'
-                            ? '________ → ________ → ________'
-                            : item.Change ===
-                                'Quantity'
-                              ? '___ mL → ___ mL'
-                              : '________ → ________'}
+                                  {item.Type ===
+                                  'Edit'
+                                    ? `Date: ${clampString(item.Date, 15)}\nChange: ${clampString(item.New, 15)}`
+                                    : ``}
+                                  
                         </Text>
 
                         <Text
@@ -2892,6 +3017,7 @@ export default function Edit_Container() {
             </Text>
 
             <ScrollView
+              ref={scrollViewRef}
               style={
                 styles.fieldHistoryScroll
               }
@@ -2902,13 +3028,19 @@ export default function Edit_Container() {
                 false
               }
             >
-              {[1, 2, 3, 4].map(
+              {filteredChangeLog.map(
                 (item, index) => (
                   <View
-                    key={item}
+                    key={index}
                     style={
-                      styles.timelineItem
+                      index === historyIndex
+                      ? styles.timelineItemHighlight
+                      : styles.timelineItem
                     }
+                                  onLayout={(event) => {
+                                      changeLogLayouts.current[index] = event.nativeEvent.layout.y;
+                                      scrollToLayoutIndex();
+                                  }}
                   >
                     <View
                       style={
@@ -2917,13 +3049,13 @@ export default function Edit_Container() {
                     >
                       <View
                         style={
-                          index === 0
+                          index === historyIndex
                             ? styles.timelineDotActive
                             : styles.timelineDot
                         }
                       />
 
-                      {index < 3 && (
+                      {index < filteredChangeLog.length && (
                         <View
                           style={
                             styles.timelineLine
@@ -2942,9 +3074,30 @@ export default function Edit_Container() {
                           styles.timelineValue
                         }
                       >
-                        {getFieldHistoryValue(
-                          index
-                        )}
+                                  {item.Change} was changed
+                      </Text>
+                      
+                                  <Text
+                                    style={
+                                      styles.timelinePlaceholder
+                                    }
+                                  >
+                                  Old {item.Change}: {item.Old}
+                                  </Text>
+                                  <Text
+                                    style={
+                                      styles.timelinePlaceholder
+                                    }
+                                  >
+                                  New {item.Change}: {item.New}
+                                  </Text>
+
+                      <Text
+                        style={
+                          styles.timelinePlaceholder
+                        }
+                      >
+                                  User: {item.User}
                       </Text>
 
                       <Text
@@ -2952,7 +3105,7 @@ export default function Edit_Container() {
                           styles.timelinePlaceholder
                         }
                       >
-                        User: __________
+                                  Date: {item.Date}
                       </Text>
 
                       <Text
@@ -2960,15 +3113,7 @@ export default function Edit_Container() {
                           styles.timelinePlaceholder
                         }
                       >
-                        Date: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Time: __________
+                                  Time: {item.Time}
                       </Text>
                     </View>
                   </View>
@@ -4306,6 +4451,12 @@ const styles = StyleSheet.create({
     minHeight: 92,
   },
 
+    timelineItemHighlight: {
+      flexDirection: 'row',
+      minHeight: 92,
+      backgroundColor:'#3f4d8f'
+    },
+    
   timelineColumn: {
     width: 22,
     alignItems: 'center',

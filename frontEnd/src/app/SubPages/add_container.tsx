@@ -22,8 +22,12 @@ import { useUserState } from "../../app/contexts/UserState";
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
 const BASE_URL = "https://kemyze.vercel.app/";
+const USER_TEST = 49035; // replace with active user ID (KM#85)
+
+
 
 // Typography
 
@@ -154,6 +158,8 @@ export default function Add_Container() {
 
 
   // Field state
+  const [chemicalName, setChemicalName] =
+    useState('');
 
   const [quantity, setQuantity] =
     useState('Select Status');
@@ -164,17 +170,19 @@ export default function Add_Container() {
   const [expirationDate, setExpirationDate] =
     useState('YYYY/MM/DD');
 
+// TEMPORARY: hardcoded location values for testing; these will be replaced with
+// dynamic values using the location selector
   const [location, setLocation] =
-    useState('Location Name');
+    useState('School');
 
   const [room, setRoom] =
-    useState('XXXX');
+    useState('Chemistry');
 
   const [cabinet, setCabinet] =
-    useState('XXXX');
+    useState('1');
 
   const [shelf, setShelf] =
-    useState('XXXX');
+    useState('1');
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -192,6 +200,17 @@ export default function Add_Container() {
 
   const [isSdsUploading, setIsSdsUploading]
     = useState(false);
+
+  const [isSavingContainer, setIsSavingContainer] =
+    useState(false);
+
+  const [newContainerId, setNewContainerId] =
+    useState<number | null>(null);
+
+  const [qrPopupVisible, setQrPopupVisible] =
+    useState(false);
+
+    
 
   // CAS state
 
@@ -300,9 +319,9 @@ export default function Add_Container() {
   const getOptions = () => {
     if (selectorType === 'quantity') {
       return [
-        'Example 1',
-        'Example 2',
-        'Example 3',
+        'low',
+        'medium',
+        'high',
       ];
     }
 
@@ -593,6 +612,7 @@ export default function Add_Container() {
         return;
       }
    
+      console.log(`[SDS] Upload started for "${sdsFile.name ?? sdsFile.uri}"`);
       setIsSdsUploading(true);
    
       try {
@@ -638,6 +658,7 @@ export default function Add_Container() {
         // Backend returns the base64 blob 
         setSdsBase64(data.sds_base64 ?? '');
         setSdsUploaded(true);
+        successHaptic();
       } 
       catch (error: any) {
         console.log(error.message);
@@ -650,14 +671,73 @@ export default function Add_Container() {
   // Save flow
 
   const openReviewChanges = () => {
-    mediumHaptic();
-    setReviewVisible(true);
-  };
+    if (!sdsUploaded) {
+      Alert.alert('Please upload the SDS PDF before saving the container.');
+      return;
+    }
 
-  const saveReviewedChanges = () => {
-    successHaptic();
-    setReviewVisible(false);
-    setSavedVisible(true);
+    mediumHaptic()
+    setReviewVisible(true);
+    };
+
+  const saveReviewedChanges = async() => {
+    if (isSavingContainer) {
+      return;
+    }
+
+    setIsSavingContainer(true);
+
+    try {
+      const payload = {
+        user_id: USER_TEST,
+        chemical_name: chemicalName,
+        cas_number: `${casFirst.join('')}-${casSecond.join('')}-${casThird.join('')}`,
+        acqn_date: acquisitionDate.replaceAll('/', '-'),
+        expr_date:
+          expirationDate && expirationDate !== 'YYYY/MM/DD'
+            ? expirationDate.replaceAll('/', '-')
+            : null,
+        quantity,
+        location,
+        room,
+        cabinet,
+        shelf,
+        sds_base64: sdsBase64,
+      };
+
+      const createURL = BASE_URL + "containers/createContainer";
+      const createResponse = await fetch(createURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        console.log(`[Container] Create failed, status ${createResponse.status}: ${errorText}`);
+        let message = 'The container could not be created. Please try again.';
+        if (createResponse.status === 403) {
+          message = "You don't have permission to create containers.";
+        } else if (createResponse.status === 400 && /location/i.test(errorText)) {
+          message = 'That location could not be found. Please re-check the room/cabinet/shelf selections.';
+        }
+        Alert.alert('Save Failed', message);
+        return;
+      }
+
+      const data = await createResponse.json();
+      successHaptic();
+      setNewContainerId(data.container_id ?? null);
+      setReviewVisible(false);
+      setSavedVisible(true);
+    } 
+    catch (error: any) {
+      console.log(`[Container] Create failed: ${error.message}`);
+      Alert.alert('Save Failed', 'The container could not be created. Please try again.');
+    } 
+    finally {
+      setIsSavingContainer(false);
+    }
   };
 
   const cancelReviewedChanges = () => {
@@ -669,6 +749,15 @@ export default function Add_Container() {
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
+    setQrPopupVisible(true);
+  };
+
+  const closeQrPopup = () => {
+    haptic();
+    setQrPopupVisible(false);
+    // Navigate back to inventory now that the container has been created
+    // and its QR label has been shown/saved.
+    router.back();
   };
 
   const closeCanceledConfirmation = () => {
@@ -856,6 +945,8 @@ export default function Add_Container() {
                   placeholderTextColor="#C9CFE9"
                   accessibilityLabel="Chemical Name"
                   maxLength={255}
+                  value={chemicalName}
+                  onChangeText={setChemicalName}
                 />
               </View>
 
@@ -1317,6 +1408,7 @@ export default function Add_Container() {
               width="100%"
               height={50}
               borderRadius={10}
+              disabled={!sdsUploaded}
             />
           </View>
 
@@ -2052,12 +2144,14 @@ export default function Add_Container() {
               onPress={
                 saveReviewedChanges
               }
+              disabled={isSavingContainer}
               accessibilityRole="button"
               accessibilityLabel="Save reviewed changes"
               style={({ pressed }) => [
                 styles.reviewSaveButton,
                 pressed &&
                   styles.buttonPressed,
+                isSavingContainer && { opacity: 0.7 },
               ]}
             >
               <LinearGradient
@@ -2081,15 +2175,18 @@ export default function Add_Container() {
                         }}
                       />
                     </LinearGradient>
-              <Text
-                style={
-                  styles.reviewSaveText
-                }
-              >
-                Save Changes
-              </Text>
+              {isSavingContainer ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text
+                  style={
+                    styles.reviewSaveText
+                  }
+                >
+                  Save Changes
+                </Text>
+              )}
             </Pressable>
-
             <Pressable
               onPress={
                 cancelReviewedChanges
@@ -2340,6 +2437,15 @@ export default function Add_Container() {
           </View>
         </View>
       </Modal>
+
+      {/* QR label for the newly created container, shown right after the
+          success confirmation (see closeSavedConfirmation above). */}
+      <QRLabelPopup
+        visible={qrPopupVisible}
+        onClose={closeQrPopup}
+        containerId={newContainerId ?? 0}
+        chemicalName={chemicalName}
+      />
     </View>
   );
 }
