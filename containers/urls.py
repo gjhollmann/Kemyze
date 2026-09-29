@@ -2,9 +2,14 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('getContainerChangeLog',views.getContainerChangeLog,name='getContainerChangeLog'),
     path('getContainer', views.getContainer, name='getContainer'),
     path('getSDS', views.getSDS, name='getSDS'),
     path('getSearch', views.getSearch, name='getSearch'),
     path('getSearchRecent', views.getSearchRecent, name='getSearchRecent'),
+    path('editContainer', views.editContainer, name='editContainer'),
+    path('getLocationChildren', views.getLocationChildren,name='getLocationChildren'),
     path('', views.containersMain, name='containersMain'),
+    path("uploadSDS", views.uploadSDS, name="uploadSDS"),
+    path("createContainer", views.createContainer, name="createContainer"),
 ]

@@ -15,6 +15,7 @@ import { useState } from "react";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "../utils/handleLogin";
 import { useRouter } from 'expo-router';
+import { useUserState } from '../app/contexts/UserState';
 
 
 
@@ -26,6 +27,7 @@ export default function Index() {
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
   const router = useRouter();
+  const { activeUser, setActiveUser } = useUserState();
 
   const logoWidth = isTablet
     ? isLandscape
@@ -129,9 +131,21 @@ export default function Index() {
 
     const result = await handleLogin(email, password);
 
-    if (!result.success) {
+    /*if (!result.success) {
       Alert.alert("Login Failed", result.message);
     } else {
+      Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+      router.navigate('/Pages/scanner');
+    }*/
+
+    if (!result.success || !result.data) {
+      Alert.alert("Login Failed", result.message);
+    } else {
+      setActiveUser({
+        userID: result.data.userID,
+        accessLevel: result.data.accessLevel,
+      });
+      
       Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
       router.navigate('/Pages/scanner');
     }

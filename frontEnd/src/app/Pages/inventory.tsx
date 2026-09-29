@@ -13,10 +13,12 @@ import {
   Alert,
   RefreshControl,
   Linking,
-  Modal
+  Modal,
+  ActivityIndicator
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
+import * as DocumentPicker from 'expo-document-picker';
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -29,9 +31,12 @@ interface Chemical {
   location: string;
   quantity: string;
   hasWarning?: boolean; // not sent by the backend yet, kept optional for later use
+  sds_document?: string;
 }
 
 const BASE_URL = "https://kemyze.vercel.app/";
+
+// const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
 const Inventory: React.FC = () => {
   const router = useRouter();
@@ -58,29 +63,37 @@ const Inventory: React.FC = () => {
   const [sdsFileLocation, setSdsFileLocation] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // SDS upload states
+  const [sdsFile, setsdsFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [sdsBase64, setSdsBase64] = useState('');
+  const [sdsUploaded, setSdsUploaded] = useState(false);
+  const [isSDSUploading, setIsSDSUploading] = useState(false);
   // Tracker for query states & pagination
   const [lastUsedSearch, setLastUsedSearch] = useState(false);
   const [isExpiringSoon, setIsExpiringSoon] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(10);
   const [inventoryData, setInventoryData] = useState<Chemical[]>([]);
+  const [noMoreData, setNoMoreData] = useState(false);
 
   // function called when user scrolls to end of inventory
   const onScrollAtEnd = useCallback(() => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setLoadingMore(false);
-    }, 2000);
-    console.log("User scrolled to end");
-    if (lastUsedSearch || isExpiringSoon){
-      addMoreContainers();
-    }
+      if (!noMoreData){
+          setLoadingMore(true);
+          setTimeout(() => {
+              setLoadingMore(false);
+          }, 2000);
+          console.log("User scrolled to end");
+          if (lastUsedSearch || isExpiringSoon){
+              addMoreContainers();
+          }
+      }
   });
 
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
-    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "");
+    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "")+(isExpiringSoon ? "&expiringSoon=true" : "");
     console.log(queryUrl);
     try {
       const response = await fetch(queryUrl, {
@@ -99,6 +112,9 @@ const Inventory: React.FC = () => {
         setCurrentIndex(currentIndex + 10);
         setInventoryData(inventoryData.concat(data));
       }
+        if (data.length <= 0){
+            setNoMoreData(true);
+        }
     } catch (error: any) {
       console.log(error.message);
     }
@@ -197,6 +213,7 @@ const Inventory: React.FC = () => {
     const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
     setIsExpiringSoon(false);
     setLastUsedSearch(true);
+      setNoMoreData(false);
     setCurrentIndex(10);
     console.log(getSearchURL);
     try {
@@ -213,6 +230,9 @@ const Inventory: React.FC = () => {
       const data = await searchResponse.json();
       console.log(data);
       setInventoryData(data);
+        if (data.length <= 0 ){
+            setNoMoreData(true);
+        }
     } catch (error: any) {
       console.log(error.message);
     }
@@ -250,6 +270,101 @@ const Inventory: React.FC = () => {
     setIsQrLabelVisible(true); // Confirm QR visibility.
   }; // const onQRLabelPress
 
+  // function to open the device's file picker and stage a PDF for SDS upload
+  const pickSdsFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+ 
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+ 
+      const asset = result.assets[0];
+ 
+      // Client-side PDF check
+      const looksLikePdf =
+        (asset.mimeType && asset.mimeType === 'application/pdf') ||
+        asset.name?.toLowerCase().endsWith('.pdf');
+ 
+      if (!looksLikePdf) {
+        showPopup('Invalid File', 'Please select a PDF file for the SDS.');
+        return;
+      }
+ 
+      setsdsFile(asset);
+      setSdsFileLocation(asset.name ?? asset.uri);
+      // A newly picked file hasn't been sent to the backend yet.
+      setSdsUploaded(false);
+      setSdsBase64('');
+    } catch (error: any) {
+      console.log(error.message);
+      showPopup('Error', 'Could not open the file picker.');
+    }
+  };
+
+  // function to handle SDS file upload (sends PDF file to backend for validation and conversion to base64)
+  const uploadSdsFile = async () => {
+    if (!sdsFile) {
+      showPopup('No File Selected', 'Please locate an SDS PDF before importing.');
+      return;
+    }
+ 
+    setIsSDSUploading(true);
+ 
+    try {
+      const formData = new FormData();
+      formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+      // No container_id yet - this container doesn't exist in the
+      // database until Save actually creates it (see handleSaveContainer).
+ 
+      if (Platform.OS === 'web') {
+        // On web, DocumentPicker gives us a File/Blob directly under `file`.
+        const response = await fetch(sdsFile.uri);
+        const blob = await response.blob();
+        formData.append('sds_file', blob, sdsFile.name ?? 'sds.pdf');
+      } else {
+        formData.append('sds_file', {
+          uri: sdsFile.uri,
+          name: sdsFile.name ?? 'sds.pdf',
+          type: sdsFile.mimeType ?? 'application/pdf',
+        } as any);
+      }
+ 
+      const uploadURL = BASE_URL + "containers/uploadSDS";
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'POST',
+        body: formData,
+      });
+ 
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        if (uploadResponse.status === 403) {
+          showPopup('Access Denied', "You don't have permission to upload SDS documents.");
+        } else if (uploadResponse.status === 415) {
+          showPopup('Invalid File', 'That file is not a valid PDF.');
+        } else {
+          showPopup('Upload Failed', 'The SDS could not be uploaded. Please try again.');
+        }
+        throw new Error("BAD TIME STATUS: " + uploadResponse.status + "\nError Reason: " + errorText);
+      }
+ 
+      const data = await uploadResponse.json();
+      // Backend returns the base64 blob 
+      setSdsBase64(data.sds_base64 ?? '');
+      setSdsUploaded(true);
+    } 
+    catch (error: any) {
+      console.log(error.message);
+    } 
+    finally {
+      setIsSDSUploading(false);
+    }
+  };
+
   // Helper functions to handle popup modal close & reset
   const handleCloseAddModal = () => {
     setName('');
@@ -264,8 +379,12 @@ const Inventory: React.FC = () => {
     setCabinet('');
     setShelf('');
     setSdsFileLocation('');
+    setsdsFile(null);
+    setSdsBase64('');
+    setSdsUploaded(false);
     setErrorMessage('');
     setIsAddModalVisible(false);
+
   };
 
   const handleSaveContainer = () => {
@@ -276,6 +395,10 @@ const Inventory: React.FC = () => {
     if (!locationName.trim()) {
       setErrorMessage('*Location Name is required*');
       return;
+    }
+    if (!sdsUploaded) {
+        setErrorMessage('*Please import a valid SDS before adding this container*');
+        return;
     }
 
     const formattedCas = `${casX}-${casY}-${casZ}`;
@@ -290,6 +413,7 @@ const Inventory: React.FC = () => {
       location: fullLocation,
       quantity: containerQuantity || 'GOOD',
       hasWarning: false,
+      sds_document: sdsBase64, 
     };
 
     setInventoryData((prev) => [newContainer, ...prev]);
@@ -398,7 +522,7 @@ const Inventory: React.FC = () => {
               // shows everything instead of staying filtered by leftover search text.
               onPress={() => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
-                if (tab === 'ADD NEW') setIsAddModalVisible(true);
+                if (tab === 'ADD NEW') router.push('../SubPages/add_container');
                 if (tab === 'SHOW ALL') { setSearch(''); setIsExpiringSoon(false); fetchAllContainers(); }
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
                 if (tab === 'SHOW LOW') setShowLow(!showLow);
@@ -643,17 +767,33 @@ const Inventory: React.FC = () => {
               {/* SDS Sheet Import Row */}
               <Text style={styles.formLabel}>SDS Sheet</Text>
               <View style={styles.sdsRow}>
-                <View style={[styles.inputWrapper, { flex: 1, marginRight: 10 }]}>
-                  <TextInput
-                    style={styles.modalTextInput}
-                    placeholder="File Location"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
-                    value={sdsFileLocation}
-                    onChangeText={setSdsFileLocation}
-                  />
-                </View>
-                <TouchableOpacity style={styles.importBtn}>
-                  <Text style={styles.importBtnText}>Import</Text>
+                <TouchableOpacity
+                  style={[styles.inputWrapper, { flex: 1, marginRight: 10 }]}
+                  onPress={pickSdsFile}
+                  disabled={isSDSUploading}
+                >
+                  <Text
+                    style={[
+                      styles.modalTextInput,
+                      !sdsFileLocation && { color: 'rgba(255,255,255,0.4)' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {sdsFileLocation || 'Tap to locate PDF file'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.importBtn, isSDSUploading && { opacity: 0.6 }]}
+                  onPress={uploadSdsFile}
+                  disabled={isSDSUploading}
+                >
+                  {isSDSUploading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text style={styles.importBtnText}>
+                      {sdsUploaded ? 'Uploaded ✓' : 'Import'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -677,7 +817,7 @@ const Inventory: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.navItem}>
               <Text style={styles.navIcon}>👤</Text>
-              <Text style={styles.navText}>Profile</Text>
+              <Text style={styles.navText}>Accounts</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -687,7 +827,7 @@ const Inventory: React.FC = () => {
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>📷</Text><Text style={styles.navText}>QR Scanner</Text></TouchableOpacity>
         <TouchableOpacity style={styles.navItem}><Text style={[styles.navIcon, styles.activeNav]}>📊</Text><Text style={[styles.navText, styles.activeNav]}>Inventory</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}><Text style={styles.navIcon}>👤</Text><Text style={styles.navText}>Accounts</Text></TouchableOpacity>
       </View>
 
       {/*Popup window for QR label to be opened on 'View QR Label' button press.*/}
