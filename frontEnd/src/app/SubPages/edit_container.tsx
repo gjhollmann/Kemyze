@@ -1077,7 +1077,7 @@ export default function Edit_Container() {
             setNewLocationSuccess(true);
             loadLocationOptions();
         }
-      };
+        }
 
 
   // Navigation
