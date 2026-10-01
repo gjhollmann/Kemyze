@@ -757,3 +757,53 @@ def createContainer(request):
         "container_id": NewContainer.container_id,
     }
     return JsonResponse(data)
+
+""" 
+View to add a location
+Route: /containers/addLocation
+Request Variables:
+Method: POST
+Parameters:
+    user_id
+    new_location
+
+Responses:
+    Failures:
+        Status 405: Not a post request
+        Status 400: Missing user_id Paramter
+        Status 400: Missing location Paramter
+        Status 403: User does not have access level
+        Status 400: User does not exist
+        Status 500: Something broke bad
+"""
+@csrf_exempt
+def addLocation(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        user_id = data.get("user_id")
+        if user_id == None:
+            return HttpResponseBadRequest("Missing 'user_id' Parameter")
+        new_location = data.get("new_location")
+        if (new_location == None) or (new_location == ''):
+            return HttpResponseBadRequest("Missing location Parameter")
+
+        #Verify User access level
+        try:
+            FoundUser = Users.objects.get(user_id = user_id)
+            if FoundUser.access_level > 1:
+                return HttpResponseForbidden("User does not have permission to make locations")
+        except Users.DoesNotExist:
+            return HttpResponseBadRequest("User does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        # Edit container
+        try:
+            new_row = Locations.objects.create(name=new_location, type = 'site')
+            return HttpResponse("Location made")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["POST"])
