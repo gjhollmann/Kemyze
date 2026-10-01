@@ -24,6 +24,7 @@ import GradientButton from '../../../components/GradientButton';
 
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 9873243; // replace with actual user ID (KM#85)
+const USER_ACCESS = 1;
 
 // Typography
 
@@ -148,6 +149,9 @@ export default function Edit_Container() {
   const [reviewVisible, setReviewVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
+  const [newLocationVisible, setNewLocationVisible] = useState(false);
+  const [newLocationLoading, setNewLocationLoading] = useState(false);
+  const [newLocationError, setNewLocationError] = useState(false);
 
   // Selection state
 
@@ -194,6 +198,11 @@ export default function Edit_Container() {
 
   const [sdsLocation, setSdsLocation] =
     useState('');
+
+  const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+
+  const [newLocation, setNewLocation] = useState('');
+
 
   // SDS upload state
   const [sdsFile, setSdsFile] =
@@ -977,6 +986,11 @@ export default function Edit_Container() {
     setCanceledVisible(true);
   };
 
+  const showAddNewLocation = () => {
+      haptic();
+      setNewLocationVisible(true);
+    };
+
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
@@ -986,6 +1000,23 @@ export default function Edit_Container() {
     haptic();
     setCanceledVisible(false);
   };
+
+  const closeNewLocation = () => {
+      haptic();
+      setNewLocationVisible(false);
+    };
+
+    useEffect(() => {
+        if(newLocationVisible == false){
+            setNewLocationLoading(false);
+            setNewLocationError(false);
+        }
+    }, [newLocationVisible]);
+
+  const addNewLocation = () => {
+      setNewLocationLoading(true);
+      };
+
 
   // Navigation
 
@@ -1071,7 +1102,14 @@ export default function Edit_Container() {
     useEffect(() => {
         getContainer();
         loadChangeLog();
+        checkUser();
     }, []);
+
+    const checkUser = async() => {
+        if(USER_ACCESS <= 1){
+            setIsNewLocationVisible(true);
+        }
+        }
     
     const getContainer = async () => {
         setIsLoading(true);
@@ -1327,7 +1365,8 @@ export default function Edit_Container() {
         </View>
         )
     }
-    
+
+
     
   // Render
 
@@ -2156,6 +2195,49 @@ export default function Edit_Container() {
                 </Pressable>
               )
             )}
+{
+    isNewLocationVisible && (
+            <Pressable
+                          onPress={showAddNewLocation}
+                          accessibilityRole="button"
+                          accessibilityLabel="Create New Location"
+                          style={({ pressed }) => [
+                            styles.cancelButton,
+                            pressed &&
+                              styles.buttonPressed,
+                          ]}
+                        >
+                          <LinearGradient
+                                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                  locations={[0, 0.27, 0.49, 0.75, 1]}
+                                  start={{ x: 0, y: 0 }}
+                                  end={{ x: 1, y: 1 }}
+                                  style={StyleSheet.absoluteFillObject}
+                                >
+                                  <LinearGradient
+                                    colors={['#2983ff', '#1b3de9']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 0, y: 1 }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 2,
+                                      bottom: 2,
+                                      left: 2,
+                                      right: 2,
+                                      borderRadius: 7,
+                                    }}
+                                  />
+                                </LinearGradient>
+                          <Text
+                            style={
+                              styles.cancelText
+                            }
+                          >
+                            Add New Location
+                          </Text>
+                        </Pressable>
+        )
+    }
 
             <Pressable
               onPress={closeSelector}
@@ -3507,6 +3589,178 @@ export default function Edit_Container() {
           </View>
         </View>
       </Modal>
+
+      {/* New Location */}
+
+            <Modal
+              visible={newLocationVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={
+                closeNewLocation
+              }
+            >
+              <View
+                style={
+                  styles.confirmBackground
+                }
+              >
+                <BlurView
+                  intensity={50}
+                  tint="dark"
+                  style={
+                    StyleSheet.absoluteFillObject
+                  }
+                />
+
+                {newLocationLoading && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <View style={styles.loadingIndicator}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        </View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Cancel Add Location in load"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Cancel
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )}
+
+                {!newLocationError && !newLocationLoading &&(
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Type in location name:
+                    </Text>
+                    <View style={{padding:5}}></View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="New Location"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="New Location Input"
+                        value = {newLocation}
+                        onChangeText = {setNewLocation}
+                        maxLength={255}
+                    />
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={addNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Add New Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed &&
+                            styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.27, 0.49, 0.75, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                    >
+                            <LinearGradient
+                              colors={['#2983ff', '#1b3de9']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 0, y: 1 }}
+                              style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                              }}
+                            />
+                          </LinearGradient>
+                    <Text
+                      style={
+                        styles.confirmButtonText
+                      }
+                    >
+                      Add Location
+                    </Text>
+                  </Pressable>
+                  <View style={{padding:2}}></View>
+                  <Pressable
+                                      onPress={
+                                        closeNewLocation
+                                      }
+                                      accessibilityRole="button"
+                                      accessibilityLabel="Cancel Add Location"
+                                      style={({ pressed }) => [
+                                        styles.confirmButton,
+                                        pressed &&
+                                          styles.buttonPressed,
+                                      ]}
+                                    >
+                                      <LinearGradient
+                                              colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                              locations={[0, 0.35, 0.56, 0.89, 1]}
+                                              start={{ x: 0, y: 0 }}
+                                              end={{ x: 1, y: 1 }}
+                                              style={StyleSheet.absoluteFillObject}
+                                            >
+                                              <LinearGradient
+                                                colors={['#2983ff', '#1b3de9']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 2,
+                                                  bottom: 2,
+                                                  left: 2,
+                                                  right: 2,
+                                                  borderRadius: 7,
+                                                }}
+                                              />
+                                            </LinearGradient>
+                                      <Text
+                                        style={
+                                          styles.confirmButtonText
+                                        }
+                                      >
+                                        Cancel
+                                      </Text>
+                                    </Pressable>
+                                    </View>
+                                    )}
+              </View>
+            </Modal>
     </View>
   );
 }
@@ -4631,4 +4885,8 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16
   },
+
+  loadingIndicator: {
+      padding: 20,
+      },
 });
