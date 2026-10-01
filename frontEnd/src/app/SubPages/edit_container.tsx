@@ -22,7 +22,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "http://127.0.0.1:8000/";
+const BASE_URL = "https://kemyze.vercel.app/";
 const USER_TEST = 9873243; // replace with actual user ID (KM#85)
 
 // Typography
