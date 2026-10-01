@@ -25,7 +25,7 @@ import GradientButton from '../../../components/GradientButton';
 
 
 const BASE_URL = "http://127.0.0.1:8000/";
-const USER_TEST = 9873243; // replace with actual user ID (KM#85)
+const USER_TEST = 49235; // replace with actual user ID (KM#85)
 const USER_ACCESS = 1;
 
 // Typography 
@@ -1045,7 +1045,7 @@ export default function Edit_Container() {
                       new_location: newLocation,
       };
       try {
-        const editURL = BASE_URL + "containers/newLocation"
+        const editURL = BASE_URL + "containers/addLocation"
         let now = new Date();
         let formattedTime = now.toLocaleTimeString();
         console.log("${formattedTime} Sending add location URL: " + editURL);
@@ -1070,7 +1070,9 @@ export default function Edit_Container() {
             setErrorMsg(error?.message ?? "Unknown error");
             setNewLocationError(true);
         } finally {
+            setNewLocationLoading(false);
             setNewLocationSuccess(true);
+            loadLocationOptions();
         }
       };
 
@@ -3817,7 +3819,7 @@ export default function Edit_Container() {
                     </View>
                     )}
 
-                {!newLocationError && !newLocationLoading &&(
+                {!newLocationError && !newLocationLoading && !newLocationSuccess &&(
                     <View style={styles.confirmCard}>
                     <Text style={styles.confirmTitle}>
                         Type in location name:
