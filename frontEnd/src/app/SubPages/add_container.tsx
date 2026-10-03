@@ -763,6 +763,7 @@ export default function Add_Container() {
 
   const showAddNewLocation = () => {
       haptic();
+      closeSelector();
       setNewLocationVisible(true);
   };
 
@@ -788,6 +789,9 @@ export default function Add_Container() {
     const closeNewLocation = () => {
         haptic();
         setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
       };
 
       useEffect(() => {
