@@ -436,7 +436,10 @@ def getContainerChangeLog(request):
                 old_values = log.old_values
                 new_values = log.new_values
                 
-                old_name = old_values.get("chemical_name")
+                if (old_values):
+                    old_name = old_values.get("chemical_name")
+                else:
+                    old_name = ""
                 new_name = new_values.get("chemical_name")
                 if (old_name!=new_name):
                     data.append({
@@ -449,8 +452,11 @@ def getContainerChangeLog(request):
                     'Old': old_name,
                     'New': new_name
                     })
-                    
-                old_cas = old_values.get("cas_number")
+                
+                if (old_values):
+                    old_cas = old_values.get("cas_number")
+                else:
+                    old_cas = ""
                 new_cas = new_values.get("cas_number")
                 if (old_cas!=new_cas):
                     data.append({
@@ -464,7 +470,10 @@ def getContainerChangeLog(request):
                     'New': new_cas
                     })
                 
-                old_quantity = old_values.get("quantity")
+                if (old_values):
+                    old_quantity = old_values.get("quantity")
+                else:
+                    old_quantity = ""
                 new_quantity = new_values.get("quantity")
                 if (old_quantity!=new_quantity):
                     data.append({
@@ -478,7 +487,10 @@ def getContainerChangeLog(request):
                     'New': new_quantity
                     })
                     
-                old_acqn_date = old_values.get("acqn_date")
+                if (old_values):
+                    old_acqn_date = old_values.get("acqn_date")
+                else:
+                    old_acqn_date = ""
                 new_acqn_date = new_values.get("acqn_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -492,7 +504,10 @@ def getContainerChangeLog(request):
                     'New': new_acqn_date
                     })
                     
-                old_expr_date = old_values.get("expr_date")
+                if (old_values):
+                    old_expr_date = old_values.get("expr_date")
+                else:
+                    old_expr_date = ""
                 new_expr_date = new_values.get("expr_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -550,6 +565,9 @@ def getContainerChangeLog(request):
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
 
