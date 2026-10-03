@@ -1424,7 +1424,7 @@ export default function Edit_Profile() {
             )}
 
         {
-                    isNewLocationVisible && (
+                    isNewLocationVisible && selectorType == 'location' && (
                             <Pressable
                                           onPress={showAddNewLocation}
                                           accessibilityRole="button"

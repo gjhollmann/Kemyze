@@ -2236,7 +2236,7 @@ export default function Edit_Container() {
               )
             )}
 {
-    isNewLocationVisible && (
+    isNewLocationVisible && selectorType == 'location' &&(
             <Pressable
                           onPress={showAddNewLocation}
                           accessibilityRole="button"

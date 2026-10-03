@@ -645,7 +645,7 @@ export default function CreateProfile() {
             ))}
 
         {
-                    isNewLocationVisible && (
+                    isNewLocationVisible && selectorType == 'location' && (
                             <Pressable
                                           onPress={showAddNewLocation}
                                           accessibilityRole="button"
