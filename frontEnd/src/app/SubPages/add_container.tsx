@@ -18,7 +18,7 @@ import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
-import { useUserState } from '../../app/contexts/UserState' // Shared-state import for user state
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
@@ -606,6 +606,11 @@ export default function Add_Container() {
   
     // function to handle SDS file upload (sends PDF file to backend for validation and conversion to base64)
     const uploadSdsFile = async () => {
+      if (!activeUser) {
+        Alert.alert("Error", "Active user not found");
+        return;
+      }
+
       if (!sdsFile) {
         Alert.alert('Please locate an SDS PDF before importing.');
         return;

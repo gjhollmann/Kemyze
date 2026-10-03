@@ -18,13 +18,12 @@ import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
-import { useUserState } from '../../app/contexts/UserState' // Shared-state import for user state.
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
 const BASE_URL = "https://kemyze.vercel.app/";
-const USER_TEST = 9873243; // replace with actual user ID (KM#85)
 
 // Typography 
 
@@ -964,9 +963,20 @@ export default function Edit_Container() {
                 body: JSON.stringify(data),
             });
             
-            if (!response.ok){
+            /*if (!response.ok){
               console.log("We are having issues");
               const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }*/
+            
+            if (response.status === 403) { // Alert user of permissions in event of bypass.
+              Alert.alert("Access Denied", "You don't have permission to edit containers");
+              return;
+            }
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              Alert.alert("Edit Failed", "The container could not be updated");
               throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             
