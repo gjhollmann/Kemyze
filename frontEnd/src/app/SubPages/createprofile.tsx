@@ -224,12 +224,16 @@ export default function CreateProfile() {
 
   const showAddNewLocation = () => {
         haptic();
+        closeSelector();
         setNewLocationVisible(true);
   };
 
     const closeNewLocation = () => {
         haptic();
         setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
       };
 
       useEffect(() => {

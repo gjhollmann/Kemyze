@@ -591,6 +591,7 @@ export default function Edit_Profile() {
 
   const showAddNewLocation = () => {
         haptic();
+        closeSelector();
         setNewLocationVisible(true);
   };
 
@@ -608,6 +609,9 @@ export default function Edit_Profile() {
     const closeNewLocation = () => {
         haptic();
         setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
       };
 
       useEffect(() => {
