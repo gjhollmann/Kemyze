@@ -19,6 +19,7 @@ import {
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -36,11 +37,12 @@ interface Chemical {
 
 const BASE_URL = "https://kemyze.vercel.app/";
 
-// const USER_TEST = 49035; // replace with actual user ID (KM#85)
+const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
 const Inventory: React.FC = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const { activeUser } = useUserState();
   // True while we're waiting on the very first/full inventory load (KM-106)
   const [loading, setLoading] = useState(true);
   const [showLow, setShowLow] = useState(false);
@@ -245,6 +247,17 @@ const Inventory: React.FC = () => {
 
   // function to handle when edit button is pressed
   const onEditPress = (container_id: any) => {
+    if (!activeUser) { // Check active user.
+      showPopup("Error", "Active user not found");
+      return;
+    }
+
+    // Deny container edit privileges to unauthorized users.
+    if (Number(activeUser.accessLevel) > 3) {
+      showPopup('Access Denied', 'You do not have permission to edit containers.');
+      return;
+    }
+
     console.log("Routing to edit screen for: "+container_id);
     router.push({
       pathname: '../SubPages/edit_container',
@@ -261,7 +274,7 @@ const Inventory: React.FC = () => {
   const onQRLabelPress = async (container_id: string, chemical_name: string) => {
     // Safety check for passed container_id.
     if (!container_id) {
-      showPopup("Error", "No container ID; QR label not retrieved.");
+      showPopup('Error', 'No container ID; QR label not retrieved.');
       return;
     }
 
@@ -472,6 +485,22 @@ const Inventory: React.FC = () => {
     } // try/catch ...
   }; // const onRecentlyChangedPress
 
+  const handleAddNewContainer = () => {
+    if (!activeUser) { // Check for active user. 
+      showPopup('Error', 'Active user not found.');
+      return;
+    }
+
+    // Deny unauthorized user access to add container menu/form.
+    if (Number(activeUser.accessLevel) > 3) {
+      showPopup('Access Denied', 'You do not have permission to add new containers.');
+      return;
+    }
+
+    // Navigate with verified authorization. 
+    router.push('../SubPages/add_container');
+  } // const handleAddNewContainer
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -522,7 +551,7 @@ const Inventory: React.FC = () => {
               // shows everything instead of staying filtered by leftover search text.
               onPress={() => {
                 if (tab === 'EXPIRING SOON') onExpiringSoonPress();
-                if (tab === 'ADD NEW') router.push('../SubPages/add_container');
+                if (tab === 'ADD NEW') router.push('../SubPages/add_container'); // Replace router.push(...) with handleAddNewContainer().
                 if (tab === 'SHOW ALL') { setSearch(''); setIsExpiringSoon(false); fetchAllContainers(); }
                 if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
                 if (tab === 'SHOW LOW') setShowLow(!showLow);
@@ -1140,7 +1169,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-}
 });
 
 export default Inventory;

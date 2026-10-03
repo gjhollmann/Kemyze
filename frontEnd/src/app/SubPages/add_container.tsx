@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
@@ -125,6 +126,8 @@ const PANEL_GRADIENT: [string, string] = [
 
 export default function Add_Container() {
   const router = useRouter();
+  const { activeUser } = useUserState(); // Insert active user.
+  console.log("Active user:", activeUser); // Verify active user in console.
 
   const { width, height } = useWindowDimensions();
 
@@ -603,6 +606,11 @@ export default function Add_Container() {
   
     // function to handle SDS file upload (sends PDF file to backend for validation and conversion to base64)
     const uploadSdsFile = async () => {
+      if (!activeUser) {
+        Alert.alert("Error", "Active user not found");
+        return;
+      }
+
       if (!sdsFile) {
         Alert.alert('Please locate an SDS PDF before importing.');
         return;
@@ -613,7 +621,7 @@ export default function Add_Container() {
    
       try {
         const formData = new FormData();
-        formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+        formData.append('user_id', String(activeUser?.userID)); // Replaced hard-coded userID.
         // No container_id yet - this container doesn't exist in the
         // database until Save actually creates it (see handleSaveContainer).
    
