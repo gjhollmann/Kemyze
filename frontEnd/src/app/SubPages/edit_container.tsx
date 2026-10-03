@@ -918,7 +918,7 @@ export default function Edit_Container() {
     const sendEditContainer = async () => {
         setIsLoading(true);
         let data = {
-                user_id: activeUser?.userID, // Replaced hard-coded user ID.
+                user_id: activeUser?.userID, // Replaced hard-coded user ID
                 container_id: container_id,
             };
 
