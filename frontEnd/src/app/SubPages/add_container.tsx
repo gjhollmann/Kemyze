@@ -127,10 +127,13 @@ const PANEL_GRADIENT: [string, string] = [
 export default function Add_Container() {
   const router = useRouter();
   const { activeUser } = useUserState(); // Insert active user.
-  console.log("Active user:", activeUser); // Verify active user in console.
 
+  // Invoke useEffect to prevent active user state from flooding console (as seen in edit_container).
+  useEffect(() => { 
+    console.log("Active user:", activeUser); // Additional console check for active user. 
+  }, [activeUser]);
+  
   const { width, height } = useWindowDimensions();
-
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
 
