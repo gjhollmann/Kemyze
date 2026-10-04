@@ -19,7 +19,7 @@ import {
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import * as DocumentPicker from 'expo-document-picker';
-import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state
+// Import shared user state from '../../app/contexts/UserState
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -42,7 +42,8 @@ const USER_TEST = 49035; // replace with actual user ID (KM#85)
 const Inventory: React.FC = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const { activeUser } = useUserState();
+  // Insert active user, assign call to useUserState().
+  
   // True while we're waiting on the very first/full inventory load (KM-106)
   const [loading, setLoading] = useState(true);
   const [showLow, setShowLow] = useState(false);
@@ -245,7 +246,8 @@ const Inventory: React.FC = () => {
     onFilterPress();
   }, [showLow]);
 
-  // function to handle when edit button is pressed
+  // function to handle when edit button is pressed.
+  // Modified to include checks for active user, access level before navigation.
   const onEditPress = (container_id: any) => {
     if (!activeUser) { // Check active user.
       showPopup("Error", "Active user not found");
@@ -253,7 +255,7 @@ const Inventory: React.FC = () => {
     }
 
     // Deny container edit privileges to unauthorized users.
-    if (Number(activeUser.accessLevel) > 3) {
+    if (Number(activeUser.accessLevel) > 4) {
       showPopup('Access Denied', 'You do not have permission to edit containers.');
       return;
     }
@@ -485,6 +487,8 @@ const Inventory: React.FC = () => {
     } // try/catch ...
   }; // const onRecentlyChangedPress
 
+  // New function handleAddNewContainer that verifies active user and checks access level before navigating to 
+  // container creation screen
   const handleAddNewContainer = () => {
     if (!activeUser) { // Check for active user. 
       showPopup('Error', 'Active user not found.');
@@ -492,7 +496,7 @@ const Inventory: React.FC = () => {
     }
 
     // Deny unauthorized user access to add container menu/form.
-    if (Number(activeUser.accessLevel) > 3) {
+    if (Number(activeUser.accessLevel) > 4) {
       showPopup('Access Denied', 'You do not have permission to add new containers.');
       return;
     }

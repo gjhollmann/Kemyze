@@ -133,7 +133,11 @@ export default function Edit_Container() {
   const { container_id } = useLocalSearchParams();
   const router = useRouter();
   const { activeUser } = useUserState(); // Insert active user.
-  console.log("Active user:", activeUser); // Additional console check for active user. 
+  
+  // Invoke useEffect to prevent active user state from flooding console.
+  useEffect(() => { 
+    console.log("Active user:", activeUser); // Additional console check for active user. 
+  }, [activeUser]);
 
   const { width, height } = useWindowDimensions();
 
