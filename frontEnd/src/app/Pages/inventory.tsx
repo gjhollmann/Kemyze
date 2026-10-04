@@ -19,7 +19,7 @@ import {
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import * as DocumentPicker from 'expo-document-picker';
-// Import shared user state from '../../app/contexts/UserState
+import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -42,8 +42,12 @@ const USER_TEST = 49035; // replace with actual user ID (KM#85)
 const Inventory: React.FC = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  // Insert active user, assign call to useUserState().
+  const { activeUser } = useUserState();// Insert active user, assign call to useUserState().
   
+  useEffect(() => { 
+    console.log("Active user:", activeUser); // Additional console check for active user. 
+  }, [activeUser]);
+
   // True while we're waiting on the very first/full inventory load (KM-106)
   const [loading, setLoading] = useState(true);
   const [showLow, setShowLow] = useState(false);
