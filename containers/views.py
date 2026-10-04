@@ -805,11 +805,15 @@ def addLocation(request):
         new_location = data.get("new_location")
         if (new_location == None) or (new_location == ''):
             return HttpResponseBadRequest("Missing location Parameter")
+        location_type = data.get("type")
 
         #Verify User access level
         try:
             FoundUser = Users.objects.get(user_id = user_id)
-            if FoundUser.access_level > 1:
+            if (location_type):
+                if FoundUser.access_level > 3:
+                    return HttpResponseForbidden("User does not have permission to make locations")
+            elif FoundUser.access_level > 1:
                 return HttpResponseForbidden("User does not have permission to make locations")
         except Users.DoesNotExist:
             return HttpResponseBadRequest("User does not exist")
@@ -818,7 +822,17 @@ def addLocation(request):
             return HttpResponseServerError(f"An unexpected error occurred: {e}")
         # Edit container
         try:
-            new_row = Locations.objects.create(name=new_location, type = 'site')
+            if (location_type == 'room'):
+                FoundLocation = Locations.objects.get(name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'cabinet'):
+                FoundLocation = Locations.objects.get(name=data.get("room"),parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'shelf'):
+                FoundLocation = Locations.objects.get(name=data.get("cabinet"),parent__name=data.get("room"), parent__parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            else:
+                new_row = Locations.objects.create(name=new_location, type = 'site')
             return HttpResponse("Location made")
         except Exception as e:
             print(e)
