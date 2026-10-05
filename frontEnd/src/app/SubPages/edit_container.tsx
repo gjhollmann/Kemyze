@@ -1044,7 +1044,7 @@ export default function Edit_Container() {
   const addNewLocation = async () => {
       setNewLocationLoading(true);
       let data = {
-                      user_id: USER_TEST,
+                      user_id: activeUser?.userID,
                       new_location: newLocation,
       };
       try {
@@ -1168,7 +1168,7 @@ export default function Edit_Container() {
     }, []);
 
     const checkUser = async() => {
-        if(USER_ACCESS <= 1){
+        if(activeUser?.accessLevel <= 1){
             setIsNewLocationVisible(true);
         }
         }
