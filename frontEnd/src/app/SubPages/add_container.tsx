@@ -706,7 +706,7 @@ export default function Add_Container() {
 
     try {
       const payload = {
-        user_id: USER_TEST,
+        user_id: activeUser?.userID,
         chemical_name: chemicalName,
         cas_number: `${casFirst.join('')}-${casSecond.join('')}-${casThird.join('')}`,
         acqn_date: acquisitionDate.replaceAll('/', '-'),
@@ -815,7 +815,7 @@ export default function Add_Container() {
   const addNewLocation = async () => {
         setNewLocationLoading(true);
         let data = {
-                        user_id: USER_TEST,
+                        user_id: activeUser?.userID,
                         new_location: newLocation,
         };
         if (selectorType == 'room'){
@@ -950,10 +950,10 @@ export default function Add_Container() {
       }, []);
 
       const checkUser = async() => {
-          if(USER_ACCESS <= 1){
+          if(activeUser?.accessLevel <= 1){
               setIsNewLocationVisible(true);
           }
-          if(USER_ACCESS <= 3){
+          if(activeUser?.accessLevel <= 2){
               setIsNewChildLocationVisible(true);
           }
           }
@@ -1036,7 +1036,7 @@ export default function Add_Container() {
             if (data && Object.keys(data).length === 0){
                 console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
                 data = [{
-                    name: "Error Loading Locations",
+                    name: "No locations found",
                 }];
             }
             return data;

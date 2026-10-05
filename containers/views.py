@@ -811,7 +811,7 @@ def addLocation(request):
         try:
             FoundUser = Users.objects.get(user_id = user_id)
             if (location_type):
-                if FoundUser.access_level > 3:
+                if FoundUser.access_level > 2:
                     return HttpResponseForbidden("User does not have permission to make locations")
             elif FoundUser.access_level > 1:
                 return HttpResponseForbidden("User does not have permission to make locations")
