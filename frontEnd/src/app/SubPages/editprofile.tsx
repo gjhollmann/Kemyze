@@ -773,8 +773,10 @@ export default function Edit_Profile() {
       }, [location]);
 
       const loadLocationOptions = async () => {
+          let data = [{name: "Currently Loading Locations"}]
+          setLocationOptions(data.map(item => item.name));
           const parameters = '';
-          const data = await loadVarLocationOptions(parameters);
+          data = await loadVarLocationOptions(parameters);
           setLocationOptions(data.map(item => item.name));
       }
 
