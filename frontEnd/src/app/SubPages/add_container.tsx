@@ -704,7 +704,7 @@ export default function Add_Container() {
 
     try {
       const payload = {
-        user_id: USER_TEST,
+        user_id: activeUser?.userID,
         chemical_name: chemicalName,
         cas_number: `${casFirst.join('')}-${casSecond.join('')}-${casThird.join('')}`,
         acqn_date: acquisitionDate.replaceAll('/', '-'),
@@ -805,7 +805,7 @@ export default function Add_Container() {
   const addNewLocation = async () => {
         setNewLocationLoading(true);
         let data = {
-                        user_id: USER_TEST,
+                        user_id: activeUser?.userID,
                         new_location: newLocation,
         };
         try {
@@ -926,7 +926,7 @@ export default function Add_Container() {
       }, []);
 
       const checkUser = async() => {
-          if(USER_ACCESS <= 1){
+          if(activeUser?.accessLevel <= 1){
               setIsNewLocationVisible(true);
           }
           }
