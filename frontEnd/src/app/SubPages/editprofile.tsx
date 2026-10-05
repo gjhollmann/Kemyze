@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
@@ -146,6 +147,14 @@ const NAV_BAR_HEIGHT = 76;
 
 export default function Edit_Profile() {
   const { user_id } = useLocalSearchParams();
+  const { activeUser } = useUserState(); // Insert active user.
+    
+    // Invoke useEffect to prevent active user state from flooding console.
+    useEffect(() => {
+      console.log("Active user for edit profile:", activeUser); // Additional console check for active user.
+    }, [activeUser]);
+    
+    
   const router = useRouter();
 
   const { width, height } = useWindowDimensions();
@@ -231,7 +240,8 @@ export default function Edit_Profile() {
     useState('');
 
   const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
-
+    
+  const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
   const [newLocation, setNewLocation] = useState('');
   // Saved state
 
@@ -750,6 +760,9 @@ export default function Edit_Profile() {
           if(activeUser?.accessLevel <= 1){
               setIsNewLocationVisible(true);
           }
+          if(activeUser?.accessLevel <= 2){
+              setLocationOptionsVisible(true);
+          }
           }
 
   //Load location data
@@ -963,40 +976,53 @@ export default function Edit_Profile() {
                       Location
                     </Text>
 
-                    <Pressable
-                      onPress={() =>
-                        openSelector(
-                          'location'
-                        )
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Select location"
-                      style={({ pressed }) => [
-                        styles.selectInput,
-                        pressed &&
-                          styles.selectPressed,
-                      ]}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.selectText,
-                          location ===
-                            'Location Name' &&
-                            styles.placeholderText,
-                        ]}
-                      >
-                        {location}
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.selectArrow
-                        }
-                      >
-                        ⌄
-                      </Text>
-                    </Pressable>
+          {locationOptionsVisible ? (<Pressable
+              onPress={() =>
+                  openSelector(
+                               'location'
+                               )
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Select location"
+              style={({ pressed }) => [
+                  styles.selectInput,
+                  pressed &&
+                  styles.selectPressed,
+              ]}
+              >
+              <Text
+              numberOfLines={1}
+              style={[
+                  styles.selectText,
+                  location ===
+                  'Location Name' &&
+                  styles.placeholderText,
+              ]}
+              >
+              {location}
+              </Text>
+              
+              <Text
+              style={
+                  styles.selectArrow
+              }
+              >
+              ⌄
+              </Text>
+              </Pressable>) : (<View
+                               style={
+                                   styles.locationDefault
+                                   }
+                               >
+                               <Text
+                               numberOfLines={1}
+                               style={
+                                   styles.selectText
+                               }
+                               >
+                               {location}
+                               </Text>
+                               </View>)}
                   </View>
 
                   {/* Phone Number */}
@@ -3063,6 +3089,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+  
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#223044',
+      borderRadius: 9,
+      backgroundColor: '#02021C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+    },
 
   selectText: {
     color: '#FFFFFF',
