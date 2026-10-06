@@ -1088,6 +1088,11 @@ export default function Edit_Container() {
     const [loadError, setLoadError] = useState(false);
     const [errorMsg, setErrorMsg] = useState("Test Error Message");
     
+    // KM-84: The change log gets its own loading/error state, so if it fails
+    // only the change log section shows an error, not the whole page.
+    const [changeLogLoading, setChangeLogLoading] = useState(true);
+    const [changeLogError, setChangeLogError] = useState(false);
+    
     //Initial fetch
     useEffect(() => {
         getContainer();
@@ -1275,6 +1280,10 @@ export default function Edit_Container() {
       */}
     
     const loadChangeLog = async () => {
+        // KM-84: Show the loading spinner and clear any old error before trying.
+        setChangeLogLoading(true);
+        setChangeLogError(false);
+
         const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?container_id=" + container_id
         try{
             const response = await fetch(getChangeLogURL,{method: "GET",});
@@ -1312,9 +1321,12 @@ export default function Edit_Container() {
             });
             setChangeLog(data)
         } catch (error: any) {
+            // KM-84: Only the change log shows the error (the rest of the page still works).
             console.log(error.message);
-            setErrorMsg(error.message);
-            setLoadError(true);
+            setChangeLogError(true);
+        } finally {
+            // KM-84: Whether it worked or failed, we're done loading.
+            setChangeLogLoading(false);
         }
     }
     
@@ -1935,106 +1947,83 @@ export default function Edit_Container() {
             />
           </View>
 
-          {/* Change Log */}
+                    {/* Change Log */}
+          {/* KM-84: Tapping opens the full history normally, but if loading failed,
+              tapping retries instead. Tapping does nothing while it's still loading. */}
           <Pressable
-            onPress={openHistory}
+            onPress={changeLogError ? loadChangeLog : openHistory}
+            disabled={changeLogLoading}
             accessibilityRole="button"
-            accessibilityLabel="Open Change Log"
+            accessibilityLabel={changeLogError ? "Retry loading Change Log" : "Open Change Log"}
             style={({ pressed }) => [
               styles.changeLogCard,
               pressed &&
                 styles.cardPressed,
             ]}
           >
-            <View
-              style={
-                styles.changeLogHeader
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogTitle
-                }
-              >
+            <View style={styles.changeLogHeader}>
+              <Text style={styles.changeLogTitle}>
                 Most Recent Change
               </Text>
 
-              <Text
-                style={
-                  styles.changeLogArrow
-                }
-              >
-                ›
-              </Text>
+              {/* Only show the arrow when there's a history to open */}
+              {!changeLogLoading && !changeLogError && (
+                <Text style={styles.changeLogArrow}>›</Text>
+              )}
             </View>
 
-            <View
-              style={
-                styles.changeLogRow
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Date: {changeLog[0].Date}
-              </Text>
+            {changeLogLoading ? (
+              // KM-84: Loading indicator while the change log is being fetched
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <ActivityIndicator size="small" color="#C9CFE9" />
+                <Text style={[styles.changeLogText, { marginTop: 8 }]}>
+                  Loading change log...
+                </Text>
+              </View>
+            ) : changeLogError ? (
+              // KM-84: Error shown only in this section, with a tap-to-retry hint
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <Text style={[styles.changeLogText, { color: '#FF6B6B' }]}>
+                  Couldn't load the change log.
+                </Text>
+                <Text style={[styles.changeLogText, { marginTop: 4 }]}>
+                  Tap to retry
+                </Text>
+              </View>
+            ) : (
+              // Loaded successfully: show the most recent change (same as before)
+              <>
+                <View style={styles.changeLogRow}>
+                  <Text style={styles.changeLogText}>
+                    Date: {changeLog[0].Date}
+                  </Text>
+                  <Text style={styles.changeLogText}>
+                    Time: {changeLog[0].Time}
+                  </Text>
+                </View>
 
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          Time: {changeLog[0].Time}
-              </Text>
-            </View>
+                <Text style={styles.changeLogText}>
+                  ContainerID: {String(container_id ?? '__________')}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-              ContainerID: {String(container_id ?? '__________')}
-            </Text>
+                <Text style={styles.changeLogText}>
+                  User: {changeLog[0].User}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-          User: {changeLog[0].User}
-            </Text>
+                <Text style={styles.changeLogText}>
+                  Change: {changeLog[0].Change}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-          Change: {changeLog[0].Change}
-            </Text>
-
-            <View
-              style={
-                styles.changeLogRow
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          Old: {changeLog[0].Old}
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          New: {changeLog[0].New}
-              </Text>
-            </View>
+                <View style={styles.changeLogRow}>
+                  <Text style={styles.changeLogText}>
+                    Old: {changeLog[0].Old}
+                  </Text>
+                  <Text style={styles.changeLogText}>
+                    New: {changeLog[0].New}
+                  </Text>
+                </View>
+              </>
+            )}
           </Pressable>
 
           {/* Container Insights */}
