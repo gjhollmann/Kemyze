@@ -1297,6 +1297,19 @@ export default function Edit_Container() {
                     New: 'Change Log',
                 }];
             }
+            // KM-78: Convert each change's timestamp from UTC (server time)
+            // into the user's own timezone before showing it.
+            // If an entry has no Timestamp (e.g. the error placeholder), leave it as is.
+            data = data.map((entry) => {
+                if (!entry.Timestamp) return entry;
+                const changedAt = new Date(entry.Timestamp);
+                if (isNaN(changedAt.getTime())) return entry; // skip if the date can't be read
+                return {
+                    ...entry,
+                    Date: changedAt.toLocaleDateString(),
+                    Time: changedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                };
+            });
             setChangeLog(data)
         } catch (error: any) {
             console.log(error.message);
