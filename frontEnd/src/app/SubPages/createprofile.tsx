@@ -222,18 +222,138 @@ export default function CreateProfile() {
     }
   };
 
-  const handleCreateProfile = () => {
-    if (!name.trim() || !email.trim()) {
-      haptic();
-      setErrorMessage('*error when saving message*');
-      return;
+    // Required Notifier States
+    const [nameRequired, setNameRequired] = useState(false);
+    const [locationRequired, setLocationRequired] = useState(false);
+    const [emailRequired, setEmailRequired] = useState(false);
+    const [authRequired, setAuthRequired] = useState(false);
+    const [passRequired, setPassRequired] = useState (false);
+    const [isSavingUser, setIsSavingUser] = useState(false);
+    const [savingUserLoading, setSavingUserLoading] = useState(true);
+    const [saveUserError, setSaveUserError] = useState(false);
+    const [saveUserSuccess, setSaveUserSuccess] = useState(false);
+    const [readyToSave, setReadyToSave] = useState(false);
+    
+    useEffect(() => {
+        if (nameRequired || emailRequired || locationRequired || authRequired || passRequired){
+            setReadyToSave(false);
+        } else {
+            setReadyToSave(true);
+        }
+    }, [nameRequired, locationRequired, emailRequired, authRequired, passRequired]);
+    
+    useEffect(() => {
+        if (!name.trim()) {
+            setNameRequired(true);
+        } else {
+            setNameRequired(false);
+        }
+    },[name]);
+    useEffect(() => {
+        if (!location.trim()) {
+            setLocationRequired(true);
+        } else {
+            setNameRequired(false);
+        }
+    },[location]);
+    useEffect(() => {
+        if (!email.trim()) {
+            setEmailRequired(true);
+        } else {
+            setEmailRequired(false);
+        }
+    },[email]);
+    useEffect(() => {
+        if (!authorization.trim()) {
+            setAuthRequired(true);
+        } else {
+            setAuthRequired(false);
+        }
+    },[authorization]);
+    useEffect(() => {
+        if (!password.trim()) {
+            setPassRequired(true);
+        } else {
+            setPassRequired(false);
+        }
+    },[password]);
+    // Save Modal Handlers
+    
+    
+    const closeSaveModal = () => {
+        haptic();
+        setIsSavingUser(false);
+        setSavingUserLoading(true);
+        setSaveUserError(false);
+        setSaveUserSuccess(false);
+      };
+    
+    const closeNewUser = () => {
+        router.dismissTo('/Pages/tertiaryprofilemanagement');
     }
+    
+  const handleCreateProfile = () => {
+      if (isSavingUser) {
+        return;
+      }
+      setSavingUserLoading(true);
+      if (!readyToSave){
+        setIsSavingUser(false);
+          setErrorMessage("*missing requirements above*");
+          return;
+      } else {
+          sendAddUser()
+          .then(() => {
+              console.log("Save User complete");
+          })
+      }
     successHaptic();
-    setErrorMessage('');
-    router.dismissTo('/Pages/tertiaryprofilemanagement');
   };
+    const sendAddUser = async () => {
+        setIsSavingUser(true);
+        setErrorMessage("");
+        let data = {
+            user_id: activeUser?.userID,
+            name: name,
+            location: location,
+            email: email,
+            authorization: authorization,
+            password: password,
+            phone: phoneArea.join('')+phonePrefix.join('')+phoneLine.join('')
+        };
+        
+        try {
+          const addURL = BASE_URL + "login/addUser"
+          let now = new Date();
+          let formattedTime = now.toLocaleTimeString();
+          console.log("${formattedTime} Sending add User URL: " + addURL);
+          const response = await fetch(addURL, {
+              method: 'POST',
+              headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+              });
 
+          if (!response.ok){
+              now = new Date();
+              formattedTime = now.toLocaleTimeString();
+              console.log("${formattedTime} We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+          } catch (error) {
+              console.error('Error sending data:', error);
+              setErrorMsg(error?.message ?? "Unknown error");
+              setSaveUserError(true);
+          } finally {
+              setSaveUserSuccess(true);
+              setSavingUserLoading(false);
+          }
+    }
   // Add Location modal handlers
+    
 
   const showAddNewLocation = () => {
         haptic();
@@ -1129,6 +1249,144 @@ export default function CreateProfile() {
                                     )}
               </View>
             </Modal>
+          
+          {/* Save User Modal */}
+
+                <Modal
+                  visible={isSavingUser}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={
+                    closeSaveModal
+                  }
+                >
+                  <View
+                    style={
+                      styles.confirmBackground
+                    }
+                  >
+                    <BlurView
+                      intensity={50}
+                      tint="dark"
+                      style={
+                        StyleSheet.absoluteFillObject
+                      }
+                    />
+
+                    {saveUserError && (
+                        <View style={styles.confirmCard}>
+                        <Text style={styles.confirmTitle}>
+                            Error creating new User
+                        </Text>
+                        <View style={{padding:10}}></View>
+                        <Text style ={styles.errorText}>
+                        {errorMsg}
+                        </Text>
+                        <View style={{padding:10}}></View>
+                        <Pressable
+                            onPress={closeSaveModal}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close Save Error"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed && styles.buttonPressed,
+                            ]}
+                        >
+                        <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.35, 0.56, 0.89, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                        >
+                        <LinearGradient
+                            colors={['#2983ff', '#1b3de9']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                            }}
+                        />
+                        </LinearGradient>
+                            <Text
+                                style={
+                                    styles.confirmButtonText
+                                }
+                            >
+                            Go Back
+                            </Text>
+                        </Pressable>
+                        </View>
+                    )}
+
+                    { saveUserSuccess && !saveUserError && (
+                        <View style={styles.confirmCard}>
+                            <Text style={styles.confirmTitle}>
+                                                                  New User Successfully Added
+                                                </Text>
+                                                <View style={{padding:5}}></View>
+                            <Pressable
+                                onPress={closeNewUser}
+                                accessibilityRole="button"
+                                accessibilityLabel="Button to leave User Success"
+                                style={({ pressed }) => [
+                                    styles.confirmButton,
+                                    pressed &&
+                                    styles.buttonPressed,
+                                ]}
+                                >
+                                                                  <LinearGradient
+                                                                          colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                          locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                          start={{ x: 0, y: 0 }}
+                                                                          end={{ x: 1, y: 1 }}
+                                                                          style={StyleSheet.absoluteFillObject}
+                                                                        >
+                                                                          <LinearGradient
+                                                                            colors={['#2983ff', '#1b3de9']}
+                                                                            start={{ x: 0, y: 0 }}
+                                                                            end={{ x: 0, y: 1 }}
+                                                                            style={{
+                                                                              position: 'absolute',
+                                                                              top: 2,
+                                                                              bottom: 2,
+                                                                              left: 2,
+                                                                              right: 2,
+                                                                              borderRadius: 7,
+                                                                            }}
+                                                                          />
+                                                                        </LinearGradient>
+                                                                  <Text
+                                                                    style={
+                                                                      styles.confirmButtonText
+                                                                    }
+                                                                  >
+                                                                    Go Back
+                                                                  </Text>
+                                                                </Pressable>
+                        </View>
+                        )
+
+                    }
+                    {isSavingUser && !saveUserError && !saveUserSuccess && (
+                        <View style={styles.confirmCard}>
+                            <View style={styles.loadingIndicator}>
+                            <ActivityIndicator size="large" color="#0000ff" />
+                            </View>
+                                                        <View style={{padding:5}}></View>
+                                                        <Text style={styles.confirmTitle}>
+                                                                                              Adding New User
+                                                                            </Text>
+                                                                            
+                        </View>
+                        )}
+                  </View>
+                </Modal>
 
     </View>
   );
