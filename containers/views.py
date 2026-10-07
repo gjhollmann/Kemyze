@@ -402,26 +402,33 @@ def getLocationChildren(request):
         return HttpResponseNotAllowed(["GET"])
 
 """
-View to get the last 20 changes of a container.
+View to get the last 20 changes of a container or last 20 changes made by a user.
 Route: /containers/getContainerChangeLog
 Request Variables:
 Method: GET
 Parameters:
-    container_id
+    container_id or user_id
     
 Responses:
     Failures:
-        Status 400: Missing container_id
+        Status 400: Missing container_id or user_id
         Status 400: Container not found
         Status 500: Something broke bad
 """
 def getContainerChangeLog(request):
     if request.method == "GET":
         container_id = request.GET.get("container_id")
+        user_id = ""
         if container_id == None:
-            return HttpResponseBadRequest("Missing 'container_id' Parameter")
+            user_id = request.GET.get("user_id")
+            if user_id == None:
+                return HttpResponseBadRequest("Missing 'container_id' or 'user_id' Parameter")
         try:
-            FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            FoundLogs = []
+            if (container_id):
+                FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            else:
+                FoundLogs = ContainerAuditLog.objects.filter(changed_by=user_id).order_by('-changed_at')[:20]
             data = []
             for log in FoundLogs:
                 user_first_name = ''
@@ -445,7 +452,7 @@ def getContainerChangeLog(request):
                     data.append({
                     'Date': log.changed_at.date(),
                     'Time': log.changed_at.time(),
-                    'ContainerID': container_id,
+                    'ContainerID': log.container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
                     'Change': "Name",

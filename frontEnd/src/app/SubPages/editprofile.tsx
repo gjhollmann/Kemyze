@@ -13,7 +13,7 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useUserState } from '../../app/contexts/UserState';
@@ -121,7 +121,8 @@ const PHONE_DIGITS = [
 const HISTORY_FILTERS = [
   'Edit',
   'Location',
-  'Role',
+  'Quantity',
+  'SDS'
 ];
 
 const EMPTY_PROFILE: ProfileValues = {
@@ -204,6 +205,8 @@ export default function Edit_Profile() {
   const [newLocationLoading, setNewLocationLoading] = useState(false);
   const [newLocationError, setNewLocationError] = useState(false);
   const [newLocationSuccess, setNewLocationSuccess] = useState(true);
+  const [changeLogLoading, setChangeLogLoading] = useState(true);
+    const [changeLogError, setChangeLogError] = useState(false);
 
   // Selection state
 
@@ -271,35 +274,7 @@ export default function Edit_Profile() {
 
   // Placeholder data
 
-  const changeLog: ChangeLogEntry[] = [
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Edit',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Location',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Role',
-      Old: '',
-      New: '',
-    },
-  ];
+    const [changeLog, setChangeLog] = useState([{}]);
 
   // Review changes
 
@@ -510,11 +485,12 @@ export default function Edit_Profile() {
   };
 
   const openFieldHistory = (
-    type: HistoryType
+    type: HistoryType, index: number
   ) => {
     haptic();
     setFieldHistoryType(type);
     setHistoryVisible(false);
+    setHistoryIndex(index);
     setFieldHistoryVisible(true);
   };
 
@@ -575,9 +551,24 @@ export default function Edit_Profile() {
   const filteredChangeLog =
     changeLog.filter(
       (item) =>
-        item.Change ===
+        item.Type ===
         historyFilter
     );
+    
+    // ChangeLog Navigation
+      const scrollViewRef = useRef<ScrollView>(null);
+      const changeLogLayouts = useRef<{[key: number]: number}>({});
+      const [historyIndex, setHistoryIndex] = useState(0);
+      const scrollToLayoutIndex = () => {
+          const yPosition = changeLogLayouts.current[historyIndex];
+          if(yPosition !== undefined && scrollViewRef.current){
+              scrollViewRef.current.scrollTo({
+                  y: yPosition,
+                  animated: true,
+              });
+          }
+      };
+
 
   // Save flow
 
@@ -754,6 +745,7 @@ export default function Edit_Profile() {
   //Initial fetch
       useEffect(() => {
           checkUser();
+          loadChangeLog();
       }, []);
 
       const checkUser = async() => {
@@ -805,6 +797,69 @@ export default function Edit_Profile() {
           }
       }
 
+    // Load Change Log
+    {/* Changes should be in the form below and added to changeLog array
+    {
+      Date: '',
+      Time: '',
+      ContainerID: String(container_id ?? ''),
+      User: '',
+      Type: 'Edit, Location, Quantity, or SDS',
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS',
+      Old: '',
+      New: '',
+    },
+      */}
+    
+    const loadChangeLog = async () => {
+        setChangeLogLoading(true);
+        setChangeLogError(false);
+        const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?user_id=" + user_id
+        try{
+            const response = await fetch(getChangeLogURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, ChangeLog data was empty.\nURL: "+getChangeLogURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    Date: '',
+                    Time: '',
+                    ContainerID: String(container_id ?? ''),
+                    User: '',
+                    Type: 'Edit',
+                    Change: 'Edit',
+                    Old: 'Error loading',
+                    New: 'Change Log',
+                }];
+            }
+            data = data.map((entry) => {
+                            if (!entry.Timestamp) return entry;
+                            const changedAt = new Date(entry.Timestamp);
+                            if (isNaN(changedAt.getTime())) return entry; // skip if the date can't be read
+                            return {
+                                ...entry,
+                                Date: changedAt.toLocaleDateString(),
+                                Time: changedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                            };
+                        });
+            setChangeLog(data)
+        } catch (error: any) {
+            setChangeLogError(true);
+        } finally {
+            setChangeLogLoading(false);
+        }
+    }
+    
+    // String clamping
+    const clampString = (str, maxLength) => {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.slice(0, maxLength) + "...";
+    }
 
   // Render
 
@@ -1254,9 +1309,10 @@ export default function Edit_Profile() {
 
             {/* Change Log */}
             <Pressable
-              onPress={() => openHistory()}
+              onPress={changeLogError ? loadChangeLog : openHistory}
+              disabled={changeLogLoading}
               accessibilityRole="button"
-              accessibilityLabel="Open Change Log"
+              accessibilityLabel={changeLogError ? "Retry loading Change Log" : "Open Change Log"}
               style={({ pressed }) => [
                 styles.changeLogCard,
                 pressed &&
@@ -1273,85 +1329,84 @@ export default function Edit_Profile() {
                     styles.changeLogTitle
                   }
                 >
-                  Change Log
+                  Most Recent Change Made
                 </Text>
 
-                <Text
-                  style={
-                    styles.changeLogArrow
-                  }
-                >
-                  ›
-                </Text>
+          {/* Only show the arrow when there's a history to open */}
+                        {!changeLogLoading && !changeLogError && (
+                          <Text style={styles.changeLogArrow}>›</Text>
+                        )}
               </View>
 
-              <View
-                style={
-                  styles.changeLogRow
-                }
-              >
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Date: __________
-                </Text>
-
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Time: __________
-                </Text>
-              </View>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Kemyze ID: {String(user_id ?? '__________')}
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                User: __________
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Change: __________
-              </Text>
-
-              <View
-                style={
-                  styles.changeLogRow
-                }
-              >
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Old: __________
-                </Text>
-
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  New: __________
-                </Text>
-              </View>
+          {changeLogLoading ? (
+                               // KM-84: Loading indicator while the change log is being fetched
+                               <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                               <ActivityIndicator size="small" color="#C9CFE9" />
+                               <Text style={[styles.changeLogText, { marginTop: 8 }]}>
+                               Loading change log...
+                               </Text>
+                               </View>
+                               ) : changeLogError ? (
+                                                     // KM-84: Error shown only in this section, with a tap-to-retry hint
+                                                     <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                                                     <Text style={[styles.changeLogText, { color: '#FF6B6B' }]}>
+                                                     Couldn't load the change log.
+                                                     </Text>
+                                                     <Text style={[styles.changeLogText, { marginTop: 4 }]}>
+                                                     Tap to retry
+                                                     </Text>
+                                                     </View>
+                                                     ) : (
+                                                          // Loaded successfully: show the most recent change (same as before)
+                                                          <>
+                                                          <View style={styles.changeLogRow}>
+                                                          <Text style={styles.changeLogText}>
+                                                          Date: {changeLog[0].Date}
+                                                          </Text>
+                                                          <Text style={styles.changeLogText}>
+                                                          Time: {changeLog[0].Time}
+                                                          </Text>
+                                                          </View>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          ContainerID: {changeLog[0].ContainerID}
+                                                          </Text>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          Change: {changeLog[0].Change}
+                                                          </Text>
+                                                          
+                                                          <View
+                                                          style={
+                                                              styles.changeLogRow
+                                                          }
+                                                          >
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          Old: {changeLog[0].Old}
+                                                          </Text>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          New: {changeLog[0].New}
+                                                          </Text>
+                                                          </View>
+                                                          </>
+                                                          )}
             </Pressable>
           </ScrollView>
         </View>
@@ -1731,7 +1786,7 @@ export default function Edit_Profile() {
         </View>
       </Modal>
 
-      {/* Profile history */}
+      {/* Change history */}
 
       <Modal
         visible={historyVisible}
@@ -1786,7 +1841,7 @@ export default function Edit_Profile() {
                   styles.sheetTitle
                 }
               >
-                Profile History
+                Change History
               </Text>
 
               <Pressable
@@ -1885,63 +1940,66 @@ export default function Edit_Profile() {
             >
               {filteredChangeLog.map(
                 (item, index) => (
-                  <Pressable
-                    key={`${item.Change}-${index}`}
-                    onPress={() =>
-                      openFieldHistory(
-                        item.Change as HistoryType
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.Change} history`}
-                    style={({ pressed }) => [
-                      styles.historyCard,
-                      pressed &&
-                        styles.cardPressed,
-                    ]}
-                  >
-                    <View
-                      style={
-                        styles.historyCardRow
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.historyName
-                        }
-                      >
-                        {item.Change ===
-                        'Edit'
-                          ? 'Profile edited'
-                          : `${item.Change} changed`}
-                      </Text>
+                                  <Pressable
+                                    key={index}
+                                                  onPress={() =>{
+                                                      openFieldHistory(
+                                                                       item.Change as HistoryType,
+                                                                       index as index
+                                                                       )
+                                                      }
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${item.Change} history`}
+                                    style={({ pressed }) => [
+                                      styles.historyCard,
+                                      pressed &&
+                                        styles.cardPressed,
+                                    ]}
+                                  >
+                                    <View
+                                      style={
+                                        styles.historyCardRow
+                                      }
+                                    >
+                                      <Text
+                                        style={
+                                          styles.historyName
+                                        }
+                                      >
+                                        {item.Type ===
+                                        'Edit'
+                                          ? `${item.Change} changed`
+                                          : `Date: ${item.Date}\nChange: ${item.New}`}
+                                      </Text>
 
-                      <View
-                        style={
-                          styles.historyRight
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.historyValue
-                          }
-                        >
-                          {item.Change ===
-                          'Edit'
-                            ? '________ → ________ → ________'
-                            : '________ → ________'}
-                        </Text>
+                                      <View
+                                        style={
+                                          styles.historyRight
+                                        }
+                                      >
+                                        <Text
+                                          style={
+                                            styles.historyValue
+                                          }
+                                        >
+                                                  {item.Type ===
+                                                  'Edit'
+                                                    ? `Date: ${clampString(item.Date, 15)}\nChange: ${clampString(item.New, 15)}`
+                                                    : ``}
+                                                  
+                                        </Text>
 
-                        <Text
-                          style={
-                            styles.historyArrow
-                          }
-                        >
-                          ›
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
+                                        <Text
+                                          style={
+                                            styles.historyArrow
+                                          }
+                                        >
+                                          ›
+                                        </Text>
+                                      </View>
+                                    </View>
+                                  </Pressable>
                 )
               )}
             </ScrollView>
@@ -2049,6 +2107,7 @@ export default function Edit_Profile() {
             </Text>
 
             <ScrollView
+          ref={scrollViewRef}
               style={
                 styles.fieldHistoryScroll
               }
@@ -2059,78 +2118,97 @@ export default function Edit_Profile() {
                 false
               }
             >
-              {[1, 2, 3, 4].map(
-                (item, index) => (
+          {filteredChangeLog.map(
+            (item, index) => (
+              <View
+                key={index}
+                style={
+                  index === historyIndex
+                  ? styles.timelineItemHighlight
+                  : styles.timelineItem
+                }
+                              onLayout={(event) => {
+                                  changeLogLayouts.current[index] = event.nativeEvent.layout.y;
+                                  scrollToLayoutIndex();
+                              }}
+              >
+                <View
+                  style={
+                    styles.timelineColumn
+                  }
+                >
                   <View
-                    key={item}
                     style={
-                      styles.timelineItem
+                      index === historyIndex
+                        ? styles.timelineDotActive
+                        : styles.timelineDot
+                    }
+                  />
+
+                  {index < filteredChangeLog.length && (
+                    <View
+                      style={
+                        styles.timelineLine
+                      }
+                    />
+                  )}
+                </View>
+
+                <View
+                  style={
+                    styles.timelineDetails
+                  }
+                >
+                  <Text
+                    style={
+                      styles.timelineValue
                     }
                   >
-                    <View
-                      style={
-                        styles.timelineColumn
-                      }
-                    >
-                      <View
-                        style={
-                          index === 0
-                            ? styles.timelineDotActive
-                            : styles.timelineDot
-                        }
-                      />
+                              {item.Change} was changed
+                  </Text>
+                  
+                              <Text
+                                style={
+                                  styles.timelinePlaceholder
+                                }
+                              >
+                              Old {item.Change}: {item.Old}
+                              </Text>
+                              <Text
+                                style={
+                                  styles.timelinePlaceholder
+                                }
+                              >
+                              New {item.Change}: {item.New}
+                              </Text>
 
-                      {index < 3 && (
-                        <View
-                          style={
-                            styles.timelineLine
-                          }
-                        />
-                      )}
-                    </View>
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              User: {item.User}
+                  </Text>
 
-                    <View
-                      style={
-                        styles.timelineDetails
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.timelineValue
-                        }
-                      >
-                        {getFieldHistoryValue(
-                          index
-                        )}
-                      </Text>
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              Date: {item.Date}
+                  </Text>
 
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        User: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Date: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Time: __________
-                      </Text>
-                    </View>
-                  </View>
-                )
-              )}
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              Time: {item.Time}
+                  </Text>
+                </View>
+              </View>
+            )
+          )}
             </ScrollView>
           </View>
         </View>
@@ -3561,6 +3639,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     minHeight: 92,
   },
+    
+    timelineItemHighlight: {
+      flexDirection: 'row',
+      minHeight: 92,
+      backgroundColor:'#3f4d8f'
+    },
 
   timelineColumn: {
     width: 22,
