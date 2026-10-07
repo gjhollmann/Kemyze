@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
@@ -120,6 +121,9 @@ export default function CreateProfile() {
     
     const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
 
+  // Password State
+  const [passIsSecure, setPassIsSecure] = useState(true);
+    
   // Phone state
   const [phoneArea, setPhoneArea] = useState(['X', 'X', 'X']);
   const [phonePrefix, setPhonePrefix] = useState(['X', 'X', 'X']);
@@ -603,22 +607,38 @@ export default function CreateProfile() {
                   </View>
 
                   {/* Set Password */}
-                  <View style={isLandscape ? styles.fieldRow : undefined}>
+                  <View style={isLandscape ? styles.fieldRow : styles.fieldRow}>
                     <View
                       style={[styles.field, isLandscape && styles.fieldHalf]}
                     >
+          
                       <Text style={styles.label}>Set Password</Text>
+          <View style = {styles.passRow} >
+          <View style={{width : '90%'}}>
                       <TextInput
                         style={styles.input}
                         value={password}
                         onChangeText={setPassword}
                         placeholder="Password"
                         placeholderTextColor="#C9CFE9"
-                        secureTextEntry
+                        secureTextEntry={passIsSecure}
                         autoCapitalize="none"
                         maxLength={255}
                       />
+          </View>
+          <Pressable
+                  style={styles.iconContainer}
+                  onPress={() => setPassIsSecure(!passIsSecure)} // Toggles state
+                >
+                  <MaterialCommunityIcons
+                    name={passIsSecure ? 'eye-off' : 'eye'}
+                    size={22}
+                    color="#666"
+                  />
+                </Pressable>
+          </View>
                     </View>
+          
                     {isLandscape && <View style={styles.fieldHalf} />}
                   </View>
 
@@ -1190,6 +1210,11 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 6,
   },
+    passRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
   label: {
     color: '#FFFFFF',
     fontFamily: FONT.regular,
@@ -1480,5 +1505,8 @@ confirmBackground: {
         backgroundColor: '#02021C',
         justifyContent: 'center',
         paddingHorizontal: 8,
+      },
+    iconContainer: {
+        padding: 5,
       },
 });
