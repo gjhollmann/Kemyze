@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
 import NavBar from '../components/NavBar';
@@ -74,6 +75,12 @@ export default function CreateProfile() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+    const { activeUser } = useUserState(); // Insert active user.
+    
+    // Invoke useEffect to prevent active user state from flooding console.
+    useEffect(() => {
+      console.log("Active user:", activeUser); // Additional console check for active user.
+    }, [activeUser]);
 
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
@@ -110,6 +117,8 @@ export default function CreateProfile() {
 
   const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
   const [newLocation, setNewLocation] = useState('');
+    
+    const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
 
   // Phone state
   const [phoneArea, setPhoneArea] = useState(['X', 'X', 'X']);
@@ -331,6 +340,9 @@ export default function CreateProfile() {
           if(activeUser?.accessLevel <= 1){
               setIsNewLocationVisible(true);
           }
+          if(activeUser?.accessLevel <= 2){
+              setLocationOptionsVisible(true);
+          }
           }
 
   //Load location data
@@ -446,25 +458,57 @@ export default function CreateProfile() {
                       style={[styles.field, isLandscape && styles.fieldHalf]}
                     >
                       <Text style={styles.label}>Location</Text>
-                      <Pressable
-                        onPress={() => openSelector('location')}
-                        style={({ pressed }) => [
-                          styles.selectInput,
-                          pressed && styles.selectPressed,
-                        ]}
-                      >
-                        <Text
-                          numberOfLines={1}
-                          style={[
-                            styles.selectText,
-                            location === 'Location Name' &&
-                              styles.placeholderText,
-                          ]}
-                        >
-                          {location}
-                        </Text>
-                        <Text style={styles.selectArrow}>⌄</Text>
-                      </Pressable>
+          {locationOptionsVisible ? (<Pressable
+                                     onPress={() =>
+              openSelector(
+                           'location'
+                           )
+          }
+                                     accessibilityRole="button"
+                                     accessibilityLabel="Select location"
+                                     style={({ pressed }) => [
+                                         styles.selectInput,
+                                         pressed &&
+                                         styles.selectPressed,
+                                     ]}
+                                     >
+                                     <Text
+                                     numberOfLines={1}
+                                     style={[
+                                         styles.selectText,
+                                         location ===
+                                         'Location Name' &&
+                                         styles.placeholderText,
+                                     ]}
+                                     >
+                                     {location}
+                                     </Text>
+                                     
+                                     <Text
+                                     style={
+              styles.selectArrow
+          }
+                                     >
+                                     ⌄
+                                     </Text>
+                                     </Pressable>) : (<View
+                                                      style={
+                                         styles.locationDefault
+                                     }
+                                                      >
+                                                      <Text
+                                                      numberOfLines={1}
+                                                      style={
+                                         styles.selectText
+                                     }
+                                                      >
+                                                      {location}
+                                                      </Text>
+                                                      
+                                                      </View>)
+          
+          }
+          <View style={{padding:5}}></View>
                     </View>
 
                     <View
@@ -1426,4 +1470,15 @@ confirmBackground: {
     alignItems: 'center',
     paddingHorizontal: 20,
   },
+    
+      locationDefault: {
+        width: '100%',
+        minHeight: 44,
+        borderWidth: 1,
+        borderColor: '#223044',
+        borderRadius: 9,
+        backgroundColor: '#02021C',
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+      },
 });
