@@ -2,8 +2,8 @@ import React from "react";
 import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions, Platform, } from "react-native";
 import { useState, useRef } from "react";
 import QRCode from 'react-native-qrcode-svg';
-import { handlePrintLabel } from "../utils/PrintLabelUtils";
-console.log("handlePrintLabel:", handlePrintLabel);
+import { handlePrintLabel } from "../utils/PrintLabelUtils"; // Import primary print handler.
+console.log("handlePrintLabel:", handlePrintLabel); // Confirm imported module for testing. 
 
 type QRLabelPopupProps = {
     visible: boolean;
