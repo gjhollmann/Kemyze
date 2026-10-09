@@ -26,7 +26,7 @@ export function QRLabelPopup({
     const qrSize = Math.min(Math.max(popupWidth * 0.7, 180), 280);
 
     // Call print handler; pass id, name, and qr data, which is further converted into base64 text
-    // that is embedded into printable HTML.
+    // that is embedded into printable HTML. Use 'ref' for rendered QR instance.
     const onPrintPress = () => {
         if (!qrRef.current) {
         return;
