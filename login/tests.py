@@ -124,6 +124,42 @@ class SearchManagedUsersTests(SimpleTestCase):
 
     @patch('login.views.Locations.objects')
     @patch('login.views.Users.objects')
+    def test_empty_search_returns_all_manageable_accounts(self, users, locations):
+        users.select_related.return_value.get.return_value = SimpleNamespace(
+            access_level=3,
+            location_id=10,
+        )
+        locations.filter.return_value.values_list.return_value = []
+        managed_users = users.filter.return_value
+        managed_users.select_related.return_value.order_by.return_value.__getitem__.return_value = [
+            SimpleNamespace(
+                user_id=20,
+                first_name='Stacy',
+                last_name='Reyes',
+                location=SimpleNamespace(name='Main Lab'),
+                access_level=4,
+            ),
+            SimpleNamespace(
+                user_id=21,
+                first_name='Bill',
+                last_name='Roberts',
+                location=SimpleNamespace(name='Main Lab'),
+                access_level=4,
+            ),
+        ]
+
+        response = searchManagedUsers(
+            self.post_search_request({'user_id': 5, 'search': '', 'offset': 0})
+        )
+
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([account['id'] for account in data['results']], [20, 21])
+        self.assertFalse(data['has_more'])
+        managed_users.filter.assert_not_called()
+
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
     def test_search_paginates_to_ten_results(self, users, locations):
         users.select_related.return_value.get.return_value = SimpleNamespace(
             access_level=2,
