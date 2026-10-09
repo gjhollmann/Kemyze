@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   View,
@@ -57,63 +57,22 @@ type User = {
   name: string;
   location: string;
   privilege: string;
-  active: boolean;
+};
+
+type ManagedUserResponse = {
+  success: boolean;
+  message?: string;
+  results?: Array<{
+    id: number;
+    name: string;
+    location: string;
+    access_level: number;
+  }>;
+  next_offset?: number | null;
+  has_more?: boolean;
 };
 
 // Constants
-
-// Sample accounts
-const SAMPLE_USERS: User[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    location: 'Sacramento Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Maria Delgado',
-    location: 'Sacramento Lab',
-    privilege: 'Secondary',
-    active: true,
-  },
-  {
-    id: '3',
-    name: 'Andre Whitfield',
-    location: 'Davis Lab',
-    privilege: 'Tertiary',
-    active: false,
-  },
-  {
-    id: '4',
-    name: 'Priya Raman',
-    location: 'Folsom Lab',
-    privilege: 'Primary',
-    active: true,
-  },
-  {
-    id: '5',
-    name: 'Chen Wei',
-    location: 'Davis Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-  {
-    id: '6',
-    name: 'Rosa Alvarez',
-    location: 'Elk Grove Lab',
-    privilege: 'Secondary',
-    active: false,
-  },
-  {
-    id: '7',
-    name: 'Daniel Okafor',
-    location: 'Sacramento Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-];
 
 // Button sizes
 
@@ -153,12 +112,6 @@ const MAX_ROW_SCALE = 1.4;
 const TABLET_MIN_SIDE = 700;
 
 const TWO_COLUMN_WIDTH = 600;
-
-const VIEW_OPTIONS = [
-  'All',
-  'Active',
-  'Inactive',
-];
 
 const PANEL_GRADIENT: [string, string] = [
   'rgba(1, 8, 37, 0.74)',
@@ -223,7 +176,13 @@ export default function ManagedAccounts() {
 
   // Account state
 
-  const [accounts, setAccounts] = useState(SAMPLE_USERS);
+  const [accounts, setAccounts] = useState<User[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const [isLoadingMoreAccounts, setIsLoadingMoreAccounts] = useState(false);
+  const [hasMoreAccounts, setHasMoreAccounts] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [accountLoadError, setAccountLoadError] = useState('');
+  const searchRequestId = useRef(0);
 
   const [accountToDelete, setAccountToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -265,36 +224,12 @@ export default function ManagedAccounts() {
 
   const [query, setQuery] = useState('');
 
-  // View state
-
-  const [view, setView] = useState('All');
-
-  const [viewSelectorVisible, setViewSelectorVisible] =
-    useState(false);
-
-  // Filtering
-
-  const normalizedQuery = query.toLowerCase();
-
-  const visibleAccounts = accounts.filter((account) => {
-    const matchesView =
-      view === 'All' ||
-      (view === 'Active') === account.active;
-
-    const matchesSearch =
-      normalizedQuery === '' ||
-      [account.name, account.location, account.privilege]
-        .some((field) => field.toLowerCase().includes(normalizedQuery));
-
-    return matchesView && matchesSearch;
-  });
-
   // Account lines
 
   const accountLines: User[][] = [];
 
-  for (let i = 0; i < visibleAccounts.length; i += columns) {
-    accountLines.push(visibleAccounts.slice(i, i + columns));
+  for (let i = 0; i < accounts.length; i += columns) {
+    accountLines.push(accounts.slice(i, i + columns));
   }
 
   // Haptics
@@ -302,6 +237,115 @@ export default function ManagedAccounts() {
   const haptic = () => {
     Haptics.selectionAsync();
   };
+
+  const accessLevelName = (accessLevel: number) => {
+    const accessLevels: Record<number, string> = {
+      1: 'Primary',
+      2: 'Secondary',
+      3: 'Tertiary',
+      4: 'Quaternary',
+      5: 'Quinary',
+    };
+
+    return accessLevels[accessLevel] ?? `Level ${accessLevel}`;
+  };
+
+  const loadAccounts = useCallback(
+    async (searchTerm: string, offset: number, append: boolean) => {
+      if (!activeUser) {
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError('You must be logged in to view managed accounts.');
+        return;
+      }
+
+      const requestId = append ? searchRequestId.current : searchRequestId.current + 1;
+
+      if (!append) {
+        searchRequestId.current = requestId;
+        setIsLoadingAccounts(true);
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError('');
+      } else {
+        setIsLoadingMoreAccounts(true);
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/login/users/search/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: activeUser.userID,
+            search: searchTerm,
+            offset,
+          }),
+        });
+
+        const responseText = await response.text();
+        let result: ManagedUserResponse = { success: false };
+
+        try {
+          result = JSON.parse(responseText) as ManagedUserResponse;
+        } catch {
+          result.message = responseText;
+        }
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Managed accounts could not be loaded.');
+        }
+
+        if (requestId !== searchRequestId.current) {
+          return;
+        }
+
+        const loadedAccounts = (result.results ?? []).map((account) => ({
+          id: String(account.id),
+          name: account.name,
+          location: account.location,
+          privilege: accessLevelName(account.access_level),
+        }));
+
+        setAccounts((current) =>
+          append
+            ? [...current, ...loadedAccounts.filter((account) =>
+                !current.some((currentAccount) => currentAccount.id === account.id)
+              )]
+            : loadedAccounts
+        );
+        setHasMoreAccounts(Boolean(result.has_more));
+        setNextOffset(result.next_offset ?? null);
+      } catch (error) {
+        if (requestId !== searchRequestId.current) {
+          return;
+        }
+
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Managed accounts could not be loaded. Please try again.'
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } finally {
+        if (requestId === searchRequestId.current) {
+          setIsLoadingAccounts(false);
+          setIsLoadingMoreAccounts(false);
+        }
+      }
+    },
+    [activeUser]
+  );
+
+  useEffect(() => {
+    loadAccounts(query, 0, false);
+  }, [activeUser?.userID, loadAccounts, query]);
 
   // Search
 
@@ -315,7 +359,27 @@ export default function ManagedAccounts() {
 
   const runSearch = () => {
     haptic();
-    setQuery(search.trim());
+    const nextQuery = search.trim();
+
+    if (nextQuery === query) {
+      loadAccounts(nextQuery, 0, false);
+      return;
+    }
+
+    setQuery(nextQuery);
+  };
+
+  const loadMoreAccounts = () => {
+    if (
+      isLoadingAccounts ||
+      isLoadingMoreAccounts ||
+      !hasMoreAccounts ||
+      nextOffset === null
+    ) {
+      return;
+    }
+
+    loadAccounts(query, nextOffset, true);
   };
 
   // Accounts
@@ -397,24 +461,6 @@ export default function ManagedAccounts() {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  // View selector
-
-  const openViewSelector = () => {
-    haptic();
-    setViewSelectorVisible(true);
-  };
-
-  const closeViewSelector = () => {
-    haptic();
-    setViewSelectorVisible(false);
-  };
-
-  const selectView = (value: string) => {
-    haptic();
-    setView(value);
-    setViewSelectorVisible(false);
   };
 
   // Render
@@ -541,44 +587,22 @@ export default function ManagedAccounts() {
                     />
                   </View>
 
-                  {/* View + Add New */}
+                  {/* Add New */}
                   <View
                     style={[
                       styles.filterRow,
                       compactHeader && styles.compactRow,
                     ]}
                   >
-                    <Pressable
-                      onPress={openViewSelector}
-                      accessibilityRole="button"
-                      accessibilityLabel="Select which accounts to view"
-                      style={({ pressed }) => [
-                        styles.selectInput,
-                        pressed &&
-                          styles.selectPressed,
-                      ]}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={styles.selectText}
-                      >
-                        View: {view}
-                      </Text>
-
-                      <Text style={styles.selectArrow}>
-                        ⌄
-                      </Text>
-                    </Pressable>
-
                     <GradientButton
                       title="Add New"
                       onPress={() => {
-                      haptic();
-                      router.push('/SubPages/createprofile');
-                    }}
-                    width={ACTION_BUTTON_WIDTH}
-                    height={BUTTON_HEIGHT}
-                    borderRadius={10}
+                        haptic();
+                        router.push('/SubPages/createprofile');
+                      }}
+                      width={ACTION_BUTTON_WIDTH}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
                     />
                   </View>
                 </View>
@@ -618,6 +642,16 @@ export default function ManagedAccounts() {
               <ScrollView
                 contentContainerStyle={styles.list}
                 keyboardShouldPersistTaps="handled"
+                onMomentumScrollEnd={({ nativeEvent }) => {
+                  const distanceFromBottom =
+                    nativeEvent.contentSize.height -
+                    nativeEvent.layoutMeasurement.height -
+                    nativeEvent.contentOffset.y;
+
+                  if (distanceFromBottom <= 24) {
+                    loadMoreAccounts();
+                  }
+                }}
               >
                 {accountLines.map((line, lineIndex) => (
                   <View
@@ -705,7 +739,35 @@ export default function ManagedAccounts() {
                   </View>
                 ))}
 
-                {visibleAccounts.length === 0 && (
+                {isLoadingAccounts && (
+                  <Animated.View
+                    entering={FadeIn.duration(220)}
+                    style={styles.emptyState}
+                  >
+                    <Text style={styles.emptyText}>Loading managed accounts...</Text>
+                  </Animated.View>
+                )}
+
+                {Boolean(accountLoadError) && (
+                  <Animated.View
+                    entering={FadeIn.duration(220)}
+                    style={styles.emptyState}
+                  >
+                    <Text style={styles.emptyText}>{accountLoadError}</Text>
+                    <GradientButton
+                      title="Back"
+                      onPress={() => {
+                        haptic();
+                        router.back();
+                      }}
+                      width={ACTION_BUTTON_WIDTH}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
+                    />
+                  </Animated.View>
+                )}
+
+                {!isLoadingAccounts && !accountLoadError && accounts.length === 0 && (
                   <Animated.View
                     entering={FadeIn.duration(220)}
                     style={styles.emptyState}
@@ -714,6 +776,14 @@ export default function ManagedAccounts() {
                       No accounts match this search.
                     </Text>
                   </Animated.View>
+                )}
+
+                {isLoadingMoreAccounts && (
+                  <Text style={styles.loadingMoreText}>Loading more accounts...</Text>
+                )}
+
+                {!isLoadingAccounts && !isLoadingMoreAccounts && !hasMoreAccounts && accounts.length > 0 && (
+                  <Text style={styles.loadingMoreText}>No more accounts to load.</Text>
                 )}
 
                 {Boolean(deletionStatus) && (
@@ -774,9 +844,6 @@ export default function ManagedAccounts() {
                 <Text style={styles.deleteUserText}>
                   Privilege Level: {accountToDelete.privilege}
                 </Text>
-                <Text style={styles.deleteUserText}>
-                  Status: {accountToDelete.active ? 'Active' : 'Inactive'}
-                </Text>
               </View>
             )}
 
@@ -808,97 +875,6 @@ export default function ManagedAccounts() {
         </View>
       </Modal>
 
-      {/* View selector modal */}
-
-      <Modal
-        visible={viewSelectorVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeViewSelector}
-      >
-        <View style={styles.modalBackground}>
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={StyleSheet.absoluteFillObject}
-          />
-
-          <Pressable
-            style={styles.modalDismiss}
-            onPress={closeViewSelector}
-          />
-
-          <View
-            style={[
-              styles.selectorSheet,
-              {
-                paddingBottom: 14 + insets.bottom,
-              },
-            ]}
-          >
-            <View style={styles.sheetHandle} />
-
-            <Text style={styles.selectorTitle}>
-              Select View
-            </Text>
-
-            {VIEW_OPTIONS.map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => selectView(option)}
-                accessibilityRole="button"
-                accessibilityLabel={option}
-                style={({ pressed }) => [
-                  styles.optionButton,
-                  pressed &&
-                    styles.selectPressed,
-                ]}
-              >
-                <Text style={styles.optionText}>
-                  {option}
-                </Text>
-              </Pressable>
-            ))}
-
-            <Pressable
-              onPress={closeViewSelector}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel selection"
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed &&
-                  styles.buttonPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                locations={[0, 0.27, 0.49, 0.75, 1]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              >
-                <LinearGradient
-                  colors={['#2983ff', '#1b3de9']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    bottom: 2,
-                    left: 2,
-                    right: 2,
-                    borderRadius: 7,
-                  }}
-                />
-              </LinearGradient>
-
-              <Text style={styles.cancelText}>
-                Cancel
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1161,6 +1137,17 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+
+  loadingMoreText: {
+    color: '#AEB7D3',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.label,
+    lineHeight: 18,
+    textAlign: 'center',
+    paddingVertical: 4,
   },
 
   deletionStatus: {
