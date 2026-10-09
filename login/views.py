@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed
 from common.models import Users
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -107,6 +107,74 @@ def forgotPasswordReq(request):
     else:
         return HttpResponseNotAllowed(["POST"])
 # end forgotPasswordReq        
+
+
+@csrf_exempt
+def deleteUser(request):
+    """Delete a user when the requesting user has tertiary-or-higher access."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "message": "Request body must be valid JSON."}, status=400)
+
+    requesting_user_id = data.get("user_id")
+    target_user_id = data.get("target_user_id")
+
+    if requesting_user_id is None or target_user_id is None:
+        return JsonResponse(
+            {"success": False, "message": "Both 'user_id' and 'target_user_id' are required."},
+            status=400,
+        )
+
+    try:
+        requesting_user_id = int(requesting_user_id)
+        target_user_id = int(target_user_id)
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"success": False, "message": "User IDs must be valid numbers."},
+            status=400,
+        )
+
+    if requesting_user_id <= 0 or target_user_id <= 0:
+        return JsonResponse(
+            {"success": False, "message": "User IDs must be positive numbers."},
+            status=400,
+        )
+
+    if requesting_user_id == target_user_id:
+        return JsonResponse(
+            {"success": False, "message": "You cannot delete your own account."},
+            status=400,
+        )
+
+    try:
+        requesting_user = Users.objects.get(user_id=requesting_user_id)
+    except Users.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "message": "Requesting user does not exist."},
+            status=400,
+        )
+
+    # Access levels 1 through 3 correspond to primary, secondary, and tertiary.
+    if requesting_user.access_level > 3:
+        return HttpResponseForbidden("User does not have permission to delete accounts.")
+
+    try:
+        target_user = Users.objects.get(user_id=target_user_id)
+    except Users.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "message": "User to delete does not exist."},
+            status=404,
+        )
+
+    target_user.delete()
+    return JsonResponse(
+        {"success": True, "message": "User deleted successfully.", "user_id": target_user_id},
+        status=200,
+    )
 
 
 

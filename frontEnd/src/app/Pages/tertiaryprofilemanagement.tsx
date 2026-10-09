@@ -27,6 +27,8 @@ import { useUserState } from '../contexts/UserState';
 
 import GradientButton from '../../../components/GradientButton';
 
+const BASE_URL = 'https://kemyze.vercel.app';
+
 // Typography
 
 const FONT = Object.freeze({
@@ -167,6 +169,7 @@ const PANEL_GRADIENT: [string, string] = [
 
 export default function ManagedAccounts() {
   const router = useRouter();
+  const { activeUser } = useUserState();
 
   const { width, height } = useWindowDimensions();
 
@@ -221,6 +224,11 @@ export default function ManagedAccounts() {
   // Account state
 
   const [accounts, setAccounts] = useState(SAMPLE_USERS);
+
+  const [accountToDelete, setAccountToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deletionStatus, setDeletionStatus] = useState('');
 
   // Columns and row scale
 
@@ -317,9 +325,78 @@ export default function ManagedAccounts() {
     router.push(`/SubPages/editprofile?user_id=${id}`);
   };
 
-  const deleteAccount = (id: string) => {
+  const openDeleteConfirmation = (account: User) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setAccounts((current) => current.filter((account) => account.id !== id));
+    setDeleteError('');
+    setAccountToDelete(account);
+  };
+
+  const cancelDelete = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    haptic();
+    setDeleteError('');
+    setAccountToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!accountToDelete || isDeleting) {
+      return;
+    }
+
+    if (!activeUser) {
+      setDeleteError('You must be logged in to delete an account.');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError('');
+    setDeletionStatus('');
+
+    try {
+      const response = await fetch(`${BASE_URL}/login/users/delete/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: activeUser.userID,
+          target_user_id: Number(accountToDelete.id),
+        }),
+      });
+
+      const responseText = await response.text();
+      let responseMessage = '';
+
+      try {
+        const result = JSON.parse(responseText) as { message?: string };
+        responseMessage = result.message ?? '';
+      } catch {
+        responseMessage = responseText;
+      }
+
+      if (!response.ok) {
+        throw new Error(responseMessage || 'The account could not be deleted.');
+      }
+
+      setAccounts((current) =>
+        current.filter((account) => account.id !== accountToDelete.id)
+      );
+      setDeletionStatus(responseMessage || `${accountToDelete.name} was deleted.`);
+      setAccountToDelete(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'The account could not be deleted. Please try again.'
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // View selector
@@ -609,7 +686,7 @@ export default function ManagedAccounts() {
 
                             <GradientButton
                               title="Delete"
-                              onPress={() => deleteAccount(account.id)}
+                              onPress={() => openDeleteConfirmation(account)}
                               width={scaled(CARD_BUTTON_WIDTH)}
                               height={scaled(CARD_BUTTON_HEIGHT)}
                               backgroundColors={DELETE_BACKGROUND}
@@ -638,11 +715,98 @@ export default function ManagedAccounts() {
                     </Text>
                   </Animated.View>
                 )}
+
+                {Boolean(deletionStatus) && (
+                  <Animated.View
+                    entering={FadeIn.duration(180)}
+                    style={styles.deletionStatus}
+                  >
+                    <Text style={styles.deletionStatusText}>{deletionStatus}</Text>
+                  </Animated.View>
+                )}
               </ScrollView>
             </LinearGradient>
           </View>
         </View>
       </View>
+
+      {/* Delete confirmation modal */}
+
+      <Modal
+        visible={accountToDelete !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDelete}
+      >
+        <View style={styles.modalBackground}>
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={StyleSheet.absoluteFillObject}
+          />
+
+          <Pressable
+            style={styles.modalDismiss}
+            onPress={cancelDelete}
+            disabled={isDeleting}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel deleting account"
+          />
+
+          <View
+            style={[
+              styles.deleteSheet,
+              { paddingBottom: 14 + insets.bottom },
+            ]}
+          >
+            <View style={styles.sheetHandle} />
+
+            <Text style={styles.deleteTitle}>Delete Account?</Text>
+            <Text style={styles.deleteDescription}>
+              This action permanently removes the following user from the database.
+            </Text>
+
+            {accountToDelete && (
+              <View style={styles.deleteUserInfo}>
+                <Text style={styles.deleteUserName}>{accountToDelete.name}</Text>
+                <Text style={styles.deleteUserText}>User ID: {accountToDelete.id}</Text>
+                <Text style={styles.deleteUserText}>{accountToDelete.location}</Text>
+                <Text style={styles.deleteUserText}>
+                  Privilege Level: {accountToDelete.privilege}
+                </Text>
+                <Text style={styles.deleteUserText}>
+                  Status: {accountToDelete.active ? 'Active' : 'Inactive'}
+                </Text>
+              </View>
+            )}
+
+            {Boolean(deleteError) && (
+              <Text style={styles.deleteError}>{deleteError}</Text>
+            )}
+
+            <View style={styles.deleteActions}>
+              <GradientButton
+                title="Cancel"
+                onPress={cancelDelete}
+                disabled={isDeleting}
+                width="48%"
+                height={BUTTON_HEIGHT}
+                borderRadius={10}
+              />
+              <GradientButton
+                title={isDeleting ? 'Deleting...' : 'Delete'}
+                onPress={confirmDelete}
+                disabled={isDeleting}
+                width="48%"
+                height={BUTTON_HEIGHT}
+                backgroundColors={DELETE_BACKGROUND}
+                borderColors={DELETE_BORDER}
+                borderRadius={10}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* View selector modal */}
 
@@ -999,6 +1163,24 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  deletionStatus: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    borderRadius: 10,
+    backgroundColor: 'rgba(20, 83, 45, 0.45)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+
+  deletionStatusText: {
+    color: '#BBF7D0',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+
   modalBackground: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -1022,6 +1204,19 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
 
+  deleteSheet: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(1, 8, 37, 0.96)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 77, 77, 0.7)',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+
   sheetHandle: {
     width: 42,
     height: 4,
@@ -1037,6 +1232,61 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sheetTitle,
     lineHeight: 27,
     marginBottom: 10,
+  },
+
+  deleteTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sheetTitle,
+    lineHeight: 27,
+    marginBottom: 6,
+  },
+
+  deleteDescription: {
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+
+  deleteUserInfo: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    backgroundColor: '#09091C',
+    padding: 12,
+    gap: 3,
+  },
+
+  deleteUserName: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sectionTitle,
+    lineHeight: 22,
+    marginBottom: 3,
+  },
+
+  deleteUserText: {
+    color: '#AEB7D3',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 18,
+  },
+
+  deleteError: {
+    color: '#FCA5A5',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.label,
+    lineHeight: 18,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+
+  deleteActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
   },
 
   optionButton: {
