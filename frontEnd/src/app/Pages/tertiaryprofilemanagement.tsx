@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   View,
@@ -26,6 +26,8 @@ import { BlurView } from 'expo-blur';
 import { useUserState } from '../contexts/UserState';
 
 import GradientButton from '../../../components/GradientButton';
+
+const BASE_URL = 'https://kemyze.vercel.app';
 
 // Typography
 
@@ -55,63 +57,22 @@ type User = {
   name: string;
   location: string;
   privilege: string;
-  active: boolean;
+};
+
+type ManagedUserResponse = {
+  success: boolean;
+  message?: string;
+  results?: Array<{
+    id: number;
+    name: string;
+    location: string;
+    access_level: number;
+  }>;
+  next_offset?: number | null;
+  has_more?: boolean;
 };
 
 // Constants
-
-// Sample accounts
-const SAMPLE_USERS: User[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    location: 'Sacramento Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Maria Delgado',
-    location: 'Sacramento Lab',
-    privilege: 'Secondary',
-    active: true,
-  },
-  {
-    id: '3',
-    name: 'Andre Whitfield',
-    location: 'Davis Lab',
-    privilege: 'Tertiary',
-    active: false,
-  },
-  {
-    id: '4',
-    name: 'Priya Raman',
-    location: 'Folsom Lab',
-    privilege: 'Primary',
-    active: true,
-  },
-  {
-    id: '5',
-    name: 'Chen Wei',
-    location: 'Davis Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-  {
-    id: '6',
-    name: 'Rosa Alvarez',
-    location: 'Elk Grove Lab',
-    privilege: 'Secondary',
-    active: false,
-  },
-  {
-    id: '7',
-    name: 'Daniel Okafor',
-    location: 'Sacramento Lab',
-    privilege: 'Tertiary',
-    active: true,
-  },
-];
 
 // Button sizes
 
@@ -152,12 +113,6 @@ const TABLET_MIN_SIDE = 700;
 
 const TWO_COLUMN_WIDTH = 600;
 
-const VIEW_OPTIONS = [
-  'All',
-  'Active',
-  'Inactive',
-];
-
 const PANEL_GRADIENT: [string, string] = [
   'rgba(1, 8, 37, 0.74)',
   'rgba(1, 8, 37, 0.74)',
@@ -167,6 +122,7 @@ const PANEL_GRADIENT: [string, string] = [
 
 export default function ManagedAccounts() {
   const router = useRouter();
+  const { activeUser } = useUserState();
 
   const { width, height } = useWindowDimensions();
 
@@ -220,7 +176,18 @@ export default function ManagedAccounts() {
 
   // Account state
 
-  const [accounts, setAccounts] = useState(SAMPLE_USERS);
+  const [accounts, setAccounts] = useState<User[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const [isLoadingMoreAccounts, setIsLoadingMoreAccounts] = useState(false);
+  const [hasMoreAccounts, setHasMoreAccounts] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [accountLoadError, setAccountLoadError] = useState('');
+  const searchRequestId = useRef(0);
+
+  const [accountToDelete, setAccountToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deletionStatus, setDeletionStatus] = useState('');
 
   // Columns and row scale
 
@@ -257,36 +224,12 @@ export default function ManagedAccounts() {
 
   const [query, setQuery] = useState('');
 
-  // View state
-
-  const [view, setView] = useState('All');
-
-  const [viewSelectorVisible, setViewSelectorVisible] =
-    useState(false);
-
-  // Filtering
-
-  const normalizedQuery = query.toLowerCase();
-
-  const visibleAccounts = accounts.filter((account) => {
-    const matchesView =
-      view === 'All' ||
-      (view === 'Active') === account.active;
-
-    const matchesSearch =
-      normalizedQuery === '' ||
-      [account.name, account.location, account.privilege]
-        .some((field) => field.toLowerCase().includes(normalizedQuery));
-
-    return matchesView && matchesSearch;
-  });
-
   // Account lines
 
   const accountLines: User[][] = [];
 
-  for (let i = 0; i < visibleAccounts.length; i += columns) {
-    accountLines.push(visibleAccounts.slice(i, i + columns));
+  for (let i = 0; i < accounts.length; i += columns) {
+    accountLines.push(accounts.slice(i, i + columns));
   }
 
   // Haptics
@@ -294,6 +237,115 @@ export default function ManagedAccounts() {
   const haptic = () => {
     Haptics.selectionAsync();
   };
+
+  const accessLevelName = (accessLevel: number) => {
+    const accessLevels: Record<number, string> = {
+      1: 'Primary',
+      2: 'Secondary',
+      3: 'Tertiary',
+      4: 'Quaternary',
+      5: 'Quinary',
+    };
+
+    return accessLevels[accessLevel] ?? `Level ${accessLevel}`;
+  };
+
+  const loadAccounts = useCallback(
+    async (searchTerm: string, offset: number, append: boolean) => {
+      if (!activeUser) {
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError('You must be logged in to view managed accounts.');
+        return;
+      }
+
+      const requestId = append ? searchRequestId.current : searchRequestId.current + 1;
+
+      if (!append) {
+        searchRequestId.current = requestId;
+        setIsLoadingAccounts(true);
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError('');
+      } else {
+        setIsLoadingMoreAccounts(true);
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/login/users/search/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: activeUser.userID,
+            search: searchTerm,
+            offset,
+          }),
+        });
+
+        const responseText = await response.text();
+        let result: ManagedUserResponse = { success: false };
+
+        try {
+          result = JSON.parse(responseText) as ManagedUserResponse;
+        } catch {
+          result.message = responseText;
+        }
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Managed accounts could not be loaded.');
+        }
+
+        if (requestId !== searchRequestId.current) {
+          return;
+        }
+
+        const loadedAccounts = (result.results ?? []).map((account) => ({
+          id: String(account.id),
+          name: account.name,
+          location: account.location,
+          privilege: accessLevelName(account.access_level),
+        }));
+
+        setAccounts((current) =>
+          append
+            ? [...current, ...loadedAccounts.filter((account) =>
+                !current.some((currentAccount) => currentAccount.id === account.id)
+              )]
+            : loadedAccounts
+        );
+        setHasMoreAccounts(Boolean(result.has_more));
+        setNextOffset(result.next_offset ?? null);
+      } catch (error) {
+        if (requestId !== searchRequestId.current) {
+          return;
+        }
+
+        setAccounts([]);
+        setHasMoreAccounts(false);
+        setNextOffset(null);
+        setAccountLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Managed accounts could not be loaded. Please try again.'
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } finally {
+        if (requestId === searchRequestId.current) {
+          setIsLoadingAccounts(false);
+          setIsLoadingMoreAccounts(false);
+        }
+      }
+    },
+    [activeUser]
+  );
+
+  useEffect(() => {
+    loadAccounts(query, 0, false);
+  }, [activeUser?.userID, loadAccounts, query]);
 
   // Search
 
@@ -307,7 +359,27 @@ export default function ManagedAccounts() {
 
   const runSearch = () => {
     haptic();
-    setQuery(search.trim());
+    const nextQuery = search.trim();
+
+    if (nextQuery === query) {
+      loadAccounts(nextQuery, 0, false);
+      return;
+    }
+
+    setQuery(nextQuery);
+  };
+
+  const loadMoreAccounts = () => {
+    if (
+      isLoadingAccounts ||
+      isLoadingMoreAccounts ||
+      !hasMoreAccounts ||
+      nextOffset === null
+    ) {
+      return;
+    }
+
+    loadAccounts(query, nextOffset, true);
   };
 
   // Accounts
@@ -317,27 +389,78 @@ export default function ManagedAccounts() {
     router.push(`/SubPages/editprofile?user_id=${id}`);
   };
 
-  const deleteAccount = (id: string) => {
+  const openDeleteConfirmation = (account: User) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setAccounts((current) => current.filter((account) => account.id !== id));
+    setDeleteError('');
+    setAccountToDelete(account);
   };
 
-  // View selector
+  const cancelDelete = () => {
+    if (isDeleting) {
+      return;
+    }
 
-  const openViewSelector = () => {
     haptic();
-    setViewSelectorVisible(true);
+    setDeleteError('');
+    setAccountToDelete(null);
   };
 
-  const closeViewSelector = () => {
-    haptic();
-    setViewSelectorVisible(false);
-  };
+  const confirmDelete = async () => {
+    if (!accountToDelete || isDeleting) {
+      return;
+    }
 
-  const selectView = (value: string) => {
-    haptic();
-    setView(value);
-    setViewSelectorVisible(false);
+    if (!activeUser) {
+      setDeleteError('You must be logged in to delete an account.');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError('');
+    setDeletionStatus('');
+
+    try {
+      const response = await fetch(`${BASE_URL}/login/users/delete/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: activeUser.userID,
+          target_user_id: Number(accountToDelete.id),
+        }),
+      });
+
+      const responseText = await response.text();
+      let responseMessage = '';
+
+      try {
+        const result = JSON.parse(responseText) as { message?: string };
+        responseMessage = result.message ?? '';
+      } catch {
+        responseMessage = responseText;
+      }
+
+      if (!response.ok) {
+        throw new Error(responseMessage || 'The account could not be deleted.');
+      }
+
+      setAccounts((current) =>
+        current.filter((account) => account.id !== accountToDelete.id)
+      );
+      setDeletionStatus(responseMessage || `${accountToDelete.name} was deleted.`);
+      setAccountToDelete(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'The account could not be deleted. Please try again.'
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Render
@@ -464,44 +587,22 @@ export default function ManagedAccounts() {
                     />
                   </View>
 
-                  {/* View + Add New */}
+                  {/* Add New */}
                   <View
                     style={[
                       styles.filterRow,
                       compactHeader && styles.compactRow,
                     ]}
                   >
-                    <Pressable
-                      onPress={openViewSelector}
-                      accessibilityRole="button"
-                      accessibilityLabel="Select which accounts to view"
-                      style={({ pressed }) => [
-                        styles.selectInput,
-                        pressed &&
-                          styles.selectPressed,
-                      ]}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={styles.selectText}
-                      >
-                        View: {view}
-                      </Text>
-
-                      <Text style={styles.selectArrow}>
-                        ⌄
-                      </Text>
-                    </Pressable>
-
                     <GradientButton
                       title="Add New"
                       onPress={() => {
-                      haptic();
-                      router.push('/SubPages/createprofile');
-                    }}
-                    width={ACTION_BUTTON_WIDTH}
-                    height={BUTTON_HEIGHT}
-                    borderRadius={10}
+                        haptic();
+                        router.push('/SubPages/createprofile');
+                      }}
+                      width={ACTION_BUTTON_WIDTH}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
                     />
                   </View>
                 </View>
@@ -541,6 +642,16 @@ export default function ManagedAccounts() {
               <ScrollView
                 contentContainerStyle={styles.list}
                 keyboardShouldPersistTaps="handled"
+                onMomentumScrollEnd={({ nativeEvent }) => {
+                  const distanceFromBottom =
+                    nativeEvent.contentSize.height -
+                    nativeEvent.layoutMeasurement.height -
+                    nativeEvent.contentOffset.y;
+
+                  if (distanceFromBottom <= 24) {
+                    loadMoreAccounts();
+                  }
+                }}
               >
                 {accountLines.map((line, lineIndex) => (
                   <View
@@ -609,7 +720,7 @@ export default function ManagedAccounts() {
 
                             <GradientButton
                               title="Delete"
-                              onPress={() => deleteAccount(account.id)}
+                              onPress={() => openDeleteConfirmation(account)}
                               width={scaled(CARD_BUTTON_WIDTH)}
                               height={scaled(CARD_BUTTON_HEIGHT)}
                               backgroundColors={DELETE_BACKGROUND}
@@ -628,7 +739,35 @@ export default function ManagedAccounts() {
                   </View>
                 ))}
 
-                {visibleAccounts.length === 0 && (
+                {isLoadingAccounts && (
+                  <Animated.View
+                    entering={FadeIn.duration(220)}
+                    style={styles.emptyState}
+                  >
+                    <Text style={styles.emptyText}>Loading managed accounts...</Text>
+                  </Animated.View>
+                )}
+
+                {Boolean(accountLoadError) && (
+                  <Animated.View
+                    entering={FadeIn.duration(220)}
+                    style={styles.emptyState}
+                  >
+                    <Text style={styles.emptyText}>{accountLoadError}</Text>
+                    <GradientButton
+                      title="Back"
+                      onPress={() => {
+                        haptic();
+                        router.back();
+                      }}
+                      width={ACTION_BUTTON_WIDTH}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
+                    />
+                  </Animated.View>
+                )}
+
+                {!isLoadingAccounts && !accountLoadError && accounts.length === 0 && (
                   <Animated.View
                     entering={FadeIn.duration(220)}
                     style={styles.emptyState}
@@ -638,19 +777,36 @@ export default function ManagedAccounts() {
                     </Text>
                   </Animated.View>
                 )}
+
+                {isLoadingMoreAccounts && (
+                  <Text style={styles.loadingMoreText}>Loading more accounts...</Text>
+                )}
+
+                {!isLoadingAccounts && !isLoadingMoreAccounts && !hasMoreAccounts && accounts.length > 0 && (
+                  <Text style={styles.loadingMoreText}>No more accounts to load.</Text>
+                )}
+
+                {Boolean(deletionStatus) && (
+                  <Animated.View
+                    entering={FadeIn.duration(180)}
+                    style={styles.deletionStatus}
+                  >
+                    <Text style={styles.deletionStatusText}>{deletionStatus}</Text>
+                  </Animated.View>
+                )}
               </ScrollView>
             </LinearGradient>
           </View>
         </View>
       </View>
 
-      {/* View selector modal */}
+      {/* Delete confirmation modal */}
 
       <Modal
-        visible={viewSelectorVisible}
+        visible={accountToDelete !== null}
         transparent
-        animationType="slide"
-        onRequestClose={closeViewSelector}
+        animationType="fade"
+        onRequestClose={cancelDelete}
       >
         <View style={styles.modalBackground}>
           <BlurView
@@ -661,80 +817,64 @@ export default function ManagedAccounts() {
 
           <Pressable
             style={styles.modalDismiss}
-            onPress={closeViewSelector}
+            onPress={cancelDelete}
+            disabled={isDeleting}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel deleting account"
           />
 
           <View
             style={[
-              styles.selectorSheet,
-              {
-                paddingBottom: 14 + insets.bottom,
-              },
+              styles.deleteSheet,
+              { paddingBottom: 14 + insets.bottom },
             ]}
           >
             <View style={styles.sheetHandle} />
 
-            <Text style={styles.selectorTitle}>
-              Select View
+            <Text style={styles.deleteTitle}>Delete Account?</Text>
+            <Text style={styles.deleteDescription}>
+              This action permanently removes the following user from the database.
             </Text>
 
-            {VIEW_OPTIONS.map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => selectView(option)}
-                accessibilityRole="button"
-                accessibilityLabel={option}
-                style={({ pressed }) => [
-                  styles.optionButton,
-                  pressed &&
-                    styles.selectPressed,
-                ]}
-              >
-                <Text style={styles.optionText}>
-                  {option}
+            {accountToDelete && (
+              <View style={styles.deleteUserInfo}>
+                <Text style={styles.deleteUserName}>{accountToDelete.name}</Text>
+                <Text style={styles.deleteUserText}>User ID: {accountToDelete.id}</Text>
+                <Text style={styles.deleteUserText}>{accountToDelete.location}</Text>
+                <Text style={styles.deleteUserText}>
+                  Privilege Level: {accountToDelete.privilege}
                 </Text>
-              </Pressable>
-            ))}
+              </View>
+            )}
 
-            <Pressable
-              onPress={closeViewSelector}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel selection"
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed &&
-                  styles.buttonPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                locations={[0, 0.27, 0.49, 0.75, 1]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              >
-                <LinearGradient
-                  colors={['#2983ff', '#1b3de9']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    bottom: 2,
-                    left: 2,
-                    right: 2,
-                    borderRadius: 7,
-                  }}
-                />
-              </LinearGradient>
+            {Boolean(deleteError) && (
+              <Text style={styles.deleteError}>{deleteError}</Text>
+            )}
 
-              <Text style={styles.cancelText}>
-                Cancel
-              </Text>
-            </Pressable>
+            <View style={styles.deleteActions}>
+              <GradientButton
+                title="Cancel"
+                onPress={cancelDelete}
+                disabled={isDeleting}
+                width="48%"
+                height={BUTTON_HEIGHT}
+                borderRadius={10}
+              />
+              <GradientButton
+                title={isDeleting ? 'Deleting...' : 'Delete'}
+                onPress={confirmDelete}
+                disabled={isDeleting}
+                width="48%"
+                height={BUTTON_HEIGHT}
+                backgroundColors={DELETE_BACKGROUND}
+                borderColors={DELETE_BORDER}
+                borderRadius={10}
+              />
+            </View>
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
@@ -997,6 +1137,35 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
     lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+
+  loadingMoreText: {
+    color: '#AEB7D3',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.label,
+    lineHeight: 18,
+    textAlign: 'center',
+    paddingVertical: 4,
+  },
+
+  deletionStatus: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    borderRadius: 10,
+    backgroundColor: 'rgba(20, 83, 45, 0.45)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+
+  deletionStatusText: {
+    color: '#BBF7D0',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 
   modalBackground: {
@@ -1022,6 +1191,19 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
 
+  deleteSheet: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(1, 8, 37, 0.96)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 77, 77, 0.7)',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+
   sheetHandle: {
     width: 42,
     height: 4,
@@ -1037,6 +1219,61 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sheetTitle,
     lineHeight: 27,
     marginBottom: 10,
+  },
+
+  deleteTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sheetTitle,
+    lineHeight: 27,
+    marginBottom: 6,
+  },
+
+  deleteDescription: {
+    color: '#C9CFE9',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+
+  deleteUserInfo: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    backgroundColor: '#09091C',
+    padding: 12,
+    gap: 3,
+  },
+
+  deleteUserName: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sectionTitle,
+    lineHeight: 22,
+    marginBottom: 3,
+  },
+
+  deleteUserText: {
+    color: '#AEB7D3',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.secondary,
+    lineHeight: 18,
+  },
+
+  deleteError: {
+    color: '#FCA5A5',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.label,
+    lineHeight: 18,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+
+  deleteActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
   },
 
   optionButton: {
