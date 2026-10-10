@@ -7,18 +7,23 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49035; // replace with active user ID (KM#85)
+const USER_ACCESS = 1;
 // Typography
 
 const FONT = Object.freeze({
@@ -116,7 +121,8 @@ const PHONE_DIGITS = [
 const HISTORY_FILTERS = [
   'Edit',
   'Location',
-  'Role',
+  'Quantity',
+  'SDS'
 ];
 
 const EMPTY_PROFILE: ProfileValues = {
@@ -142,6 +148,14 @@ const NAV_BAR_HEIGHT = 76;
 
 export default function Edit_Profile() {
   const { user_id } = useLocalSearchParams();
+  const { activeUser } = useUserState(); // Insert active user.
+    
+    // Invoke useEffect to prevent active user state from flooding console.
+    useEffect(() => {
+      console.log("Active user for edit profile:", activeUser); // Additional console check for active user.
+    }, [activeUser]);
+    
+    
   const router = useRouter();
 
   const { width, height } = useWindowDimensions();
@@ -187,6 +201,12 @@ export default function Edit_Profile() {
   const [reviewVisible, setReviewVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
+  const [newLocationVisible, setNewLocationVisible] = useState(false);
+  const [newLocationLoading, setNewLocationLoading] = useState(false);
+  const [newLocationError, setNewLocationError] = useState(false);
+  const [newLocationSuccess, setNewLocationSuccess] = useState(true);
+  const [changeLogLoading, setChangeLogLoading] = useState(true);
+    const [changeLogError, setChangeLogError] = useState(false);
 
   // Selection state
 
@@ -222,6 +242,10 @@ export default function Edit_Profile() {
   const [password, setPassword] =
     useState('');
 
+  const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+    
+  const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
+  const [newLocation, setNewLocation] = useState('');
   // Saved state
 
   const [savedProfile, setSavedProfile] =
@@ -250,35 +274,7 @@ export default function Edit_Profile() {
 
   // Placeholder data
 
-  const changeLog: ChangeLogEntry[] = [
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Edit',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Location',
-      Old: '',
-      New: '',
-    },
-    {
-      Date: '',
-      Time: '',
-      KemyzeID: String(user_id ?? ''),
-      User: '',
-      Change: 'Role',
-      Old: '',
-      New: '',
-    },
-  ];
+    const [changeLog, setChangeLog] = useState([{}]);
 
   // Review changes
 
@@ -373,9 +369,23 @@ export default function Edit_Profile() {
     return 'Select Option';
   };
 
+
+  // State Variables for Options that are dynamic
+
+      const [locationOptions, setLocationOptions] = useState([
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+        ]);
+
+
   const getOptions = () => {
     if (selectorType === 'location') {
-      return LOCATION_OPTIONS;
+      return locationOptions;
     }
 
     if (selectorType === 'role') {
@@ -475,11 +485,12 @@ export default function Edit_Profile() {
   };
 
   const openFieldHistory = (
-    type: HistoryType
+    type: HistoryType, index: number
   ) => {
     haptic();
     setFieldHistoryType(type);
     setHistoryVisible(false);
+    setHistoryIndex(index);
     setFieldHistoryVisible(true);
   };
 
@@ -540,9 +551,24 @@ export default function Edit_Profile() {
   const filteredChangeLog =
     changeLog.filter(
       (item) =>
-        item.Change ===
+        item.Type ===
         historyFilter
     );
+    
+    // ChangeLog Navigation
+      const scrollViewRef = useRef<ScrollView>(null);
+      const changeLogLayouts = useRef<{[key: number]: number}>({});
+      const [historyIndex, setHistoryIndex] = useState(0);
+      const scrollToLayoutIndex = () => {
+          const yPosition = changeLogLayouts.current[historyIndex];
+          if(yPosition !== undefined && scrollViewRef.current){
+              scrollViewRef.current.scrollTo({
+                  y: yPosition,
+                  animated: true,
+              });
+          }
+      };
+
 
   // Save flow
 
@@ -564,6 +590,12 @@ export default function Edit_Profile() {
     setCanceledVisible(true);
   };
 
+  const showAddNewLocation = () => {
+        haptic();
+        closeSelector();
+        setNewLocationVisible(true);
+  };
+
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
@@ -573,6 +605,62 @@ export default function Edit_Profile() {
     haptic();
     setCanceledVisible(false);
   };
+
+
+    const closeNewLocation = () => {
+        haptic();
+        setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
+      };
+
+      useEffect(() => {
+          if(newLocationVisible == false){
+              setNewLocationLoading(false);
+              setNewLocationError(false);
+              setNewLocationSuccess(false);
+          }
+      }, [newLocationVisible]);
+
+  const addNewLocation = async () => {
+        setNewLocationLoading(true);
+        let data = {
+                        user_id: activeUser?.userID,
+                        new_location: newLocation,
+        };
+        try {
+          const editURL = BASE_URL + "containers/addLocation"
+          let now = new Date();
+          let formattedTime = now.toLocaleTimeString();
+          console.log("${formattedTime} Sending add location URL: " + editURL);
+          const response = await fetch(editURL, {
+              method: 'POST',
+              headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+              });
+
+          if (!response.ok){
+              now = new Date();
+              formattedTime = now.toLocaleTimeString();
+              console.log("${formattedTime} We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+          } catch (error) {
+              console.error('Error sending data:', error);
+              setErrorMsg(error?.message ?? "Unknown error");
+              setNewLocationError(true);
+          } finally {
+              setNewLocationLoading(false);
+              setNewLocationSuccess(true);
+              loadLocationOptions();
+          }
+        };
+
 
   // Navigation
 
@@ -648,6 +736,130 @@ export default function Edit_Profile() {
       }
     },
   } as any;
+
+  // Load inital data
+      const [isLoading, setIsLoading] = useState(true);
+      const [loadError, setLoadError] = useState(false);
+      const [errorMsg, setErrorMsg] = useState("Test Error Message");
+
+  //Initial fetch
+      useEffect(() => {
+          checkUser();
+          loadChangeLog();
+      }, []);
+
+      const checkUser = async() => {
+          if(activeUser?.accessLevel <= 1){
+              setIsNewLocationVisible(true);
+          }
+          if(activeUser?.accessLevel <= 2){
+              setLocationOptionsVisible(true);
+          }
+          }
+
+  //Load location data
+  useEffect(() => {
+          if (location !== null){
+              loadLocationOptions();
+          }
+      }, [location]);
+
+      const loadLocationOptions = async () => {
+          let data = [{name: "Currently Loading Locations"}]
+          setLocationOptions(data.map(item => item.name));
+          const parameters = '';
+          data = await loadVarLocationOptions(parameters);
+          setLocationOptions(data.map(item => item.name));
+      }
+
+
+      const loadVarLocationOptions = async (parameters) => {
+          const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
+          try{
+              const response = await fetch(getLocationChildrenURL,{method: "GET",});
+              if (!response.ok){
+                  console.log("We are having issues");
+                  const errorText = await response.text();
+                  throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+              let data = await response.json();
+              if (data && Object.keys(data).length === 0){
+                  console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
+                  data = [{
+                      name: "No locations found",
+                  }];
+              }
+              return data;
+          } catch (error: any) {
+              console.log(error.message);
+              setErrorMsg(error.message);
+              setLoadError(true);
+          }
+      }
+
+    // Load Change Log
+    {/* Changes should be in the form below and added to changeLog array
+    {
+      Date: '',
+      Time: '',
+      ContainerID: String(container_id ?? ''),
+      User: '',
+      Type: 'Edit, Location, Quantity, or SDS',
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS',
+      Old: '',
+      New: '',
+    },
+      */}
+    
+    const loadChangeLog = async () => {
+        setChangeLogLoading(true);
+        setChangeLogError(false);
+        const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?user_id=" + user_id
+        try{
+            const response = await fetch(getChangeLogURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, ChangeLog data was empty.\nURL: "+getChangeLogURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    Date: '',
+                    Time: '',
+                    ContainerID: String(container_id ?? ''),
+                    User: '',
+                    Type: 'Edit',
+                    Change: 'Edit',
+                    Old: 'Error loading',
+                    New: 'Change Log',
+                }];
+            }
+            data = data.map((entry) => {
+                            if (!entry.Timestamp) return entry;
+                            const changedAt = new Date(entry.Timestamp);
+                            if (isNaN(changedAt.getTime())) return entry; // skip if the date can't be read
+                            return {
+                                ...entry,
+                                Date: changedAt.toLocaleDateString(),
+                                Time: changedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                            };
+                        });
+            setChangeLog(data)
+        } catch (error: any) {
+            setChangeLogError(true);
+        } finally {
+            setChangeLogLoading(false);
+        }
+    }
+    
+    // String clamping
+    const clampString = (str, maxLength) => {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.slice(0, maxLength) + "...";
+    }
 
   // Render
 
@@ -821,40 +1033,53 @@ export default function Edit_Profile() {
                       Location
                     </Text>
 
-                    <Pressable
-                      onPress={() =>
-                        openSelector(
-                          'location'
-                        )
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Select location"
-                      style={({ pressed }) => [
-                        styles.selectInput,
-                        pressed &&
-                          styles.selectPressed,
-                      ]}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.selectText,
-                          location ===
-                            'Location Name' &&
-                            styles.placeholderText,
-                        ]}
-                      >
-                        {location}
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.selectArrow
-                        }
-                      >
-                        ⌄
-                      </Text>
-                    </Pressable>
+          {locationOptionsVisible ? (<Pressable
+              onPress={() =>
+                  openSelector(
+                               'location'
+                               )
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Select location"
+              style={({ pressed }) => [
+                  styles.selectInput,
+                  pressed &&
+                  styles.selectPressed,
+              ]}
+              >
+              <Text
+              numberOfLines={1}
+              style={[
+                  styles.selectText,
+                  location ===
+                  'Location Name' &&
+                  styles.placeholderText,
+              ]}
+              >
+              {location}
+              </Text>
+              
+              <Text
+              style={
+                  styles.selectArrow
+              }
+              >
+              ⌄
+              </Text>
+              </Pressable>) : (<View
+                               style={
+                                   styles.locationDefault
+                                   }
+                               >
+                               <Text
+                               numberOfLines={1}
+                               style={
+                                   styles.selectText
+                               }
+                               >
+                               {location}
+                               </Text>
+                               </View>)}
                   </View>
 
                   {/* Phone Number */}
@@ -1084,9 +1309,10 @@ export default function Edit_Profile() {
 
             {/* Change Log */}
             <Pressable
-              onPress={() => openHistory()}
+              onPress={changeLogError ? loadChangeLog : openHistory}
+              disabled={changeLogLoading}
               accessibilityRole="button"
-              accessibilityLabel="Open Change Log"
+              accessibilityLabel={changeLogError ? "Retry loading Change Log" : "Open Change Log"}
               style={({ pressed }) => [
                 styles.changeLogCard,
                 pressed &&
@@ -1103,85 +1329,84 @@ export default function Edit_Profile() {
                     styles.changeLogTitle
                   }
                 >
-                  Change Log
+                  Most Recent Change Made
                 </Text>
 
-                <Text
-                  style={
-                    styles.changeLogArrow
-                  }
-                >
-                  ›
-                </Text>
+          {/* Only show the arrow when there's a history to open */}
+                        {!changeLogLoading && !changeLogError && (
+                          <Text style={styles.changeLogArrow}>›</Text>
+                        )}
               </View>
 
-              <View
-                style={
-                  styles.changeLogRow
-                }
-              >
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Date: __________
-                </Text>
-
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Time: __________
-                </Text>
-              </View>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Kemyze ID: {String(user_id ?? '__________')}
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                User: __________
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Change: __________
-              </Text>
-
-              <View
-                style={
-                  styles.changeLogRow
-                }
-              >
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  Old: __________
-                </Text>
-
-                <Text
-                  style={
-                    styles.changeLogText
-                  }
-                >
-                  New: __________
-                </Text>
-              </View>
+          {changeLogLoading ? (
+                               // KM-84: Loading indicator while the change log is being fetched
+                               <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                               <ActivityIndicator size="small" color="#C9CFE9" />
+                               <Text style={[styles.changeLogText, { marginTop: 8 }]}>
+                               Loading change log...
+                               </Text>
+                               </View>
+                               ) : changeLogError ? (
+                                                     // KM-84: Error shown only in this section, with a tap-to-retry hint
+                                                     <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                                                     <Text style={[styles.changeLogText, { color: '#FF6B6B' }]}>
+                                                     Couldn't load the change log.
+                                                     </Text>
+                                                     <Text style={[styles.changeLogText, { marginTop: 4 }]}>
+                                                     Tap to retry
+                                                     </Text>
+                                                     </View>
+                                                     ) : (
+                                                          // Loaded successfully: show the most recent change (same as before)
+                                                          <>
+                                                          <View style={styles.changeLogRow}>
+                                                          <Text style={styles.changeLogText}>
+                                                          Date: {changeLog[0].Date}
+                                                          </Text>
+                                                          <Text style={styles.changeLogText}>
+                                                          Time: {changeLog[0].Time}
+                                                          </Text>
+                                                          </View>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          ContainerID: {changeLog[0].ContainerID}
+                                                          </Text>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          Change: {changeLog[0].Change}
+                                                          </Text>
+                                                          
+                                                          <View
+                                                          style={
+                                                              styles.changeLogRow
+                                                          }
+                                                          >
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          Old: {changeLog[0].Old}
+                                                          </Text>
+                                                          
+                                                          <Text
+                                                          style={
+                                                              styles.changeLogText
+                                                          }
+                                                          >
+                                                          New: {changeLog[0].New}
+                                                          </Text>
+                                                          </View>
+                                                          </>
+                                                          )}
             </Pressable>
           </ScrollView>
         </View>
@@ -1280,6 +1505,51 @@ export default function Edit_Profile() {
                 </Pressable>
               )
             )}
+
+        {
+                    isNewLocationVisible && selectorType == 'location' && (
+                            <Pressable
+                                          onPress={showAddNewLocation}
+                                          accessibilityRole="button"
+                                          accessibilityLabel="Create New Location"
+                                          style={({ pressed }) => [
+                                            styles.cancelButton,
+                                            pressed &&
+                                              styles.buttonPressed,
+                                          ]}
+                                        >
+                                          <LinearGradient
+                                                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                  locations={[0, 0.27, 0.49, 0.75, 1]}
+                                                  start={{ x: 0, y: 0 }}
+                                                  end={{ x: 1, y: 1 }}
+                                                  style={StyleSheet.absoluteFillObject}
+                                                >
+                                                  <LinearGradient
+                                                    colors={['#2983ff', '#1b3de9']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 0, y: 1 }}
+                                                    style={{
+                                                      position: 'absolute',
+                                                      top: 2,
+                                                      bottom: 2,
+                                                      left: 2,
+                                                      right: 2,
+                                                      borderRadius: 7,
+                                                    }}
+                                                  />
+                                                </LinearGradient>
+                                          <Text
+                                            style={
+                                              styles.cancelText
+                                            }
+                                          >
+                                            Add New Location
+                                          </Text>
+                                        </Pressable>
+                        )
+                    }
+
 
             <Pressable
               onPress={closeSelector}
@@ -1516,7 +1786,7 @@ export default function Edit_Profile() {
         </View>
       </Modal>
 
-      {/* Profile history */}
+      {/* Change history */}
 
       <Modal
         visible={historyVisible}
@@ -1571,7 +1841,7 @@ export default function Edit_Profile() {
                   styles.sheetTitle
                 }
               >
-                Profile History
+                Change History
               </Text>
 
               <Pressable
@@ -1670,63 +1940,66 @@ export default function Edit_Profile() {
             >
               {filteredChangeLog.map(
                 (item, index) => (
-                  <Pressable
-                    key={`${item.Change}-${index}`}
-                    onPress={() =>
-                      openFieldHistory(
-                        item.Change as HistoryType
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.Change} history`}
-                    style={({ pressed }) => [
-                      styles.historyCard,
-                      pressed &&
-                        styles.cardPressed,
-                    ]}
-                  >
-                    <View
-                      style={
-                        styles.historyCardRow
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.historyName
-                        }
-                      >
-                        {item.Change ===
-                        'Edit'
-                          ? 'Profile edited'
-                          : `${item.Change} changed`}
-                      </Text>
+                                  <Pressable
+                                    key={index}
+                                                  onPress={() =>{
+                                                      openFieldHistory(
+                                                                       item.Change as HistoryType,
+                                                                       index as index
+                                                                       )
+                                                      }
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${item.Change} history`}
+                                    style={({ pressed }) => [
+                                      styles.historyCard,
+                                      pressed &&
+                                        styles.cardPressed,
+                                    ]}
+                                  >
+                                    <View
+                                      style={
+                                        styles.historyCardRow
+                                      }
+                                    >
+                                      <Text
+                                        style={
+                                          styles.historyName
+                                        }
+                                      >
+                                        {item.Type ===
+                                        'Edit'
+                                          ? `${item.Change} changed`
+                                          : `Date: ${item.Date}\nChange: ${item.New}`}
+                                      </Text>
 
-                      <View
-                        style={
-                          styles.historyRight
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.historyValue
-                          }
-                        >
-                          {item.Change ===
-                          'Edit'
-                            ? '________ → ________ → ________'
-                            : '________ → ________'}
-                        </Text>
+                                      <View
+                                        style={
+                                          styles.historyRight
+                                        }
+                                      >
+                                        <Text
+                                          style={
+                                            styles.historyValue
+                                          }
+                                        >
+                                                  {item.Type ===
+                                                  'Edit'
+                                                    ? `Date: ${clampString(item.Date, 15)}\nChange: ${clampString(item.New, 15)}`
+                                                    : ``}
+                                                  
+                                        </Text>
 
-                        <Text
-                          style={
-                            styles.historyArrow
-                          }
-                        >
-                          ›
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
+                                        <Text
+                                          style={
+                                            styles.historyArrow
+                                          }
+                                        >
+                                          ›
+                                        </Text>
+                                      </View>
+                                    </View>
+                                  </Pressable>
                 )
               )}
             </ScrollView>
@@ -1834,6 +2107,7 @@ export default function Edit_Profile() {
             </Text>
 
             <ScrollView
+          ref={scrollViewRef}
               style={
                 styles.fieldHistoryScroll
               }
@@ -1844,78 +2118,97 @@ export default function Edit_Profile() {
                 false
               }
             >
-              {[1, 2, 3, 4].map(
-                (item, index) => (
+          {filteredChangeLog.map(
+            (item, index) => (
+              <View
+                key={index}
+                style={
+                  index === historyIndex
+                  ? styles.timelineItemHighlight
+                  : styles.timelineItem
+                }
+                              onLayout={(event) => {
+                                  changeLogLayouts.current[index] = event.nativeEvent.layout.y;
+                                  scrollToLayoutIndex();
+                              }}
+              >
+                <View
+                  style={
+                    styles.timelineColumn
+                  }
+                >
                   <View
-                    key={item}
                     style={
-                      styles.timelineItem
+                      index === historyIndex
+                        ? styles.timelineDotActive
+                        : styles.timelineDot
+                    }
+                  />
+
+                  {index < filteredChangeLog.length && (
+                    <View
+                      style={
+                        styles.timelineLine
+                      }
+                    />
+                  )}
+                </View>
+
+                <View
+                  style={
+                    styles.timelineDetails
+                  }
+                >
+                  <Text
+                    style={
+                      styles.timelineValue
                     }
                   >
-                    <View
-                      style={
-                        styles.timelineColumn
-                      }
-                    >
-                      <View
-                        style={
-                          index === 0
-                            ? styles.timelineDotActive
-                            : styles.timelineDot
-                        }
-                      />
+                              {item.Change} was changed
+                  </Text>
+                  
+                              <Text
+                                style={
+                                  styles.timelinePlaceholder
+                                }
+                              >
+                              Old {item.Change}: {item.Old}
+                              </Text>
+                              <Text
+                                style={
+                                  styles.timelinePlaceholder
+                                }
+                              >
+                              New {item.Change}: {item.New}
+                              </Text>
 
-                      {index < 3 && (
-                        <View
-                          style={
-                            styles.timelineLine
-                          }
-                        />
-                      )}
-                    </View>
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              User: {item.User}
+                  </Text>
 
-                    <View
-                      style={
-                        styles.timelineDetails
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.timelineValue
-                        }
-                      >
-                        {getFieldHistoryValue(
-                          index
-                        )}
-                      </Text>
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              Date: {item.Date}
+                  </Text>
 
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        User: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Date: __________
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.timelinePlaceholder
-                        }
-                      >
-                        Time: __________
-                      </Text>
-                    </View>
-                  </View>
-                )
-              )}
+                  <Text
+                    style={
+                      styles.timelinePlaceholder
+                    }
+                  >
+                              Time: {item.Time}
+                  </Text>
+                </View>
+              </View>
+            )
+          )}
             </ScrollView>
           </View>
         </View>
@@ -2410,6 +2703,281 @@ export default function Edit_Profile() {
           </View>
         </View>
       </Modal>
+
+
+
+      {/* New Location */}
+
+            <Modal
+              visible={newLocationVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={
+                closeNewLocation
+              }
+            >
+              <View
+                style={
+                  styles.confirmBackground
+                }
+              >
+                <BlurView
+                  intensity={50}
+                  tint="dark"
+                  style={
+                    StyleSheet.absoluteFillObject
+                  }
+                />
+
+                {newLocationError && (
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Error creating new location.
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Text style ={styles.errorText}>
+                    {errorMsg}
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={closeNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel Add Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed && styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                        colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                        locations={[0, 0.35, 0.56, 0.89, 1]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                    >
+                    <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                            position: 'absolute',
+                            top: 2,
+                            bottom: 2,
+                            left: 2,
+                            right: 2,
+                            borderRadius: 7,
+                        }}
+                    />
+                    </LinearGradient>
+                        <Text
+                            style={
+                                styles.confirmButtonText
+                            }
+                        >
+                        Go Back
+                        </Text>
+                    </Pressable>
+                    </View>
+                )}
+
+                { newLocationSuccess && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <Text style={styles.confirmTitle}>
+                                                New Location Successfully Added
+                                            </Text>
+                                            <View style={{padding:5}}></View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Button to leave new Location"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Go Back
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )
+
+                }
+                {newLocationLoading && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <View style={styles.loadingIndicator}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        </View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Cancel Add Location in load"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Cancel
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )}
+
+                {!newLocationError && !newLocationLoading && !newLocationSuccess &&(
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Type in location name:
+                    </Text>
+                    <View style={{padding:5}}></View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="New Location"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="New Location Input"
+                        value = {newLocation}
+                        onChangeText = {setNewLocation}
+                        maxLength={255}
+                    />
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={addNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Add New Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed &&
+                            styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.27, 0.49, 0.75, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                    >
+                            <LinearGradient
+                              colors={['#2983ff', '#1b3de9']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 0, y: 1 }}
+                              style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                              }}
+                            />
+                          </LinearGradient>
+                    <Text
+                      style={
+                        styles.confirmButtonText
+                      }
+                    >
+                      Add Location
+                    </Text>
+                  </Pressable>
+                  <View style={{padding:2}}></View>
+                  <Pressable
+                                      onPress={
+                                        closeNewLocation
+                                      }
+                                      accessibilityRole="button"
+                                      accessibilityLabel="Cancel Add Location"
+                                      style={({ pressed }) => [
+                                        styles.confirmButton,
+                                        pressed &&
+                                          styles.buttonPressed,
+                                      ]}
+                                    >
+                                      <LinearGradient
+                                              colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                              locations={[0, 0.35, 0.56, 0.89, 1]}
+                                              start={{ x: 0, y: 0 }}
+                                              end={{ x: 1, y: 1 }}
+                                              style={StyleSheet.absoluteFillObject}
+                                            >
+                                              <LinearGradient
+                                                colors={['#2983ff', '#1b3de9']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 2,
+                                                  bottom: 2,
+                                                  left: 2,
+                                                  right: 2,
+                                                  borderRadius: 7,
+                                                }}
+                                              />
+                                            </LinearGradient>
+                                      <Text
+                                        style={
+                                          styles.confirmButtonText
+                                        }
+                                      >
+                                        Cancel
+                                      </Text>
+                                    </Pressable>
+                                    </View>
+                                    )}
+              </View>
+            </Modal>
+
     </View>
   );
 }
@@ -2601,6 +3169,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+  
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#223044',
+      borderRadius: 9,
+      backgroundColor: '#02021C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+    },
 
   selectText: {
     color: '#FFFFFF',
@@ -3060,6 +3639,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     minHeight: 92,
   },
+    
+    timelineItemHighlight: {
+      flexDirection: 'row',
+      minHeight: 92,
+      backgroundColor:'#3f4d8f'
+    },
 
   timelineColumn: {
     width: 22,
