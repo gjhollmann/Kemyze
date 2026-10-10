@@ -30,9 +30,12 @@ export default function Scanner() {
     const [scannedKemID, setScannedKemId] = useState(0);
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [scannedData, setScannedData] = useState<string | null>(null);
-    const lastScannedTimestampRef = useRef(0);
+    const lastScanRef = useRef({ data: '', timestamp: 0 });
+
+    // Scan lock and in-flight request guard (refs update synchronously, so rapid scans see them right away)
+    const scanLockRef = useRef(false);
+    const isFetchingRef = useRef(false);
+    const [isFetching, setIsFetching] = useState(false);
     
     
     function delay(time){
@@ -52,60 +55,38 @@ export default function Scanner() {
     return qrData.trim().length > 0;
   };
 
-  const handleValidQRCode = async (qrData: string) => {
-    // should fetch containerID from here
-    await fetchContainerData;
-    console.log('Valid QR Code:', qrData);
-  };
-
-
   const handleInvalidQRCode = () => {
     // invalid qr code or container id not found
     console.log('Container ID not found for QR Code');
   };
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    const timestamp = Date.now();
-    if (scanned || (timestamp - lastScannedTimestampRef.current < 2000)) {
-            return
+    // Ignore scans while one is being handled or a request is ongoing
+    if (scanLockRef.current || isFetchingRef.current) {
+      return;
     }
-    lastScannedTimestampRef.current = timestamp;
-    setTimeout(async () => {
-        if (!scanned) {
-          setScanned(true);
-          setScannedData(data);
-          const isValid = validateQRCode(data);
 
-          if (isValid) {
+    // Ignore the same code again within 2 seconds of the last scan finishing
+    const timestamp = Date.now();
+    if (data === lastScanRef.current.data && timestamp - lastScanRef.current.timestamp < 2000) {
+      return;
+    }
 
-            setCurrentKemId(data);
-            handleValidQRCode(data);
-            
-            Alert.alert(
-              'QR Code Scanned, retrieving containerID',
-              `Data: ${data}`,
-              [
-                {
-                  text: 'Ok',
-                  onPress: () => setScanned(false),
-                },
-              ]
-            );
-          } else {
-            handleInvalidQRCode();
-            Alert.alert(
-              'Invalid QR Code',
-              'The QR code could not be read. Please try again.',
-              [
-                {
-                  text: 'Scan Again',
-                  onPress: () => setScanned(false),
-                },
-              ]
-            );
-          }
-        }
-    }, 500);
+    scanLockRef.current = true;
+
+    try {
+      if (validateQRCode(data)) {
+        // Start the container search immediately with the scanned ID
+        setCurrentKemId(data);
+        await fetchContainerData(data);
+      } else {
+        handleInvalidQRCode();
+        showPopup('Invalid QR Code', 'The QR code could not be read. Please try again.');
+      }
+    } finally {
+      lastScanRef.current = { data, timestamp: Date.now() };
+      scanLockRef.current = false;
+    }
   };
 
   if (!permission) {
@@ -147,7 +128,14 @@ export default function Scanner() {
       return accessLevel <= quaternaryUser;
     };
 
-    const fetchContainerData = async () => {
+    const fetchContainerData = async (kemId: string | null = currentKemId) => {
+      // Only one container request at a time
+      if (isFetchingRef.current) {
+        return;
+      }
+      isFetchingRef.current = true;
+      setIsFetching(true);
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -155,7 +143,7 @@ export default function Scanner() {
       let quinaryUser = 5;
       let accessLevel = 5;
       let canEdit = canEditFromAccessLevel(accessLevel);
-      const getContainerUrl = "https://kemyze.vercel.app/containers/getContainer?kemID="+currentKemId+"&accessLevel=1";
+      const getContainerUrl = "https://kemyze.vercel.app/containers/getContainer?kemID="+kemId+"&accessLevel=1";
       try {
           console.log(getContainerUrl);
           const containerResponse = await fetch(getContainerUrl,
@@ -206,6 +194,10 @@ export default function Scanner() {
               showPopup("Network error", "Unable to reach server.");
           
           }
+      } finally {
+          clearTimeout(timeoutId);
+          isFetchingRef.current = false;
+          setIsFetching(false);
       } // try ...
     }
 
@@ -233,7 +225,7 @@ export default function Scanner() {
           <CameraView
             style={{ flex: 1 }}
             facing="back"
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={popupVisible ? undefined : handleBarCodeScanned}
             barcodeScannerSettings={{
               barcodeTypes: ['qr'],
             }}
@@ -255,12 +247,16 @@ export default function Scanner() {
             </View>
           </View>
           <View style= {styles.buttonWrapper}>
-            <GradientButton title="Search" onPress={fetchContainerData} width="100%"/>
+            <GradientButton title="Search" onPress={() => fetchContainerData()} disabled={isFetching} width="100%"/>
           </View>
       </View>
           <ScanPopup
             visible={popupVisible}
-            onClose={() => setPopupVisible(false)}
+            onClose={() => {
+              // Give the user time to move the camera off the same code
+              lastScanRef.current.timestamp = Date.now();
+              setPopupVisible(false);
+            }}
             scanResult={popupData}
             editPrivilege={editPrivilege}
             onViewSds={handleViewSds}
