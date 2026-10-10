@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,23 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
+
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49035; // replace with active user ID (KM#85)
+const USER_ACCESS = 1;
 // Typography
 const FONT = Object.freeze({
   regular: 'JetBrains Mono',
@@ -69,6 +76,12 @@ export default function CreateProfile() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+    const { activeUser } = useUserState(); // Insert active user.
+    
+    // Invoke useEffect to prevent active user state from flooding console.
+    useEffect(() => {
+      console.log("Active user:", activeUser); // Additional console check for active user.
+    }, [activeUser]);
 
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
@@ -84,12 +97,17 @@ export default function CreateProfile() {
   // Modals state
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [phoneSelectorVisible, setPhoneSelectorVisible] = useState(false);
+  const [newLocationVisible, setNewLocationVisible] = useState(false);
+  const [newLocationLoading, setNewLocationLoading] = useState(false);
+  const [newLocationError, setNewLocationError] = useState(false);
+  const [newLocationSuccess, setNewLocationSuccess] = useState(true);
 
   // Field states
   const [selectorType, setSelectorType] = useState<SelectorType>(null);
   const [phoneSelectorType, setPhoneSelectorType] = useState<PhoneSelectorType>(
     null
   );
+
 
   const [name, setName] = useState('');
   const [location, setLocation] = useState('Location Name');
@@ -98,6 +116,14 @@ export default function CreateProfile() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+  const [newLocation, setNewLocation] = useState('');
+    
+    const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
+
+  // Password State
+  const [passIsSecure, setPassIsSecure] = useState(true);
+    
   // Phone state
   const [phoneArea, setPhoneArea] = useState(['X', 'X', 'X']);
   const [phonePrefix, setPhonePrefix] = useState(['X', 'X', 'X']);
@@ -131,8 +157,23 @@ export default function CreateProfile() {
     return 'Select Option';
   };
 
+
+
+  // State Variables for Options that are dynamic
+
+      const [locationOptions, setLocationOptions] = useState([
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+          'X',
+        ]);
+
+
   const getOptions = () => {
-    if (selectorType === 'location') return LOCATION_OPTIONS;
+    if (selectorType === 'location') return locationOptions;
     if (selectorType === 'authorization') return AUTHORIZATION_OPTIONS;
     return [];
   };
@@ -181,16 +222,199 @@ export default function CreateProfile() {
     }
   };
 
-  const handleCreateProfile = () => {
-    if (!name.trim() || !email.trim()) {
-      haptic();
-      setErrorMessage('*error when saving message*');
-      return;
+    // Required Notifier States
+    const [nameRequired, setNameRequired] = useState(false);
+    const [locationRequired, setLocationRequired] = useState(false);
+    const [emailRequired, setEmailRequired] = useState(false);
+    const [authRequired, setAuthRequired] = useState(false);
+    const [passRequired, setPassRequired] = useState (false);
+    const [isSavingUser, setIsSavingUser] = useState(false);
+    const [savingUserLoading, setSavingUserLoading] = useState(true);
+    const [saveUserError, setSaveUserError] = useState(false);
+    const [saveUserSuccess, setSaveUserSuccess] = useState(false);
+    const [readyToSave, setReadyToSave] = useState(false);
+    
+    useEffect(() => {
+        if (nameRequired || emailRequired || locationRequired || authRequired || passRequired){
+            setReadyToSave(false);
+        } else {
+            setReadyToSave(true);
+        }
+    }, [nameRequired, locationRequired, emailRequired, authRequired, passRequired]);
+    
+    useEffect(() => {
+        if (!name.trim()) {
+            setNameRequired(true);
+        } else {
+            setNameRequired(false);
+        }
+    },[name]);
+    useEffect(() => {
+        if (!location.trim()) {
+            setLocationRequired(true);
+        } else {
+            setNameRequired(false);
+        }
+    },[location]);
+    useEffect(() => {
+        if (!email.trim()) {
+            setEmailRequired(true);
+        } else {
+            setEmailRequired(false);
+        }
+    },[email]);
+    useEffect(() => {
+        if (!authorization.trim()) {
+            setAuthRequired(true);
+        } else {
+            setAuthRequired(false);
+        }
+    },[authorization]);
+    useEffect(() => {
+        if (!password.trim()) {
+            setPassRequired(true);
+        } else {
+            setPassRequired(false);
+        }
+    },[password]);
+    // Save Modal Handlers
+    
+    
+    const closeSaveModal = () => {
+        haptic();
+        setIsSavingUser(false);
+        setSavingUserLoading(true);
+        setSaveUserError(false);
+        setSaveUserSuccess(false);
+      };
+    
+    const closeNewUser = () => {
+        router.dismissTo('/Pages/tertiaryprofilemanagement');
     }
+    
+  const handleCreateProfile = () => {
+      if (isSavingUser) {
+        return;
+      }
+      setSavingUserLoading(true);
+      if (!readyToSave){
+        setIsSavingUser(false);
+          setErrorMessage("*missing requirements above*");
+          return;
+      } else {
+          sendAddUser()
+          .then(() => {
+              console.log("Save User complete");
+          })
+      }
     successHaptic();
-    setErrorMessage('');
-    router.dismissTo('/Pages/tertiaryprofilemanagement');
   };
+    const sendAddUser = async () => {
+        setIsSavingUser(true);
+        setErrorMessage("");
+        let data = {
+            user_id: activeUser?.userID,
+            name: name,
+            location: location,
+            email: email,
+            authorization: authorization,
+            password: password,
+            phone: phoneArea.join('')+phonePrefix.join('')+phoneLine.join('')
+        };
+        
+        try {
+          const addURL = BASE_URL + "login/addUser"
+          let now = new Date();
+          let formattedTime = now.toLocaleTimeString();
+          console.log("${formattedTime} Sending add User URL: " + addURL);
+          const response = await fetch(addURL, {
+              method: 'POST',
+              headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+              });
+
+          if (!response.ok){
+              now = new Date();
+              formattedTime = now.toLocaleTimeString();
+              console.log("${formattedTime} We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+          } catch (error) {
+              console.error('Error sending data:', error);
+              setErrorMsg(error?.message ?? "Unknown error");
+              setSaveUserError(true);
+          } finally {
+              setSaveUserSuccess(true);
+              setSavingUserLoading(false);
+          }
+    }
+  // Add Location modal handlers
+    
+
+  const showAddNewLocation = () => {
+        haptic();
+        closeSelector();
+        setNewLocationVisible(true);
+  };
+
+    const closeNewLocation = () => {
+        haptic();
+        setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
+      };
+
+      useEffect(() => {
+          if(newLocationVisible == false){
+              setNewLocationLoading(false);
+              setNewLocationError(false);
+              setNewLocationSuccess(false);
+          }
+      }, [newLocationVisible]);
+
+  const addNewLocation = async () => {
+        setNewLocationLoading(true);
+        let data = {
+                        user_id: activeUser?.userID,
+                        new_location: newLocation,
+        };
+        try {
+          const editURL = BASE_URL + "containers/addLocation"
+          let now = new Date();
+          let formattedTime = now.toLocaleTimeString();
+          console.log("${formattedTime} Sending add location URL: " + editURL);
+          const response = await fetch(editURL, {
+              method: 'POST',
+              headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+              });
+
+          if (!response.ok){
+              now = new Date();
+              formattedTime = now.toLocaleTimeString();
+              console.log("${formattedTime} We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+          } catch (error) {
+              console.error('Error sending data:', error);
+              setErrorMsg(error?.message ?? "Unknown error");
+              setNewLocationError(true);
+          } finally {
+              setNewLocationLoading(false);
+              setNewLocationSuccess(true);
+              loadLocationOptions();
+          }
+        };
+
 
   // Bottom Navigation Config
   const navState = {
@@ -225,6 +449,65 @@ export default function CreateProfile() {
       }
     },
   } as any;
+
+// Load inital data
+      const [isLoading, setIsLoading] = useState(true);
+      const [loadError, setLoadError] = useState(false);
+      const [errorMsg, setErrorMsg] = useState("Test Error Message");
+
+  //Initial fetch
+      useEffect(() => {
+          checkUser();
+      }, []);
+
+      const checkUser = async() => {
+          if(activeUser?.accessLevel <= 1){
+              setIsNewLocationVisible(true);
+          }
+          if(activeUser?.accessLevel <= 2){
+              setLocationOptionsVisible(true);
+          }
+          }
+
+  //Load location data
+  useEffect(() => {
+          if (location !== null){
+              loadLocationOptions();
+          }
+      }, [location]);
+
+      const loadLocationOptions = async () => {
+          const parameters = '';
+          const data = await loadVarLocationOptions(parameters);
+          setLocationOptions(data.map(item => item.name));
+      }
+
+
+      const loadVarLocationOptions = async (parameters) => {
+          const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?"+parameters;
+          try{
+              const response = await fetch(getLocationChildrenURL,{method: "GET",});
+              if (!response.ok){
+                  console.log("We are having issues");
+                  const errorText = await response.text();
+                  throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+              let data = await response.json();
+              if (data && Object.keys(data).length === 0){
+                  console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
+                  data = [{
+                      name: "No locations found",
+                  }];
+              }
+              return data;
+          } catch (error: any) {
+              console.log(error.message);
+              setErrorMsg(error.message);
+              setLoadError(true);
+          }
+      }
+
+
 
   return (
     <View style={styles.screen}>
@@ -299,25 +582,57 @@ export default function CreateProfile() {
                       style={[styles.field, isLandscape && styles.fieldHalf]}
                     >
                       <Text style={styles.label}>Location</Text>
-                      <Pressable
-                        onPress={() => openSelector('location')}
-                        style={({ pressed }) => [
-                          styles.selectInput,
-                          pressed && styles.selectPressed,
-                        ]}
-                      >
-                        <Text
-                          numberOfLines={1}
-                          style={[
-                            styles.selectText,
-                            location === 'Location Name' &&
-                              styles.placeholderText,
-                          ]}
-                        >
-                          {location}
-                        </Text>
-                        <Text style={styles.selectArrow}>⌄</Text>
-                      </Pressable>
+          {locationOptionsVisible ? (<Pressable
+                                     onPress={() =>
+              openSelector(
+                           'location'
+                           )
+          }
+                                     accessibilityRole="button"
+                                     accessibilityLabel="Select location"
+                                     style={({ pressed }) => [
+                                         styles.selectInput,
+                                         pressed &&
+                                         styles.selectPressed,
+                                     ]}
+                                     >
+                                     <Text
+                                     numberOfLines={1}
+                                     style={[
+                                         styles.selectText,
+                                         location ===
+                                         'Location Name' &&
+                                         styles.placeholderText,
+                                     ]}
+                                     >
+                                     {location}
+                                     </Text>
+                                     
+                                     <Text
+                                     style={
+              styles.selectArrow
+          }
+                                     >
+                                     ⌄
+                                     </Text>
+                                     </Pressable>) : (<View
+                                                      style={
+                                         styles.locationDefault
+                                     }
+                                                      >
+                                                      <Text
+                                                      numberOfLines={1}
+                                                      style={
+                                         styles.selectText
+                                     }
+                                                      >
+                                                      {location}
+                                                      </Text>
+                                                      
+                                                      </View>)
+          
+          }
+          <View style={{padding:5}}></View>
                     </View>
 
                     <View
@@ -412,22 +727,38 @@ export default function CreateProfile() {
                   </View>
 
                   {/* Set Password */}
-                  <View style={isLandscape ? styles.fieldRow : undefined}>
+                  <View style={isLandscape ? styles.fieldRow : styles.fieldRow}>
                     <View
                       style={[styles.field, isLandscape && styles.fieldHalf]}
                     >
+          
                       <Text style={styles.label}>Set Password</Text>
+          <View style = {styles.passRow} >
+          <View style={{width : '90%'}}>
                       <TextInput
                         style={styles.input}
                         value={password}
                         onChangeText={setPassword}
                         placeholder="Password"
                         placeholderTextColor="#C9CFE9"
-                        secureTextEntry
+                        secureTextEntry={passIsSecure}
                         autoCapitalize="none"
                         maxLength={255}
                       />
+          </View>
+          <Pressable
+                  style={styles.iconContainer}
+                  onPress={() => setPassIsSecure(!passIsSecure)} // Toggles state
+                >
+                  <MaterialCommunityIcons
+                    name={passIsSecure ? 'eye-off' : 'eye'}
+                    size={22}
+                    color="#666"
+                  />
+                </Pressable>
+          </View>
                     </View>
+          
                     {isLandscape && <View style={styles.fieldHalf} />}
                   </View>
 
@@ -496,6 +827,50 @@ export default function CreateProfile() {
                 <Text style={styles.optionText}>{option}</Text>
               </Pressable>
             ))}
+
+        {
+                    isNewLocationVisible && selectorType == 'location' && (
+                            <Pressable
+                                          onPress={showAddNewLocation}
+                                          accessibilityRole="button"
+                                          accessibilityLabel="Create New Location"
+                                          style={({ pressed }) => [
+                                            styles.cancelButton,
+                                            pressed &&
+                                              styles.buttonPressed,
+                                          ]}
+                                        >
+                                          <LinearGradient
+                                                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                  locations={[0, 0.27, 0.49, 0.75, 1]}
+                                                  start={{ x: 0, y: 0 }}
+                                                  end={{ x: 1, y: 1 }}
+                                                  style={StyleSheet.absoluteFillObject}
+                                                >
+                                                  <LinearGradient
+                                                    colors={['#2983ff', '#1b3de9']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 0, y: 1 }}
+                                                    style={{
+                                                      position: 'absolute',
+                                                      top: 2,
+                                                      bottom: 2,
+                                                      left: 2,
+                                                      right: 2,
+                                                      borderRadius: 7,
+                                                    }}
+                                                  />
+                                                </LinearGradient>
+                                          <Text
+                                            style={
+                                              styles.cancelText
+                                            }
+                                          >
+                                            Add New Location
+                                          </Text>
+                                        </Pressable>
+                        )
+                    }
 
             <Pressable
               onPress={closeSelector}
@@ -599,6 +974,420 @@ export default function CreateProfile() {
           </View>
         </View>
       </Modal>
+
+
+
+
+      {/* New Location */}
+
+            <Modal
+              visible={newLocationVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={
+                closeNewLocation
+              }
+            >
+              <View
+                style={
+                  styles.confirmBackground
+                }
+              >
+                <BlurView
+                  intensity={50}
+                  tint="dark"
+                  style={
+                    StyleSheet.absoluteFillObject
+                  }
+                />
+
+                {newLocationError && (
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Error creating new location.
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Text style ={styles.errorText}>
+                    {errorMsg}
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={closeNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel Add Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed && styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                        colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                        locations={[0, 0.35, 0.56, 0.89, 1]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                    >
+                    <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                            position: 'absolute',
+                            top: 2,
+                            bottom: 2,
+                            left: 2,
+                            right: 2,
+                            borderRadius: 7,
+                        }}
+                    />
+                    </LinearGradient>
+                        <Text
+                            style={
+                                styles.confirmButtonText
+                            }
+                        >
+                        Go Back
+                        </Text>
+                    </Pressable>
+                    </View>
+                )}
+
+                { newLocationSuccess && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <Text style={styles.confirmTitle}>
+                                                New Location Successfully Added
+                                            </Text>
+                                            <View style={{padding:5}}></View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Button to leave new Location"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Go Back
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )
+
+                }
+                {newLocationLoading && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <View style={styles.loadingIndicator}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        </View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Cancel Add Location in load"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Cancel
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )}
+
+                {!newLocationError && !newLocationLoading && !newLocationSuccess &&(
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Type in location name:
+                    </Text>
+                    <View style={{padding:5}}></View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="New Location"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="New Location Input"
+                        value = {newLocation}
+                        onChangeText = {setNewLocation}
+                        maxLength={255}
+                    />
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={addNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Add New Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed &&
+                            styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.27, 0.49, 0.75, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                    >
+                            <LinearGradient
+                              colors={['#2983ff', '#1b3de9']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 0, y: 1 }}
+                              style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                              }}
+                            />
+                          </LinearGradient>
+                    <Text
+                      style={
+                        styles.confirmButtonText
+                      }
+                    >
+                      Add Location
+                    </Text>
+                  </Pressable>
+                  <View style={{padding:2}}></View>
+                  <Pressable
+                                      onPress={
+                                        closeNewLocation
+                                      }
+                                      accessibilityRole="button"
+                                      accessibilityLabel="Cancel Add Location"
+                                      style={({ pressed }) => [
+                                        styles.confirmButton,
+                                        pressed &&
+                                          styles.buttonPressed,
+                                      ]}
+                                    >
+                                      <LinearGradient
+                                              colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                              locations={[0, 0.35, 0.56, 0.89, 1]}
+                                              start={{ x: 0, y: 0 }}
+                                              end={{ x: 1, y: 1 }}
+                                              style={StyleSheet.absoluteFillObject}
+                                            >
+                                              <LinearGradient
+                                                colors={['#2983ff', '#1b3de9']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 2,
+                                                  bottom: 2,
+                                                  left: 2,
+                                                  right: 2,
+                                                  borderRadius: 7,
+                                                }}
+                                              />
+                                            </LinearGradient>
+                                      <Text
+                                        style={
+                                          styles.confirmButtonText
+                                        }
+                                      >
+                                        Cancel
+                                      </Text>
+                                    </Pressable>
+                                    </View>
+                                    )}
+              </View>
+            </Modal>
+          
+          {/* Save User Modal */}
+
+                <Modal
+                  visible={isSavingUser}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={
+                    closeSaveModal
+                  }
+                >
+                  <View
+                    style={
+                      styles.confirmBackground
+                    }
+                  >
+                    <BlurView
+                      intensity={50}
+                      tint="dark"
+                      style={
+                        StyleSheet.absoluteFillObject
+                      }
+                    />
+
+                    {saveUserError && (
+                        <View style={styles.confirmCard}>
+                        <Text style={styles.confirmTitle}>
+                            Error creating new User
+                        </Text>
+                        <View style={{padding:10}}></View>
+                        <Text style ={styles.errorText}>
+                        {errorMsg}
+                        </Text>
+                        <View style={{padding:10}}></View>
+                        <Pressable
+                            onPress={closeSaveModal}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close Save Error"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed && styles.buttonPressed,
+                            ]}
+                        >
+                        <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.35, 0.56, 0.89, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                        >
+                        <LinearGradient
+                            colors={['#2983ff', '#1b3de9']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                            }}
+                        />
+                        </LinearGradient>
+                            <Text
+                                style={
+                                    styles.confirmButtonText
+                                }
+                            >
+                            Go Back
+                            </Text>
+                        </Pressable>
+                        </View>
+                    )}
+
+                    { saveUserSuccess && !saveUserError && (
+                        <View style={styles.confirmCard}>
+                            <Text style={styles.confirmTitle}>
+                                                                  New User Successfully Added
+                                                </Text>
+                                                <View style={{padding:5}}></View>
+                            <Pressable
+                                onPress={closeNewUser}
+                                accessibilityRole="button"
+                                accessibilityLabel="Button to leave User Success"
+                                style={({ pressed }) => [
+                                    styles.confirmButton,
+                                    pressed &&
+                                    styles.buttonPressed,
+                                ]}
+                                >
+                                                                  <LinearGradient
+                                                                          colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                          locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                          start={{ x: 0, y: 0 }}
+                                                                          end={{ x: 1, y: 1 }}
+                                                                          style={StyleSheet.absoluteFillObject}
+                                                                        >
+                                                                          <LinearGradient
+                                                                            colors={['#2983ff', '#1b3de9']}
+                                                                            start={{ x: 0, y: 0 }}
+                                                                            end={{ x: 0, y: 1 }}
+                                                                            style={{
+                                                                              position: 'absolute',
+                                                                              top: 2,
+                                                                              bottom: 2,
+                                                                              left: 2,
+                                                                              right: 2,
+                                                                              borderRadius: 7,
+                                                                            }}
+                                                                          />
+                                                                        </LinearGradient>
+                                                                  <Text
+                                                                    style={
+                                                                      styles.confirmButtonText
+                                                                    }
+                                                                  >
+                                                                    Go Back
+                                                                  </Text>
+                                                                </Pressable>
+                        </View>
+                        )
+
+                    }
+                    {isSavingUser && !saveUserError && !saveUserSuccess && (
+                        <View style={styles.confirmCard}>
+                            <View style={styles.loadingIndicator}>
+                            <ActivityIndicator size="large" color="#0000ff" />
+                            </View>
+                                                        <View style={{padding:5}}></View>
+                                                        <Text style={styles.confirmTitle}>
+                                                                                              Adding New User
+                                                                            </Text>
+                                                                            
+                        </View>
+                        )}
+                  </View>
+                </Modal>
+
     </View>
   );
 }
@@ -679,6 +1468,11 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 6,
   },
+    passRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
   label: {
     color: '#FFFFFF',
     fontFamily: FONT.regular,
@@ -892,4 +1686,85 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontFamily: FONT.bold,
   },
+
+  cancelButton: {
+    minHeight: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+
+  cancelText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.button,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  confirmCard: {
+      width: '100%',
+      maxWidth: 390,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: 'rgba(33, 142, 255, 0.5)',
+      backgroundColor: 'rgba(1, 8, 37, 0.74)',
+      padding: 20,
+      alignItems: 'center',
+    },
+  confirmTitle: {
+    color: '#FFFFFF',
+    fontFamily: FONT.bold,
+    fontSize: FONT_SIZE.sheetTitle,
+    lineHeight: 27,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+      color: '#C9CFE9',
+      fontFamily: FONT.regular,
+      fontSize: FONT_SIZE.body,
+      lineHeight: 20,
+      textAlign: 'center',
+      marginTop: 7,
+      marginBottom: 15,
+    },
+
+    confirmButton: {
+      width: '100%',
+      minHeight: 48,
+      borderRadius: 10,
+          borderWidth: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',
+    },
+
+    confirmButtonText: {
+      color: '#FFFFFF',
+      fontFamily: FONT.bold,
+      fontSize: FONT_SIZE.button,
+      lineHeight: 20,
+    },
+confirmBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+    
+      locationDefault: {
+        width: '100%',
+        minHeight: 44,
+        borderWidth: 1,
+        borderColor: '#223044',
+        borderRadius: 9,
+        backgroundColor: '#02021C',
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+      },
+    iconContainer: {
+        padding: 5,
+      },
 });

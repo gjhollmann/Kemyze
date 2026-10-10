@@ -105,8 +105,8 @@ const SAMPLE_USERS: User[] = [
     active: false,
   },
   {
-    id: '7',
-    name: 'Daniel Okafor',
+    id: '49235',
+    name: 'Change Log Testing',
     location: 'Sacramento Lab',
     privilege: 'Tertiary',
     active: true,
