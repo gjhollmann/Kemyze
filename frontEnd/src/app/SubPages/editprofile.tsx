@@ -7,17 +7,22 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
+  Button,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+
+const BASE_URL = "https://kemyze.vercel.app/"; // replace with local server URL for testing
 
 // Typography
 
@@ -100,6 +105,13 @@ const ROLE_OPTIONS = [
   'Tertiary',
 ];
 
+const ROLE_BY_LEVEL: Record<number, string> = {
+  1: 'Primary',
+  2: 'Secondary',
+  3: 'Tertiary',
+  4: 'Quaternary',
+};
+
 const PHONE_DIGITS = [
   '0',
   '1',
@@ -143,6 +155,7 @@ const NAV_BAR_HEIGHT = 76;
 export default function Edit_Profile() {
   const { user_id } = useLocalSearchParams();
   const router = useRouter();
+  const { activeUser } = useUserState();
 
   const { width, height } = useWindowDimensions();
 
@@ -648,6 +661,126 @@ export default function Edit_Profile() {
       }
     },
   } as any;
+
+  // Load initial data
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    loadUser();
+  }, [activeUser, user_id]);
+
+  const loadUser = async () => {
+    setIsLoading(true);
+    setLoadError(false);
+
+    try {
+      if (!activeUser) {
+        throw new Error('Active user not found.');
+      }
+      if (!user_id) {
+        throw new Error('No user was selected.');
+      }
+
+      const parameters = new URLSearchParams({
+        active_user_id: String(activeUser.userID),
+        user_id: String(user_id),
+      }).toString();
+
+      const response = await fetch(
+        BASE_URL + 'login/getUser?' + parameters,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`[EditProfile] Load failed, status ${response.status}: ${errorText}`);
+
+        if (response.status === 403) {
+          throw new Error("You don't have permission to view this user.");
+        }
+        if (response.status === 400) {
+          throw new Error(errorText);
+        }
+        throw new Error('The user could not be loaded. Please try again.');
+      }
+
+      const data = await response.json();
+
+      const fullName = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim();
+      const loadedUserId = String(data.user_id ?? '');
+      const loadedLocation = data.location ?? EMPTY_PROFILE.Location;
+      const loadedEmail = data.email ?? '';
+      const loadedRole = ROLE_BY_LEVEL[data.access_level] ?? EMPTY_PROFILE.Role;
+
+      // Phone: use the last 10 digits when available, otherwise leave the X placeholders.
+      const digits = String(data.phone ?? '').replace(/\D/g, '');
+      let area = ['X', 'X', 'X'];
+      let prefix = ['X', 'X', 'X'];
+      let line = ['X', 'X', 'X', 'X'];
+      if (digits.length >= 10) {
+        const ten = digits.slice(-10);
+        area = ten.slice(0, 3).split('');
+        prefix = ten.slice(3, 6).split('');
+        line = ten.slice(6, 10).split('');
+      }
+
+      setName(fullName);
+      setUserId(loadedUserId);
+      setLocation(loadedLocation);
+      setEmail(loadedEmail);
+      setRole(loadedRole);
+      setPhoneArea(area);
+      setPhonePrefix(prefix);
+      setPhoneLine(line);
+
+      // Baseline for the review sheet's old -> new comparison.
+      setSavedProfile({
+        Name: fullName,
+        'User ID': loadedUserId,
+        Location: loadedLocation,
+        'Phone Number': `${area.join('')} - ${prefix.join('')} - ${line.join('')}`,
+        Email: loadedEmail,
+        Role: loadedRole,
+        Password: '',
+      });
+    } catch (error: any) {
+      console.log(error.message);
+      setErrorMsg(error.message);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Render Loading Screen
+
+  if (isLoading) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      </View>
+    );
+  }
+
+  // Render Error Screen
+
+  if (loadError) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <Text style={styles.errorText}>Error: {errorMsg}</Text>
+          <Button title="Go Back" onPress={() => router.back()} />
+        </View>
+      </View>
+    );
+  }
 
   // Render
 
@@ -3319,5 +3452,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  errorText: {
+    color: 'red',
+    fontSize: 16,
   },
 });
