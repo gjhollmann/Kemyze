@@ -35,7 +35,7 @@ interface Chemical {
   sds_document?: string;
 }
 
-const BASE_URL = "https://kemyze.vercel.app/";
+const BASE_URL = "http://127.0.0.1:8000/";
 
 const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
@@ -100,7 +100,7 @@ const Inventory: React.FC = () => {
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
-    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "")+(isExpiringSoon ? "&expiringSoon=true" : "");
+    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "")+(isExpiringSoon ? "&expiringSoon=true" : "")+(activeUser ? "&userID="+activeUser.userID:"");
     console.log(queryUrl);
     try {
       const response = await fetch(queryUrl, {
@@ -150,7 +150,7 @@ const Inventory: React.FC = () => {
     setLoading(true);
     setLastUsedSearch(true);
     setCurrentIndex(10);
-    const getAllURL = BASE_URL + "containers/getSearch?input=&count=0";
+    const getAllURL = BASE_URL + "containers/getSearch?input=&count=0"+(activeUser ? "&userID="+activeUser.userID:"");
     console.log(getAllURL);
     try {
       const response = await fetch(getAllURL, {
@@ -194,7 +194,7 @@ const Inventory: React.FC = () => {
     setLastUsedSearch(true);
     setCurrentIndex(10);
 
-    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=true&count=0&limit=10`;
+    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=true&count=0&limit=10`+(activeUser ? "&userID="+activeUser.userID:"");
     console.log(getSearchURL);
     try {
       const searchResponse = await fetch(getSearchURL, {
@@ -217,7 +217,7 @@ const Inventory: React.FC = () => {
 
   // function to handle when the filter button is pressed
   const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "");
+    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "")+(activeUser ? "&userID="+activeUser.userID:"");
     setIsExpiringSoon(false);
     setLastUsedSearch(true);
       setNoMoreData(false);
@@ -336,7 +336,7 @@ const Inventory: React.FC = () => {
  
     try {
       const formData = new FormData();
-      formData.append('user_id', String(USER_TEST)); // replace with actual user ID (KM#85)
+      formData.append('user_id', String(activeUser.userID)); // replace with actual user ID (KM#85)
       // No container_id yet - this container doesn't exist in the
       // database until Save actually creates it (see handleSaveContainer).
  
@@ -441,7 +441,7 @@ const Inventory: React.FC = () => {
 
   // Handler for "Recently Changed" inventory button press.
   const onRecentlyChangedPress = async () => {
-    const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`;
+    const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`+(activeUser ? "&userID="+activeUser.userID:"");
     setLastUsedSearch(true);
     setCurrentIndex(10);
     console.log(getRecentSearchURL);

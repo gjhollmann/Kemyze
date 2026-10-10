@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
-from django.db.models import Subquery, OuterRef
+from django.db.models import Subquery, OuterRef, Q
 from common.models import Containers, Locations, ContainerAuditLog, Users
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -10,6 +10,7 @@ import base64
 import mimetypes
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponseForbidden, HttpResponseServerError
+
 
 # Create your views here.
 """
@@ -127,6 +128,7 @@ Method: GET
 Parameters:
     input
     count
+    userID
 
 Response:
 The following will return data in the format of the following JSON
@@ -159,12 +161,21 @@ def getSearch(request):
         count = request.GET.get("count")
         show_low = request.GET.get("show_low")
         expiring_soon = request.GET.get("expiringSoon")
+        userID = request.GET.get("userID")
 
         if input == None:
             if show_low is not None:
                 input = ""
             else:
                 return HttpResponseBadRequest("Missing 'input' Parameter")
+        FoundUser = ""
+        if userID == None:
+            return HttpResponseBadRequest("Missing 'userID' Parameter")
+        else:
+            FoundUser = Users.objects.get(user_id = userID)
+        FoundLocation = None
+        if FoundUser.access_level > 2:
+            FoundLocation = FoundUser.location
         if count is None or not count.isdigit():
             count = 0
         else:
@@ -179,6 +190,8 @@ def getSearch(request):
                 FoundSearch = FoundSearch.filter(quantity__iexact="low")
             if expiring_soon is not None and expiring_soon.lower() == "true":
                 FoundSearch = FoundSearch.exclude(expr_date__isnull=True).order_by("expr_date")
+            if FoundLocation is not None:
+                FoundSearch = FoundSearch.filter(Q(location = FoundLocation)|Q(location__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent__parent = FoundLocation))
             for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
@@ -204,11 +217,20 @@ def getSearch(request):
 def getSearchRecent(request):
     if request.method == "GET":
         count = request.GET.get("count")
+        userID = request.GET.get("userID")
 
         if count is None or not count.isdigit():
             count = 0
         else:
             count = int(count)
+        FoundUser = ""
+        if userID == None:
+            return HttpResponseBadRequest("Missing 'userID' Parameter")
+        else:
+            FoundUser = Users.objects.get(user_id = userID)
+        FoundLocation = None
+        if FoundUser.access_level > 2:
+            FoundLocation = FoundUser.location
 
         try:
             recently_changed_data = []
@@ -236,6 +258,9 @@ def getSearchRecent(request):
                 .annotate(most_recent_change=Subquery(most_recent_audit))
                 .order_by('-most_recent_change', 'container_id')
             )
+            
+            if FoundLocation is not None:
+                TargetContainers = TargetContainers.filter(Q(location = FoundLocation)|Q(location__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent__parent = FoundLocation))
     
             for container in recently_changed_containers[count:count+10]:
                 location = container.location.name
@@ -402,26 +427,33 @@ def getLocationChildren(request):
         return HttpResponseNotAllowed(["GET"])
 
 """
-View to get the last 20 changes of a container.
+View to get the last 20 changes of a container or last 20 changes made by a user.
 Route: /containers/getContainerChangeLog
 Request Variables:
 Method: GET
 Parameters:
-    container_id
+    container_id or user_id
     
 Responses:
     Failures:
-        Status 400: Missing container_id
+        Status 400: Missing container_id or user_id
         Status 400: Container not found
         Status 500: Something broke bad
 """
 def getContainerChangeLog(request):
     if request.method == "GET":
         container_id = request.GET.get("container_id")
+        user_id = ""
         if container_id == None:
-            return HttpResponseBadRequest("Missing 'container_id' Parameter")
+            user_id = request.GET.get("user_id")
+            if user_id == None:
+                return HttpResponseBadRequest("Missing 'container_id' or 'user_id' Parameter")
         try:
-            FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            FoundLogs = []
+            if (container_id):
+                FoundLogs = ContainerAuditLog.objects.filter(container_id=container_id).order_by('-changed_at')[:20]
+            else:
+                FoundLogs = ContainerAuditLog.objects.filter(changed_by=user_id).order_by('-changed_at')[:20]
             data = []
             for log in FoundLogs:
                 user_first_name = ''
@@ -436,21 +468,27 @@ def getContainerChangeLog(request):
                 old_values = log.old_values
                 new_values = log.new_values
                 
-                old_name = old_values.get("chemical_name")
+                if (old_values):
+                    old_name = old_values.get("chemical_name")
+                else:
+                    old_name = ""
                 new_name = new_values.get("chemical_name")
                 if (old_name!=new_name):
                     data.append({
                     'Date': log.changed_at.date(),
                     'Time': log.changed_at.time(),
-                    'ContainerID': container_id,
+                    'ContainerID': log.container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
                     'Change': "Name",
                     'Old': old_name,
                     'New': new_name
                     })
-                    
-                old_cas = old_values.get("cas_number")
+                
+                if (old_values):
+                    old_cas = old_values.get("cas_number")
+                else:
+                    old_cas = ""
                 new_cas = new_values.get("cas_number")
                 if (old_cas!=new_cas):
                     data.append({
@@ -464,7 +502,10 @@ def getContainerChangeLog(request):
                     'New': new_cas
                     })
                 
-                old_quantity = old_values.get("quantity")
+                if (old_values):
+                    old_quantity = old_values.get("quantity")
+                else:
+                    old_quantity = ""
                 new_quantity = new_values.get("quantity")
                 if (old_quantity!=new_quantity):
                     data.append({
@@ -478,7 +519,10 @@ def getContainerChangeLog(request):
                     'New': new_quantity
                     })
                     
-                old_acqn_date = old_values.get("acqn_date")
+                if (old_values):
+                    old_acqn_date = old_values.get("acqn_date")
+                else:
+                    old_acqn_date = ""
                 new_acqn_date = new_values.get("acqn_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -492,7 +536,10 @@ def getContainerChangeLog(request):
                     'New': new_acqn_date
                     })
                     
-                old_expr_date = old_values.get("expr_date")
+                if (old_values):
+                    old_expr_date = old_values.get("expr_date")
+                else:
+                    old_expr_date = ""
                 new_expr_date = new_values.get("expr_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -550,6 +597,9 @@ def getContainerChangeLog(request):
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
 
@@ -757,3 +807,67 @@ def createContainer(request):
         "container_id": NewContainer.container_id,
     }
     return JsonResponse(data)
+
+""" 
+View to add a location
+Route: /containers/addLocation
+Request Variables:
+Method: POST
+Parameters:
+    user_id
+    new_location
+
+Responses:
+    Failures:
+        Status 405: Not a post request
+        Status 400: Missing user_id Paramter
+        Status 400: Missing location Paramter
+        Status 403: User does not have access level
+        Status 400: User does not exist
+        Status 500: Something broke bad
+"""
+@csrf_exempt
+def addLocation(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        user_id = data.get("user_id")
+        if user_id == None:
+            return HttpResponseBadRequest("Missing 'user_id' Parameter")
+        new_location = data.get("new_location")
+        if (new_location == None) or (new_location == ''):
+            return HttpResponseBadRequest("Missing location Parameter")
+        location_type = data.get("type")
+
+        #Verify User access level
+        try:
+            FoundUser = Users.objects.get(user_id = user_id)
+            if (location_type):
+                if FoundUser.access_level > 2:
+                    return HttpResponseForbidden("User does not have permission to make locations")
+            elif FoundUser.access_level > 1:
+                return HttpResponseForbidden("User does not have permission to make locations")
+        except Users.DoesNotExist:
+            return HttpResponseBadRequest("User does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        # Edit container
+        try:
+            if (location_type == 'room'):
+                FoundLocation = Locations.objects.get(name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'cabinet'):
+                FoundLocation = Locations.objects.get(name=data.get("room"),parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'shelf'):
+                FoundLocation = Locations.objects.get(name=data.get("cabinet"),parent__name=data.get("room"), parent__parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            else:
+                new_row = Locations.objects.create(name=new_location, type = 'site')
+            return HttpResponse("Location made")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["POST"])
