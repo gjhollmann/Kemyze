@@ -436,7 +436,10 @@ def getContainerChangeLog(request):
                 old_values = log.old_values
                 new_values = log.new_values
                 
-                old_name = old_values.get("chemical_name")
+                if (old_values):
+                    old_name = old_values.get("chemical_name")
+                else:
+                    old_name = ""
                 new_name = new_values.get("chemical_name")
                 if (old_name!=new_name):
                     data.append({
@@ -449,8 +452,11 @@ def getContainerChangeLog(request):
                     'Old': old_name,
                     'New': new_name
                     })
-                    
-                old_cas = old_values.get("cas_number")
+                
+                if (old_values):
+                    old_cas = old_values.get("cas_number")
+                else:
+                    old_cas = ""
                 new_cas = new_values.get("cas_number")
                 if (old_cas!=new_cas):
                     data.append({
@@ -464,7 +470,10 @@ def getContainerChangeLog(request):
                     'New': new_cas
                     })
                 
-                old_quantity = old_values.get("quantity")
+                if (old_values):
+                    old_quantity = old_values.get("quantity")
+                else:
+                    old_quantity = ""
                 new_quantity = new_values.get("quantity")
                 if (old_quantity!=new_quantity):
                     data.append({
@@ -478,7 +487,10 @@ def getContainerChangeLog(request):
                     'New': new_quantity
                     })
                     
-                old_acqn_date = old_values.get("acqn_date")
+                if (old_values):
+                    old_acqn_date = old_values.get("acqn_date")
+                else:
+                    old_acqn_date = ""
                 new_acqn_date = new_values.get("acqn_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -492,7 +504,10 @@ def getContainerChangeLog(request):
                     'New': new_acqn_date
                     })
                     
-                old_expr_date = old_values.get("expr_date")
+                if (old_values):
+                    old_expr_date = old_values.get("expr_date")
+                else:
+                    old_expr_date = ""
                 new_expr_date = new_values.get("expr_date")
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
@@ -550,6 +565,9 @@ def getContainerChangeLog(request):
             return JsonResponse(data, safe=False)
         except Containers.DoesNotExist:
             print("Could not find container")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
 
@@ -757,3 +775,67 @@ def createContainer(request):
         "container_id": NewContainer.container_id,
     }
     return JsonResponse(data)
+
+""" 
+View to add a location
+Route: /containers/addLocation
+Request Variables:
+Method: POST
+Parameters:
+    user_id
+    new_location
+
+Responses:
+    Failures:
+        Status 405: Not a post request
+        Status 400: Missing user_id Paramter
+        Status 400: Missing location Paramter
+        Status 403: User does not have access level
+        Status 400: User does not exist
+        Status 500: Something broke bad
+"""
+@csrf_exempt
+def addLocation(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        user_id = data.get("user_id")
+        if user_id == None:
+            return HttpResponseBadRequest("Missing 'user_id' Parameter")
+        new_location = data.get("new_location")
+        if (new_location == None) or (new_location == ''):
+            return HttpResponseBadRequest("Missing location Parameter")
+        location_type = data.get("type")
+
+        #Verify User access level
+        try:
+            FoundUser = Users.objects.get(user_id = user_id)
+            if (location_type):
+                if FoundUser.access_level > 2:
+                    return HttpResponseForbidden("User does not have permission to make locations")
+            elif FoundUser.access_level > 1:
+                return HttpResponseForbidden("User does not have permission to make locations")
+        except Users.DoesNotExist:
+            return HttpResponseBadRequest("User does not exist")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        # Edit container
+        try:
+            if (location_type == 'room'):
+                FoundLocation = Locations.objects.get(name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'cabinet'):
+                FoundLocation = Locations.objects.get(name=data.get("room"),parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            elif (location_type == 'shelf'):
+                FoundLocation = Locations.objects.get(name=data.get("cabinet"),parent__name=data.get("room"), parent__parent__name=data.get("location"))
+                new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
+            else:
+                new_row = Locations.objects.create(name=new_location, type = 'site')
+            return HttpResponse("Location made")
+        except Exception as e:
+            print(e)
+            return HttpResponseServerError(f"An unexpected error occurred: {e}")
+    else:
+        return HttpResponseNotAllowed(["POST"])
