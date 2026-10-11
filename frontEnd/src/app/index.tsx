@@ -253,7 +253,11 @@ export default function Index() {
           </View>
 
           <View style={styles.bypassBtn}>
-            <GradientButton title="QR Scanner Bypass" onPress={handleForgotPassword} width="100%" />
+            <GradientButton
+            title="QR Scanner Bypass"
+            onPress={() => router.navigate('/SubPages/scannerbypass')}
+            width="100%"
+            />
           </View>
         </ScrollView>
       </View>
