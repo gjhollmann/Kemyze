@@ -22,7 +22,6 @@ import { useUserState } from '../../app/contexts/UserState'; // Shared-state imp
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
-import { useUserState } from '../contexts/UserState';
 
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
@@ -107,7 +106,6 @@ export default function CreateProfile() {
   const paddingBottom = NAV_BAR_HEIGHT + (insets.bottom || 14) + 10;
 
   // Active user
-  const { activeUser } = useUserState();
   const allowedAuthorizations = getAllowedAuthorizations(
     activeUser ? Number(activeUser.accessLevel) : null
   );
