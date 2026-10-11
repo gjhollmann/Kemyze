@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
-from django.db.models import Subquery, OuterRef
+from django.db.models import Subquery, OuterRef, Q
 from common.models import Containers, Locations, ContainerAuditLog, Users
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -10,6 +10,7 @@ import base64
 import mimetypes
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponseForbidden, HttpResponseServerError
+
 
 # Create your views here.
 """
@@ -127,6 +128,7 @@ Method: GET
 Parameters:
     input
     count
+    userID
 
 Response:
 The following will return data in the format of the following JSON
@@ -159,12 +161,21 @@ def getSearch(request):
         count = request.GET.get("count")
         show_low = request.GET.get("show_low")
         expiring_soon = request.GET.get("expiringSoon")
+        userID = request.GET.get("userID")
 
         if input == None:
             if show_low is not None:
                 input = ""
             else:
                 return HttpResponseBadRequest("Missing 'input' Parameter")
+        FoundUser = ""
+        if userID == None:
+            return HttpResponseBadRequest("Missing 'userID' Parameter")
+        else:
+            FoundUser = Users.objects.get(user_id = userID)
+        FoundLocation = None
+        if FoundUser.access_level > 2:
+            FoundLocation = FoundUser.location
         if count is None or not count.isdigit():
             count = 0
         else:
@@ -179,6 +190,8 @@ def getSearch(request):
                 FoundSearch = FoundSearch.filter(quantity__iexact="low")
             if expiring_soon is not None and expiring_soon.lower() == "true":
                 FoundSearch = FoundSearch.exclude(expr_date__isnull=True).order_by("expr_date")
+            if FoundLocation is not None:
+                FoundSearch = FoundSearch.filter(Q(location = FoundLocation)|Q(location__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent__parent = FoundLocation))
             for container in FoundSearch[count:count+10]:
                 location = container.location.name
                 FoundLocation = container.location
@@ -204,11 +217,20 @@ def getSearch(request):
 def getSearchRecent(request):
     if request.method == "GET":
         count = request.GET.get("count")
+        userID = request.GET.get("userID")
 
         if count is None or not count.isdigit():
             count = 0
         else:
             count = int(count)
+        FoundUser = ""
+        if userID == None:
+            return HttpResponseBadRequest("Missing 'userID' Parameter")
+        else:
+            FoundUser = Users.objects.get(user_id = userID)
+        FoundLocation = None
+        if FoundUser.access_level > 2:
+            FoundLocation = FoundUser.location
 
         try:
             recently_changed_data = []
@@ -236,6 +258,9 @@ def getSearchRecent(request):
                 .annotate(most_recent_change=Subquery(most_recent_audit))
                 .order_by('-most_recent_change', 'container_id')
             )
+            
+            if FoundLocation is not None:
+                TargetContainers = TargetContainers.filter(Q(location = FoundLocation)|Q(location__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent = FoundLocation)|Q(location__parent__parent__parent = FoundLocation))
     
             for container in recently_changed_containers[count:count+10]:
                 location = container.location.name
