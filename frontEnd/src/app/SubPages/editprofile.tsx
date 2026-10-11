@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
@@ -180,9 +179,6 @@ export default function Edit_Profile() {
   const router = useRouter();
 
   // Active user
-
-  const { activeUser } = useUserState();
-
   const activeAccessLevel = activeUser
     ? Number(activeUser.accessLevel)
     : null;
