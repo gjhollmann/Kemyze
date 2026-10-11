@@ -22,7 +22,7 @@ import { useUserState } from '../../app/contexts/UserState';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "http://127.0.0.1:8000/"; // replace with local server URL for testing
+const BASE_URL = "https://kemyze.vercel.app/";
 
 // Typography
 
