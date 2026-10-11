@@ -476,8 +476,8 @@ def getContainerChangeLog(request):
                 if (old_name!=new_name):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
-                    'ContainerID': log.container_id,
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
+                    'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
                     'Change': "Name",
@@ -493,7 +493,7 @@ def getContainerChangeLog(request):
                 if (old_cas!=new_cas):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
@@ -510,7 +510,7 @@ def getContainerChangeLog(request):
                 if (old_quantity!=new_quantity):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Quantity",
@@ -527,7 +527,7 @@ def getContainerChangeLog(request):
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
@@ -544,7 +544,7 @@ def getContainerChangeLog(request):
                 if (old_acqn_date!=new_acqn_date):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Edit",
@@ -556,7 +556,7 @@ def getContainerChangeLog(request):
                 """
                 data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name
                     
@@ -585,7 +585,7 @@ def getContainerChangeLog(request):
                 if (old_location!=new_location):
                     data.append({
                     'Date': log.changed_at.date(),
-                    'Time': log.changed_at.time(),
+                    'Time': log.changed_at.time(), 'Timestamp': log.changed_at.isoformat(),
                     'ContainerID': container_id,
                     'User': user_first_name + " " + user_last_name,
                     'Type': "Location",

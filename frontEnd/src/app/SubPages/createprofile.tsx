@@ -21,6 +21,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
+
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
@@ -431,8 +432,7 @@ export default function CreateProfile() {
               loadLocationOptions();
           }
         };
-
-
+  
   // Bottom Navigation Config
   const navState = {
     index: 2,
