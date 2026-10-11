@@ -19,8 +19,11 @@ import { openBase64Pdf } from "../../../utils/PDFUtils";
 import { Linking } from "react-native";
 import GradientButton from "../../../components/GradientButton";
 import { useUserState } from '../contexts/UserState';
+import { useRouter } from 'expo-router';
 
 export default function Scanner() {
+    const router = useRouter();
+    const { activeUser } = useUserState();
     
     //Constanst for popup
     const [popupVisible, setPopupVisible] = useState(false);
@@ -140,21 +143,19 @@ export default function Scanner() {
       }
     };
 
-    // Helper to ensure users of access level <= 4 can edit info.
-    const quaternaryUser = 4;
+    // Helper to ensure users of access level <= 3 can edit info (matches backend editContainer check).
+    const tertiaryUser = 3;
     
     const canEditFromAccessLevel = (accessLevel: number) => {
-      return accessLevel <= quaternaryUser;
+      return accessLevel <= tertiaryUser;
     };
 
     const fetchContainerData = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Test with access level matched to query.
-      let quinaryUser = 5;
-      let accessLevel = 5;
-      let canEdit = canEditFromAccessLevel(accessLevel);
+      // Edit access comes from the active user's stored access level.
+      const canEdit = activeUser !== null && canEditFromAccessLevel(Number(activeUser.accessLevel));
       const getContainerUrl = "https://kemyze.vercel.app/containers/getContainer?kemID="+currentKemId+"&accessLevel=1";
       try {
           console.log(getContainerUrl);
@@ -208,6 +209,20 @@ export default function Scanner() {
           }
       } // try ...
     }
+
+    // Respond to press on 'Edit Information.' Edit container loads the container from its ID.
+    const handleEditContainer = () => {
+      if (!currentKemId) {
+        showPopup("Error", "No container ID is available to edit.");
+        return;
+      }
+
+      setPopupVisible(false);
+      router.push({
+        pathname: '/SubPages/edit_container',
+        params: { container_id: String(currentKemId) },
+      });
+    };
 
     // Respond to press on 'View SDS.'
     const handleViewSds = async () => {
@@ -264,6 +279,7 @@ export default function Scanner() {
             scanResult={popupData}
             editPrivilege={editPrivilege}
             onViewSds={handleViewSds}
+            onEdit={handleEditContainer}
           />
     </SafeAreaView>
   );
