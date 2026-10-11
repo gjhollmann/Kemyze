@@ -35,8 +35,7 @@ interface Chemical {
   sds_document?: string;
 }
 
-//const BASE_URL = "https://kemyze.vercel.app/";
-const BASE_URL = "http://127.0.0.1:8000/";
+const BASE_URL = "https://kemyze.vercel.app/";
 
 const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
