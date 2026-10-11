@@ -20,7 +20,6 @@ import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
-import { useUserState } from '../contexts/UserState';
 
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
@@ -181,9 +180,6 @@ export default function Edit_Profile() {
   const router = useRouter();
 
   // Active user
-
-  const { activeUser } = useUserState();
-
   const activeAccessLevel = activeUser
     ? Number(activeUser.accessLevel)
     : null;
