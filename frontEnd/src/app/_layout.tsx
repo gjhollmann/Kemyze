@@ -51,6 +51,10 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
 
+          <Stack.Screen
+            name="SubPages/scannerbypass"
+            options={{ headerShown: false }}
+          />
         </Stack>
       </UserProvider>
     </GestureHandlerRootView>
