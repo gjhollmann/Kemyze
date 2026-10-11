@@ -240,11 +240,6 @@ export default function ManagedAccounts() {
   const [deleteError, setDeleteError] = useState('');
   const [deletionStatus, setDeletionStatus] = useState('');
 
-  const [accountToDelete, setAccountToDelete] = useState<User | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-  const [deletionStatus, setDeletionStatus] = useState('');
-
   // Columns and row scale
 
   const rowScaleFor = (columnCount: number) => {
