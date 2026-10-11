@@ -63,7 +63,7 @@ class TesterTesttable(models.Model):
 
 
 class Users(models.Model):
-    user_id = models.PositiveIntegerField(primary_key=True)
+    user_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(unique=True, max_length=255)

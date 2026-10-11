@@ -72,7 +72,58 @@ type ManagedUserResponse = {
   has_more?: boolean;
 };
 
-// Constants
+// Sample accounts
+const SAMPLE_USERS: User[] = [
+  {
+    id: '1',
+    name: 'John Smith',
+    location: 'Sacramento Lab',
+    privilege: 'Tertiary',
+    active: true,
+  },
+  {
+    id: '2',
+    name: 'Maria Delgado',
+    location: 'Sacramento Lab',
+    privilege: 'Secondary',
+    active: true,
+  },
+  {
+    id: '3',
+    name: 'Andre Whitfield',
+    location: 'Davis Lab',
+    privilege: 'Tertiary',
+    active: false,
+  },
+  {
+    id: '4',
+    name: 'Priya Raman',
+    location: 'Folsom Lab',
+    privilege: 'Primary',
+    active: true,
+  },
+  {
+    id: '5',
+    name: 'Chen Wei',
+    location: 'Davis Lab',
+    privilege: 'Tertiary',
+    active: true,
+  },
+  {
+    id: '6',
+    name: 'Rosa Alvarez',
+    location: 'Elk Grove Lab',
+    privilege: 'Secondary',
+    active: false,
+  },
+  {
+    id: '49235',
+    name: 'Change Log Testing',
+    location: 'Sacramento Lab',
+    privilege: 'Tertiary',
+    active: true,
+  },
+];
 
 // Button sizes
 
