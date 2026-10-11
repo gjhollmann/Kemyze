@@ -9,6 +9,8 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   Button,
+  Platform,
+  Alert
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,11 +20,20 @@ import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useUserState } from '../../app/contexts/UserState';
+import { Ionicons } from '@expo/vector-icons';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
 const BASE_URL = "https://kemyze.vercel.app/"; // replace with local server URL for testing
+
+const showPopup = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 // Typography
 
@@ -260,6 +271,10 @@ export default function Edit_Profile() {
     'X',
     'X',
   ]);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   // Placeholder data
 
@@ -564,11 +579,95 @@ export default function Edit_Profile() {
     setReviewVisible(true);
   };
 
-  const saveReviewedChanges = () => {
-    successHaptic();
-    setSavedProfile(currentProfile);
+  const saveReviewedChanges = async () => {
+    if (!activeUser || isSaving) return;
+
+    const phoneChanged =
+      currentProfile['Phone Number'] !== savedProfile['Phone Number'];
+    const phoneDigits = [...phoneArea, ...phonePrefix, ...phoneLine].join('');
+
+    if (currentProfile.Name === '') {
+      setReviewVisible(false);
+      showPopup('Invalid Name', 'Name cannot be empty.');
+      return;
+    }
+    if (phoneChanged && !/^\d{10}$/.test(phoneDigits)) {
+      setReviewVisible(false);
+      showPopup('Invalid Phone Number', 'Please fill in all 10 digits of the phone number.');
+      return;
+    }
+
+    const data: Record<string, any> = {
+      active_user_id: activeUser.userID,
+      user_id: user_id, // the user being edited (route param), not the editable "User ID" box
+    };
+
+    // Send only the fields that changed
+    if (currentProfile.Name !== savedProfile.Name) {
+      const parts = currentProfile.Name.split(/\s+/);
+      data.first_name = parts[0] ?? '';
+      data.last_name = parts.slice(1).join(' ');
+    }
+    if (currentProfile.Email !== savedProfile.Email) {
+      data.email = currentProfile.Email;
+    }
+    if (currentProfile.Location !== savedProfile.Location) {
+      data.location = currentProfile.Location;
+    }
+    if (currentProfile.Role !== savedProfile.Role) {
+      const level = Object.keys(ROLE_BY_LEVEL).find(
+        (k) => ROLE_BY_LEVEL[Number(k)] === currentProfile.Role
+      );
+      if (level) data.access_level = Number(level);
+    }
+
+    if (phoneChanged) {
+      data.phone = phoneDigits;
+    }
+
+    if (currentProfile.Password !== '') {
+      data.password = currentProfile.Password;
+    }
+
+    if (Object.keys(data).length === 2) {
+      setReviewVisible(false);
+      return;
+    }
+
+    setIsSaving(true);
     setReviewVisible(false);
-    setSavedVisible(true);
+
+    try {
+      const response = await fetch(BASE_URL + 'login/editUser', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          response.status === 403
+            ? "You don't have permission to make this change."
+            : response.status === 400
+              ? errorText
+              : 'The changes could not be saved. Please try again.'
+        );
+      }
+
+      // Success only: update baseline, clear password box, show confirmation
+      successHaptic();
+      setSavedProfile({ ...currentProfile, Password: '' });
+      setPassword('');
+      setSavedVisible(true);
+    } catch (error: any) {
+      showPopup('Save Failed', error.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelReviewedChanges = () => {
@@ -580,6 +679,7 @@ export default function Edit_Profile() {
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
+    router.back();
   };
 
   const closeCanceledConfirmation = () => {
@@ -829,7 +929,7 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.backButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <Text style={styles.backText}>
@@ -924,13 +1024,11 @@ export default function Edit_Profile() {
                     </Text>
 
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, styles.inputReadOnly]}
                       value={userId}
-                      onChangeText={setUserId}
-                      placeholder="User ID"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="User ID"
-                      maxLength={255}
+                      editable={false}
+                      selectTextOnFocus={false}
+                      accessibilityLabel="User ID (read only)"
                     />
                   </View>
                 </View>
@@ -965,7 +1063,7 @@ export default function Edit_Profile() {
                       style={({ pressed }) => [
                         styles.selectInput,
                         pressed &&
-                          styles.selectPressed,
+                        styles.selectPressed,
                       ]}
                     >
                       <Text
@@ -973,8 +1071,8 @@ export default function Edit_Profile() {
                         style={[
                           styles.selectText,
                           location ===
-                            'Location Name' &&
-                            styles.placeholderText,
+                          'Location Name' &&
+                          styles.placeholderText,
                         ]}
                       >
                         {location}
@@ -1014,7 +1112,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phoneArea,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -1042,7 +1140,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phonePrefix,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -1070,7 +1168,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phoneLine,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -1139,7 +1237,7 @@ export default function Edit_Profile() {
                       style={({ pressed }) => [
                         styles.selectInput,
                         pressed &&
-                          styles.selectPressed,
+                        styles.selectPressed,
                       ]}
                     >
                       <Text
@@ -1147,8 +1245,8 @@ export default function Edit_Profile() {
                         style={[
                           styles.selectText,
                           role ===
-                            'Role' &&
-                            styles.placeholderText,
+                          'Role' &&
+                          styles.placeholderText,
                         ]}
                       >
                         {role}
@@ -1183,18 +1281,32 @@ export default function Edit_Profile() {
                     <Text style={styles.label}>
                       Password
                     </Text>
-
-                    <TextInput
-                      style={styles.input}
-                      value={password}
-                      onChangeText={setPassword}
-                      placeholder="Password"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="Password"
-                      secureTextEntry
-                      autoCapitalize="none"
-                      maxLength={255}
-                    />
+                    <View style={styles.passwordWrapper}>
+                      <TextInput
+                        style={[styles.input, styles.passwordInput]}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Password"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="Password"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        maxLength={255}
+                      />
+                      <Pressable
+                        style={styles.eyeButton}
+                        onPress={() => setShowPassword((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                          size={22}
+                          color="#C9CFE9"
+                        />
+                      </Pressable>
+                    </View>
                   </View>
 
                   {isLandscape && (
@@ -1207,8 +1319,9 @@ export default function Edit_Profile() {
             {/* Save */}
             <View style={styles.saveButton}>
               <GradientButton
-                title="Save"
+                title={isSaving ? 'Saving...' : 'Save Changes'}
                 onPress={openReviewChanges}
+                disabled={reviewChanges.length === 0 || isSaving}
                 width="100%"
                 height={50}
                 borderRadius={10}
@@ -1223,7 +1336,7 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.changeLogCard,
                 pressed &&
-                  styles.cardPressed,
+                styles.cardPressed,
               ]}
             >
               <View
@@ -1400,7 +1513,7 @@ export default function Edit_Profile() {
                   style={({ pressed }) => [
                     styles.optionButton,
                     pressed &&
-                      styles.selectPressed,
+                    styles.selectPressed,
                   ]}
                 >
                   <Text
@@ -1421,30 +1534,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.cancelButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.cancelText
@@ -1543,7 +1656,7 @@ export default function Edit_Profile() {
                       >
                         {
                           getPhoneValue()[
-                            columnIndex
+                          columnIndex
                           ]
                         }
                       </Text>
@@ -1577,20 +1690,20 @@ export default function Edit_Profile() {
                             style={[
                               styles.phoneWheelOption,
                               getPhoneValue()[
-                                columnIndex
+                              columnIndex
                               ] ===
-                                character &&
-                                styles.phoneWheelOptionActive,
+                              character &&
+                              styles.phoneWheelOptionActive,
                             ]}
                           >
                             <Text
                               style={[
                                 styles.phoneWheelText,
                                 getPhoneValue()[
-                                  columnIndex
+                                columnIndex
                                 ] ===
-                                  character &&
-                                  styles.phoneWheelTextActive,
+                                character &&
+                                styles.phoneWheelTextActive,
                               ]}
                             >
                               {character}
@@ -1613,30 +1726,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.phoneDoneButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.phoneDoneText
@@ -1749,8 +1862,8 @@ export default function Edit_Profile() {
                     style={[
                       styles.filterChip,
                       historyFilter ===
-                        filter &&
-                        styles.filterChipActive,
+                      filter &&
+                      styles.filterChipActive,
                     ]}
                   >
                     <LinearGradient
@@ -1779,8 +1892,8 @@ export default function Edit_Profile() {
                       style={[
                         styles.filterText,
                         historyFilter ===
-                          filter &&
-                          styles.filterTextActive,
+                        filter &&
+                        styles.filterTextActive,
                       ]}
                     >
                       {filter}
@@ -1815,7 +1928,7 @@ export default function Edit_Profile() {
                     style={({ pressed }) => [
                       styles.historyCard,
                       pressed &&
-                        styles.cardPressed,
+                      styles.cardPressed,
                     ]}
                   >
                     <View
@@ -1829,7 +1942,7 @@ export default function Edit_Profile() {
                         }
                       >
                         {item.Change ===
-                        'Edit'
+                          'Edit'
                           ? 'Profile edited'
                           : `${item.Change} changed`}
                       </Text>
@@ -1845,7 +1958,7 @@ export default function Edit_Profile() {
                           }
                         >
                           {item.Change ===
-                          'Edit'
+                            'Edit'
                             ? '________ → ________ → ________'
                             : '________ → ________'}
                         </Text>
@@ -2260,30 +2373,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.reviewSaveButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.reviewSaveText
@@ -2302,30 +2415,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.reviewCancelButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.reviewCancelText
@@ -2405,30 +2518,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.confirmButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2508,30 +2621,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.confirmButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2917,7 +3030,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#334155',
-        justifyContent: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
     marginBottom: 7,
@@ -3034,7 +3147,7 @@ const styles = StyleSheet.create({
   phoneDoneButton: {
     minHeight: 46,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -3331,7 +3444,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 48,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 6,
@@ -3441,7 +3554,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 48,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -3463,5 +3576,27 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 16,
+  },
+
+  passwordWrapper: {
+    justifyContent: 'center',
+  },
+
+  passwordInput: {
+    paddingRight: 64, // keeps typed text from running under the button
+  },
+
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+  },
+
+  eyeText: {
+    color: '#C9CFE9',
+    fontSize: 14,
+  },
+
+  inputReadOnly: {
+    opacity: 0.6,
   },
 });
