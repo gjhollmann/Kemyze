@@ -189,6 +189,11 @@ export default function ManagedAccounts() {
   const [deleteError, setDeleteError] = useState('');
   const [deletionStatus, setDeletionStatus] = useState('');
 
+  const [accountToDelete, setAccountToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deletionStatus, setDeletionStatus] = useState('');
+
   // Columns and row scale
 
   const rowScaleFor = (columnCount: number) => {
@@ -1148,6 +1153,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'center',
     paddingVertical: 4,
+  },
+
+  deletionStatus: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    borderRadius: 10,
+    backgroundColor: 'rgba(20, 83, 45, 0.45)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+
+  deletionStatusText: {
+    color: '#BBF7D0',
+    fontFamily: FONT.regular,
+    fontSize: FONT_SIZE.body,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 
   deletionStatus: {

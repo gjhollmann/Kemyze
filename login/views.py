@@ -493,4 +493,3 @@ def searchManagedUsers(request):
   
     return HttpResponse("Success")
 
-
