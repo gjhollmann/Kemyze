@@ -9,6 +9,7 @@ type ScanPopupProps = {
     scanResult: ScanData | null;
     editPrivilege: boolean;
     onViewSds: () => void;
+    onEdit: () => void;
 }; // type ScanPopupProps
 
 
@@ -17,7 +18,8 @@ export function ScanPopup({
     onClose,
     scanResult,
     editPrivilege,
-    onViewSds
+    onViewSds,
+    onEdit
 }: ScanPopupProps) {
     // Start with window dimensions for scaling.
     const { width, height } = useWindowDimensions();
@@ -138,7 +140,7 @@ export function ScanPopup({
 
                         {/*Third button 'Edit Information' should only be presented to privileged user. Toggled by 'editPrivilege' boolean.*/}
                         {editPrivilege && (
-                            <Pressable style={styling.actionButton}>
+                            <Pressable style={styling.actionButton} onPress={onEdit}>
                             <Text style={styling.actionButtonText}>Edit Information</Text>
                             </Pressable>
                         )}

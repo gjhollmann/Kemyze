@@ -22,6 +22,7 @@ import { useUserState } from '../../app/contexts/UserState'; // Shared-state imp
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+import { useUserState } from '../contexts/UserState';
 
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
@@ -62,6 +63,18 @@ const AUTHORIZATION_OPTIONS = [
   'Quinary',
 ];
 
+const PRIMARY_LEVEL = 1;
+
+// Roles below the active user's level; Primary may also create Primary
+const getAllowedAuthorizations = (accessLevel: number | null) => {
+  if (!accessLevel) return [];
+
+  return AUTHORIZATION_OPTIONS.filter((_, index) => {
+    const level = index + 1;
+    return accessLevel === PRIMARY_LEVEL ? level >= accessLevel : level > accessLevel;
+  });
+};
+
 const PHONE_DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 const PANEL_GRADIENT: [string, string] = [
@@ -92,6 +105,12 @@ export default function CreateProfile() {
   const paddingRight = Math.max(pagePadding, insets.right + 8);
   const paddingTop = insets.top + (isLandscape ? 8 : 12);
   const paddingBottom = NAV_BAR_HEIGHT + (insets.bottom || 14) + 10;
+
+  // Active user
+  const { activeUser } = useUserState();
+  const allowedAuthorizations = getAllowedAuthorizations(
+    activeUser ? Number(activeUser.accessLevel) : null
+  );
 
   // Modals state
   const [selectorVisible, setSelectorVisible] = useState(false);
@@ -170,7 +189,7 @@ export default function CreateProfile() {
 
   const getOptions = () => {
     if (selectorType === 'location') return locationOptions;
-    if (selectorType === 'authorization') return AUTHORIZATION_OPTIONS;
+    if (selectorType === 'authorization') return allowedAuthorizations;
     return [];
   };
 
