@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { useUserState } from '../contexts/UserState';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +133,13 @@ export default function NavBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  
+  const router = useRouter();
+
+  // KM-117: Check the logged-in user's access level.
+  // Levels go 1 = Primary ... 5 = Quinary, so 4 or higher means Quaternary and below.
+  const { activeUser } = useUserState();
+  const isQuaternaryOrBelow = Number(activeUser?.accessLevel) >= 4;
 
   // Only keep the three actual bottom-navigation routes.
   const visibleRoutes = state.routes.filter((route) =>
@@ -156,9 +165,20 @@ export default function NavBar({
 
           const { options } = descriptors[route.key];
 
-          const label = options.title ?? route.name;
+                    // KM-117: The Accounts tab changes based on the active user.
+          // Quaternary and below see "Your Profile"; Tertiary and above see "Accounts".
+          const isAccountsTab = route.name === 'tertiaryprofilemanagement';
 
-          const isActive = state.index === originalIndex;
+          const label =
+            isAccountsTab && isQuaternaryOrBelow
+              ? 'Your Profile'
+              : options.title ?? route.name;
+
+          // Keep the Accounts tab highlighted while on the Quaternary Profile page too.
+          const currentRouteName = state.routes[state.index]?.name;
+          const isActive =
+            state.index === originalIndex ||
+            (isAccountsTab && currentRouteName === 'quaternaryprofile');
 
           const iconColor = isActive
             ? '#ffffff'
@@ -175,7 +195,12 @@ export default function NavBar({
             });
 
             if (!isActive && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+              // KM-117: Quaternary and below go to their own profile page instead.
+              if (isAccountsTab && isQuaternaryOrBelow) {
+                router.navigate('/Pages/quaternaryprofile');
+              } else {
+                navigation.navigate(route.name);
+              }
             }
           };
 
