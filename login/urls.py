@@ -5,5 +5,7 @@ urlpatterns = [
     path('', views.loginMain, name='loginMain'),
     path('dbtest/', views.newModelTest, name='newModelTest'),
     path('forgot-password/', views.forgotPasswordReq, name='forgotPasswordReq'),
-    path('addUser',views.addUser, name='addUser')
+    path('addUser',views.addUser, name='addUser'),
+    path('getUser', views.getUser, name='getUser'),
+    path('editUser', views.editUser, name='editUser')
 ]
