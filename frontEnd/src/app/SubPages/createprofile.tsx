@@ -21,6 +21,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
+
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
@@ -398,6 +399,69 @@ export default function CreateProfile() {
         setNewLocationLoading(true);
         let data = {
                         user_id: activeUser?.userID,
+                        new_location: newLocation,
+        };
+        try {
+          const editURL = BASE_URL + "containers/addLocation"
+          let now = new Date();
+          let formattedTime = now.toLocaleTimeString();
+          console.log("${formattedTime} Sending add location URL: " + editURL);
+          const response = await fetch(editURL, {
+              method: 'POST',
+              headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data),
+              });
+
+          if (!response.ok){
+              now = new Date();
+              formattedTime = now.toLocaleTimeString();
+              console.log("${formattedTime} We are having issues");
+              const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+              }
+          } catch (error) {
+              console.error('Error sending data:', error);
+              setErrorMsg(error?.message ?? "Unknown error");
+              setNewLocationError(true);
+          } finally {
+              setNewLocationLoading(false);
+              setNewLocationSuccess(true);
+              loadLocationOptions();
+          }
+        };
+
+
+  // Add Location modal handlers
+
+  const showAddNewLocation = () => {
+        haptic();
+        closeSelector();
+        setNewLocationVisible(true);
+  };
+
+    const closeNewLocation = () => {
+        haptic();
+        setNewLocationVisible(false);
+        openSelector(
+          'location'
+        )
+      };
+
+      useEffect(() => {
+          if(newLocationVisible == false){
+              setNewLocationLoading(false);
+              setNewLocationError(false);
+              setNewLocationSuccess(false);
+          }
+      }, [newLocationVisible]);
+
+  const addNewLocation = async () => {
+        setNewLocationLoading(true);
+        let data = {
+                        user_id: USER_TEST,
                         new_location: newLocation,
         };
         try {
