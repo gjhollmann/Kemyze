@@ -180,7 +180,7 @@ export default function CreateProfile() {
 
   const getOptions = () => {
     if (selectorType === 'location') return locationOptions;
-    if (selectorType === 'authorization') return AUTHORIZATION_OPTIONS;
+    if (selectorType === 'authorization') return allowedAuthorizations;
     return [];
   };
 
