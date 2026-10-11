@@ -19,4 +19,5 @@ __pycache__/
 frontEnd/.gitignore
 frontEnd/node_modules
 frontEnd/.expo
+.DS_Store
 
