@@ -18,14 +18,14 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
-import { useUserState } from '../contexts/UserState';
 
-const BASE_URL = "https://kemyze.vercel.app";
+const BASE_URL = "https://kemyze.vercel.app/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
 const USER_ACCESS = 1;
 // Typography
@@ -89,6 +89,7 @@ export default function CreateProfile() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+    const { activeUser } = useUserState(); // Insert active user.
     
     // Invoke useEffect to prevent active user state from flooding console.
     useEffect(() => {
@@ -107,7 +108,6 @@ export default function CreateProfile() {
   const paddingBottom = NAV_BAR_HEIGHT + (insets.bottom || 14) + 10;
 
   // Active user
-  const { activeUser } = useUserState();
   const allowedAuthorizations = getAllowedAuthorizations(
     activeUser ? Number(activeUser.accessLevel) : null
   );
