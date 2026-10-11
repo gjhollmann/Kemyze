@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseForbidden, HttpResponseServerError
-from common.models import Users
+from common.models import Users, Locations
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 import json
 
 # Create your views here.
@@ -183,3 +183,109 @@ def getUser(request):
         "location": RequestedUser.location.name if RequestedUser.location else None,
     }
     return JsonResponse(data)
+
+"""
+View to edit a user's profile.
+Route: /login/editUser
+Method: POST (JSON body)
+Body:
+    active_user_id - required. The user making the request.
+    user_id        - required. The user being edited.
+    Optional (only sent when changed): first_name, last_name, email,
+    phone, access_level, location (name), password (plaintext, hashed here).
+
+Failures:
+    405 Not a POST request
+    400 Invalid JSON / missing or invalid fields / user does not exist
+    403 Active user may not edit this user or set these values
+    500 Unexpected error
+"""
+@csrf_exempt
+def editUser(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    try:
+        body = json.loads(request.body)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid JSON")
+
+    active_user_id = body.get("active_user_id")
+    user_id = body.get("user_id")
+    if active_user_id is None:
+        return HttpResponseBadRequest("Missing 'active_user_id' Parameter")
+    if user_id is None:
+        return HttpResponseBadRequest("Missing 'user_id' Parameter")
+
+    try:
+        ActiveUser = Users.objects.get(user_id=active_user_id)
+        TargetUser = Users.objects.get(user_id=user_id)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid user id")
+    except Users.DoesNotExist:
+        return HttpResponseBadRequest("User does not exist")
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+
+    is_self = ActiveUser.user_id == TargetUser.user_id
+
+    # Permission checks
+
+    if ActiveUser.access_level > 3:
+        return HttpResponseForbidden("User does not have permission to edit profiles")
+
+    if not is_self:
+        if ActiveUser.access_level == 3 and ActiveUser.location_id != TargetUser.location_id:
+            return HttpResponseForbidden("User does not have access to users in this location")
+        # Lower number = more privilege; can't edit someone above you
+        if TargetUser.access_level < ActiveUser.access_level:
+            return HttpResponseForbidden("User cannot edit a higher-access user")
+
+    try:
+        if "first_name" in body:
+            TargetUser.first_name = str(body["first_name"]).strip()
+        if "last_name" in body:
+            TargetUser.last_name = str(body["last_name"]).strip()
+
+        if "email" in body:
+            email = str(body["email"]).strip()
+            if not email or "@" not in email:
+                return HttpResponseBadRequest("Invalid email")
+            if Users.objects.filter(email=email).exclude(user_id=TargetUser.user_id).exists():
+                return HttpResponseBadRequest("That email is already in use")
+            TargetUser.email = email
+
+        if "phone" in body:
+            TargetUser.phone = str(body["phone"]).strip()
+
+        if "access_level" in body:
+            new_level = int(body["access_level"])
+            if new_level < 1 or new_level > 4:
+                return HttpResponseBadRequest("Invalid access level")
+            if new_level < ActiveUser.access_level:
+                return HttpResponseForbidden("User cannot grant a higher access level than their own")
+            if is_self and new_level != TargetUser.access_level:
+                return HttpResponseForbidden("User cannot change their own access level")
+            TargetUser.access_level = new_level
+
+        if "location" in body:
+            if is_self and ActiveUser.access_level > 3:
+                return HttpResponseForbidden("User cannot change their own location")
+            matches = Locations.objects.filter(name=body["location"])
+            if matches.count() != 1:
+                return HttpResponseBadRequest("Location not found or ambiguous")
+            TargetUser.location = matches.first()
+
+        # Hash the password before storing; never store plaintext
+        if body.get("password"):
+            TargetUser.password = make_password(body["password"])
+
+        TargetUser.save()
+    except ValueError:
+        return HttpResponseBadRequest("Invalid value")
+    except Exception as e:
+        print(e)
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
+
+    return HttpResponse("Success")

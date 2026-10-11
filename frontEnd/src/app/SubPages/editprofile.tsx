@@ -9,6 +9,8 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   Button,
+  Platform,
+  Alert
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,11 +20,20 @@ import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useUserState } from '../../app/contexts/UserState';
+import { Ionicons } from '@expo/vector-icons';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
 const BASE_URL = "https://kemyze.vercel.app/";
+
+const showPopup = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 // Typography
 
@@ -309,6 +320,10 @@ export default function Edit_Profile() {
     'X',
     'X',
   ]);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   // Placeholder data
 
@@ -627,11 +642,95 @@ export default function Edit_Profile() {
     setReviewVisible(true);
   };
 
-  const saveReviewedChanges = () => {
-    successHaptic();
-    setSavedProfile(currentProfile);
+  const saveReviewedChanges = async () => {
+    if (!activeUser || isSaving) return;
+
+    const phoneChanged =
+      currentProfile['Phone Number'] !== savedProfile['Phone Number'];
+    const phoneDigits = [...phoneArea, ...phonePrefix, ...phoneLine].join('');
+
+    if (currentProfile.Name === '') {
+      setReviewVisible(false);
+      showPopup('Invalid Name', 'Name cannot be empty.');
+      return;
+    }
+    if (phoneChanged && !/^\d{10}$/.test(phoneDigits)) {
+      setReviewVisible(false);
+      showPopup('Invalid Phone Number', 'Please fill in all 10 digits of the phone number.');
+      return;
+    }
+
+    const data: Record<string, any> = {
+      active_user_id: activeUser.userID,
+      user_id: user_id, // the user being edited (route param), not the editable "User ID" box
+    };
+
+    // Send only the fields that changed
+    if (currentProfile.Name !== savedProfile.Name) {
+      const parts = currentProfile.Name.split(/\s+/);
+      data.first_name = parts[0] ?? '';
+      data.last_name = parts.slice(1).join(' ');
+    }
+    if (currentProfile.Email !== savedProfile.Email) {
+      data.email = currentProfile.Email;
+    }
+    if (currentProfile.Location !== savedProfile.Location) {
+      data.location = currentProfile.Location;
+    }
+    if (currentProfile.Role !== savedProfile.Role) {
+      const level = Object.keys(ROLE_BY_LEVEL).find(
+        (k) => ROLE_BY_LEVEL[Number(k)] === currentProfile.Role
+      );
+      if (level) data.access_level = Number(level);
+    }
+
+    if (phoneChanged) {
+      data.phone = phoneDigits;
+    }
+
+    if (currentProfile.Password !== '') {
+      data.password = currentProfile.Password;
+    }
+
+    if (Object.keys(data).length === 2) {
+      setReviewVisible(false);
+      return;
+    }
+
+    setIsSaving(true);
     setReviewVisible(false);
-    setSavedVisible(true);
+
+    try {
+      const response = await fetch(BASE_URL + 'login/editUser', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          response.status === 403
+            ? "You don't have permission to make this change."
+            : response.status === 400
+              ? errorText
+              : 'The changes could not be saved. Please try again.'
+        );
+      }
+
+      // Success only: update baseline, clear password box, show confirmation
+      successHaptic();
+      setSavedProfile({ ...currentProfile, Password: '' });
+      setPassword('');
+      setSavedVisible(true);
+    } catch (error: any) {
+      showPopup('Save Failed', error.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelReviewedChanges = () => {
@@ -649,6 +748,7 @@ export default function Edit_Profile() {
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
+    router.back();
   };
 
   const closeCanceledConfirmation = () => {
@@ -1103,13 +1203,11 @@ export default function Edit_Profile() {
                     </Text>
 
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, styles.inputReadOnly]}
                       value={userId}
-                      onChangeText={setUserId}
-                      placeholder="User ID"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="User ID"
-                      maxLength={255}
+                      editable={false}
+                      selectTextOnFocus={false}
+                      accessibilityLabel="User ID (read only)"
                     />
                   </View>
                 </View>
@@ -1381,18 +1479,32 @@ export default function Edit_Profile() {
                     <Text style={styles.label}>
                       Password
                     </Text>
-
-                    <TextInput
-                      style={styles.input}
-                      value={password}
-                      onChangeText={setPassword}
-                      placeholder="Password"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="Password"
-                      secureTextEntry
-                      autoCapitalize="none"
-                      maxLength={255}
-                    />
+                    <View style={styles.passwordWrapper}>
+                      <TextInput
+                        style={[styles.input, styles.passwordInput]}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Password"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="Password"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        maxLength={255}
+                      />
+                      <Pressable
+                        style={styles.eyeButton}
+                        onPress={() => setShowPassword((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                          size={22}
+                          color="#C9CFE9"
+                        />
+                      </Pressable>
+                    </View>
                   </View>
 
                   {isLandscape && (
@@ -1405,8 +1517,9 @@ export default function Edit_Profile() {
             {/* Save */}
             <View style={styles.saveButton}>
               <GradientButton
-                title="Save"
+                title={isSaving ? 'Saving...' : 'Save Changes'}
                 onPress={openReviewChanges}
+                disabled={reviewChanges.length === 0 || isSaving}
                 width="100%"
                 height={50}
                 borderRadius={10}
@@ -3996,5 +4109,27 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 16,
+  },
+
+  passwordWrapper: {
+    justifyContent: 'center',
+  },
+
+  passwordInput: {
+    paddingRight: 64, // keeps typed text from running under the button
+  },
+
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+  },
+
+  eyeText: {
+    color: '#C9CFE9',
+    fontSize: 14,
+  },
+
+  inputReadOnly: {
+    opacity: 0.6,
   },
 });
