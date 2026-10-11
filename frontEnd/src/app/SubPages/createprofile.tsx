@@ -19,6 +19,7 @@ import { BlurView } from 'expo-blur';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+import { useUserState } from '../contexts/UserState';
 
 // Typography
 const FONT = Object.freeze({
@@ -56,6 +57,18 @@ const AUTHORIZATION_OPTIONS = [
   'Quinary',
 ];
 
+const PRIMARY_LEVEL = 1;
+
+// Roles below the active user's level; Primary may also create Primary
+const getAllowedAuthorizations = (accessLevel: number | null) => {
+  if (!accessLevel) return [];
+
+  return AUTHORIZATION_OPTIONS.filter((_, index) => {
+    const level = index + 1;
+    return accessLevel === PRIMARY_LEVEL ? level >= accessLevel : level > accessLevel;
+  });
+};
+
 const PHONE_DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 const PANEL_GRADIENT: [string, string] = [
@@ -80,6 +93,12 @@ export default function CreateProfile() {
   const paddingRight = Math.max(pagePadding, insets.right + 8);
   const paddingTop = insets.top + (isLandscape ? 8 : 12);
   const paddingBottom = NAV_BAR_HEIGHT + (insets.bottom || 14) + 10;
+
+  // Active user
+  const { activeUser } = useUserState();
+  const allowedAuthorizations = getAllowedAuthorizations(
+    activeUser ? Number(activeUser.accessLevel) : null
+  );
 
   // Modals state
   const [selectorVisible, setSelectorVisible] = useState(false);
@@ -133,7 +152,7 @@ export default function CreateProfile() {
 
   const getOptions = () => {
     if (selectorType === 'location') return LOCATION_OPTIONS;
-    if (selectorType === 'authorization') return AUTHORIZATION_OPTIONS;
+    if (selectorType === 'authorization') return allowedAuthorizations;
     return [];
   };
 

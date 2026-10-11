@@ -18,14 +18,14 @@ import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "http://127.0.0.1:8000/";
-const USER_TEST = 9873243; // replace with actual user ID (KM#85)
+const BASE_URL = "https://kemyze.vercel.app/";
 
-// Typography
+// Typography 
 
 const FONT = Object.freeze({
   regular: 'JetBrains Mono',
@@ -132,6 +132,12 @@ const PANEL_GRADIENT: [string, string] = [
 export default function Edit_Container() {
   const { container_id } = useLocalSearchParams();
   const router = useRouter();
+  const { activeUser } = useUserState(); // Insert active user.
+  
+  // Invoke useEffect to prevent active user state from flooding console.
+  useEffect(() => { 
+    console.log("Active user:", activeUser); // Additional console check for active user. 
+  }, [activeUser]);
 
   const { width, height } = useWindowDimensions();
 
@@ -764,6 +770,10 @@ export default function Edit_Container() {
   };
 
   const uploadSdsFile = async () => {
+    if (!activeUser) {
+      Alert.alert('Error', 'Active user not found');
+    }
+
     if (!sdsFile) {
       Alert.alert('No file selected', 'Please select an SDS PDF before importing');
     }
@@ -772,7 +782,7 @@ export default function Edit_Container() {
 
     try {
       const formData = new FormData();
-      formData.append('user_id', String(USER_TEST));
+      formData.append('user_id', String(activeUser?.userID)); // Replaced hard-coded user ID.
       formData.append('container_id', String(container_id ?? ''));
       formData.append('sds_file', {
         uri: sdsFile.uri,
@@ -911,7 +921,7 @@ export default function Edit_Container() {
     const sendEditContainer = async () => {
         setIsLoading(true);
         let data = {
-                user_id: USER_TEST,
+                user_id: activeUser?.userID, // Replaced hard-coded user ID
                 container_id: container_id,
             };
 
@@ -957,9 +967,20 @@ export default function Edit_Container() {
                 body: JSON.stringify(data),
             });
             
-            if (!response.ok){
+            /*if (!response.ok){
               console.log("We are having issues");
               const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }*/
+            
+            if (response.status === 403) { // Alert user of permissions in event of bypass.
+              Alert.alert("Access Denied", "You don't have permission to edit containers");
+              return;
+            }
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              Alert.alert("Edit Failed", "The container could not be updated");
               throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             
