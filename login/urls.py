@@ -6,6 +6,7 @@ urlpatterns = [
     path('dbtest/', views.newModelTest, name='newModelTest'),
     path('forgot-password/', views.forgotPasswordReq, name='forgotPasswordReq'),
     path('users/delete/', views.deleteUser, name='deleteUser'),
+    path('users/search/', views.searchManagedUsers, name='searchManagedUsers'),
     path('getUser', views.getUser, name='getUser'),
     path('editUser', views.editUser, name='editUser')
 ]
