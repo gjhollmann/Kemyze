@@ -7,17 +7,33 @@ import {
   Modal,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
+  Button,
+  Platform,
+  Alert
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useUserState } from '../../app/contexts/UserState';
+import { Ionicons } from '@expo/vector-icons';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+
+const BASE_URL = "https://kemyze.vercel.app/";
+
+const showPopup = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 // Typography
 
@@ -94,11 +110,39 @@ const LOCATION_OPTIONS = [
   'Elk Grove Lab',
 ];
 
+// Ordered by access level (index 0 = level 1 = Primary)
 const ROLE_OPTIONS = [
   'Primary',
   'Secondary',
   'Tertiary',
+  'Quaternary',
+  'Quinary',
 ];
+
+const ROLE_BY_LEVEL: Record<number, string> = {
+  1: 'Primary',
+  2: 'Secondary',
+  3: 'Tertiary',
+  4: 'Quaternary',
+}
+
+const PRIMARY_LEVEL = 1;
+
+// Roles the active user may assign: every role below their own level.
+// Primary users may also assign Primary.
+const getAllowedRoles = (accessLevel: number | null) => {
+  if (!accessLevel) {
+    return [];
+  }
+
+  return ROLE_OPTIONS.filter((_, index) => {
+    const roleLevel = index + 1;
+
+    return accessLevel === PRIMARY_LEVEL
+      ? roleLevel >= accessLevel
+      : roleLevel > accessLevel;
+  });
+};
 
 const PHONE_DIGITS = [
   '0',
@@ -142,7 +186,28 @@ const NAV_BAR_HEIGHT = 76;
 
 export default function Edit_Profile() {
   const { user_id } = useLocalSearchParams();
+  const { activeUser } = useUserState(); // Insert active user.
+
+  // Invoke useEffect to prevent active user state from flooding console.
+  useEffect(() => {
+    console.log("Active user for edit profile:", activeUser); // Additional console check for active user.
+  }, [activeUser]);
+
+
   const router = useRouter();
+
+  // Active user
+  const activeAccessLevel = activeUser
+    ? Number(activeUser.accessLevel)
+    : null;
+
+  const isOwnProfile =
+    activeUser !== null &&
+    String(activeUser.userID) === String(user_id);
+
+  const allowedRoles = getAllowedRoles(activeAccessLevel);
+
+  const canEditRole = !isOwnProfile && allowedRoles.length > 0;
 
   const { width, height } = useWindowDimensions();
 
@@ -187,6 +252,10 @@ export default function Edit_Profile() {
   const [reviewVisible, setReviewVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
+  const [newLocationVisible, setNewLocationVisible] = useState(false);
+  const [newLocationLoading, setNewLocationLoading] = useState(false);
+  const [newLocationError, setNewLocationError] = useState(false);
+  const [newLocationSuccess, setNewLocationSuccess] = useState(true);
 
   // Selection state
 
@@ -222,6 +291,10 @@ export default function Edit_Profile() {
   const [password, setPassword] =
     useState('');
 
+  const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+
+  const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
+  const [newLocation, setNewLocation] = useState('');
   // Saved state
 
   const [savedProfile, setSavedProfile] =
@@ -247,6 +320,10 @@ export default function Edit_Profile() {
     'X',
     'X',
   ]);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   // Placeholder data
 
@@ -373,13 +450,27 @@ export default function Edit_Profile() {
     return 'Select Option';
   };
 
+
+  // State Variables for Options that are dynamic
+
+  const [locationOptions, setLocationOptions] = useState([
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+    'X',
+  ]);
+
+
   const getOptions = () => {
     if (selectorType === 'location') {
-      return LOCATION_OPTIONS;
+      return locationOptions;
     }
 
     if (selectorType === 'role') {
-      return ROLE_OPTIONS;
+      return allowedRoles;
     }
 
     return [];
@@ -551,11 +642,95 @@ export default function Edit_Profile() {
     setReviewVisible(true);
   };
 
-  const saveReviewedChanges = () => {
-    successHaptic();
-    setSavedProfile(currentProfile);
+  const saveReviewedChanges = async () => {
+    if (!activeUser || isSaving) return;
+
+    const phoneChanged =
+      currentProfile['Phone Number'] !== savedProfile['Phone Number'];
+    const phoneDigits = [...phoneArea, ...phonePrefix, ...phoneLine].join('');
+
+    if (currentProfile.Name === '') {
+      setReviewVisible(false);
+      showPopup('Invalid Name', 'Name cannot be empty.');
+      return;
+    }
+    if (phoneChanged && !/^\d{10}$/.test(phoneDigits)) {
+      setReviewVisible(false);
+      showPopup('Invalid Phone Number', 'Please fill in all 10 digits of the phone number.');
+      return;
+    }
+
+    const data: Record<string, any> = {
+      active_user_id: activeUser.userID,
+      user_id: user_id, // the user being edited (route param), not the editable "User ID" box
+    };
+
+    // Send only the fields that changed
+    if (currentProfile.Name !== savedProfile.Name) {
+      const parts = currentProfile.Name.split(/\s+/);
+      data.first_name = parts[0] ?? '';
+      data.last_name = parts.slice(1).join(' ');
+    }
+    if (currentProfile.Email !== savedProfile.Email) {
+      data.email = currentProfile.Email;
+    }
+    if (currentProfile.Location !== savedProfile.Location) {
+      data.location = currentProfile.Location;
+    }
+    if (currentProfile.Role !== savedProfile.Role) {
+      const level = Object.keys(ROLE_BY_LEVEL).find(
+        (k) => ROLE_BY_LEVEL[Number(k)] === currentProfile.Role
+      );
+      if (level) data.access_level = Number(level);
+    }
+
+    if (phoneChanged) {
+      data.phone = phoneDigits;
+    }
+
+    if (currentProfile.Password !== '') {
+      data.password = currentProfile.Password;
+    }
+
+    if (Object.keys(data).length === 2) {
+      setReviewVisible(false);
+      return;
+    }
+
+    setIsSaving(true);
     setReviewVisible(false);
-    setSavedVisible(true);
+
+    try {
+      const response = await fetch(BASE_URL + 'login/editUser', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          response.status === 403
+            ? "You don't have permission to make this change."
+            : response.status === 400
+              ? errorText
+              : 'The changes could not be saved. Please try again.'
+        );
+      }
+
+      // Success only: update baseline, clear password box, show confirmation
+      successHaptic();
+      setSavedProfile({ ...currentProfile, Password: '' });
+      setPassword('');
+      setSavedVisible(true);
+    } catch (error: any) {
+      showPopup('Save Failed', error.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelReviewedChanges = () => {
@@ -564,15 +739,78 @@ export default function Edit_Profile() {
     setCanceledVisible(true);
   };
 
+  const showAddNewLocation = () => {
+    haptic();
+    closeSelector();
+    setNewLocationVisible(true);
+  };
+
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
+    router.back();
   };
 
   const closeCanceledConfirmation = () => {
     haptic();
     setCanceledVisible(false);
   };
+
+
+  const closeNewLocation = () => {
+    haptic();
+    setNewLocationVisible(false);
+    openSelector(
+      'location'
+    )
+  };
+
+  useEffect(() => {
+    if (newLocationVisible == false) {
+      setNewLocationLoading(false);
+      setNewLocationError(false);
+      setNewLocationSuccess(false);
+    }
+  }, [newLocationVisible]);
+
+  const addNewLocation = async () => {
+    setNewLocationLoading(true);
+    let data = {
+      user_id: activeUser?.userID,
+      new_location: newLocation,
+    };
+    try {
+      const editURL = BASE_URL + "containers/addLocation"
+      let now = new Date();
+      let formattedTime = now.toLocaleTimeString();
+      console.log("${formattedTime} Sending add location URL: " + editURL);
+      const response = await fetch(editURL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        now = new Date();
+        formattedTime = now.toLocaleTimeString();
+        console.log("${formattedTime} We are having issues");
+        const errorText = await response.text();
+        throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+      }
+    } catch (error) {
+      console.error('Error sending data:', error);
+      setErrorMsg(error?.message ?? "Unknown error");
+      setNewLocationError(true);
+    } finally {
+      setNewLocationLoading(false);
+      setNewLocationSuccess(true);
+      loadLocationOptions();
+    }
+  };
+
 
   // Navigation
 
@@ -649,6 +887,180 @@ export default function Edit_Profile() {
     },
   } as any;
 
+  // Load initial data
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    loadUser();
+  }, [activeUser, user_id]);
+
+  const loadUser = async () => {
+    setIsLoading(true);
+    setLoadError(false);
+
+    try {
+      if (!activeUser) {
+        throw new Error('Active user not found.');
+      }
+      if (!user_id) {
+        throw new Error('No user was selected.');
+      }
+
+      const parameters = new URLSearchParams({
+        active_user_id: String(activeUser.userID),
+        user_id: String(user_id),
+      }).toString();
+
+      const response = await fetch(
+        BASE_URL + 'login/getUser?' + parameters,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`[EditProfile] Load failed, status ${response.status}: ${errorText}`);
+
+        if (response.status === 403) {
+          throw new Error("You don't have permission to view this user.");
+        }
+        if (response.status === 400) {
+          throw new Error(errorText);
+        }
+        throw new Error('The user could not be loaded. Please try again.');
+      }
+
+      const data = await response.json();
+
+      const fullName = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim();
+      const loadedUserId = String(data.user_id ?? '');
+      const loadedLocation = data.location ?? EMPTY_PROFILE.Location;
+      const loadedEmail = data.email ?? '';
+      const loadedRole = ROLE_BY_LEVEL[data.access_level] ?? EMPTY_PROFILE.Role;
+
+      // Phone: use the last 10 digits when available, otherwise leave the X placeholders.
+      const digits = String(data.phone ?? '').replace(/\D/g, '');
+      let area = ['X', 'X', 'X'];
+      let prefix = ['X', 'X', 'X'];
+      let line = ['X', 'X', 'X', 'X'];
+      if (digits.length >= 10) {
+        const ten = digits.slice(-10);
+        area = ten.slice(0, 3).split('');
+        prefix = ten.slice(3, 6).split('');
+        line = ten.slice(6, 10).split('');
+      }
+
+      setName(fullName);
+      setUserId(loadedUserId);
+      setLocation(loadedLocation);
+      setEmail(loadedEmail);
+      setRole(loadedRole);
+      setPhoneArea(area);
+      setPhonePrefix(prefix);
+      setPhoneLine(line);
+
+      // Baseline for the review sheet's old -> new comparison.
+      setSavedProfile({
+        Name: fullName,
+        'User ID': loadedUserId,
+        Location: loadedLocation,
+        'Phone Number': `${area.join('')} - ${prefix.join('')} - ${line.join('')}`,
+        Email: loadedEmail,
+        Role: loadedRole,
+        Password: '',
+      });
+    } catch (error: any) {
+      console.log(error.message);
+      setErrorMsg(error.message);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  //Initial fetch
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    if (activeUser?.accessLevel <= 1) {
+      setIsNewLocationVisible(true);
+    }
+    if (activeUser?.accessLevel <= 2) {
+      setLocationOptionsVisible(true);
+    }
+  }
+
+  //Load location data
+  useEffect(() => {
+    if (location !== null) {
+      loadLocationOptions();
+    }
+  }, [location]);
+
+  const loadLocationOptions = async () => {
+    let data = [{ name: "Currently Loading Locations" }]
+    setLocationOptions(data.map(item => item.name));
+    const parameters = '';
+    data = await loadVarLocationOptions(parameters);
+    setLocationOptions(data.map(item => item.name));
+  }
+
+  const loadVarLocationOptions = async (parameters) => {
+    const getLocationChildrenURL = BASE_URL + "containers/getLocationChildren?" + parameters;
+    try {
+      const response = await fetch(getLocationChildrenURL, { method: "GET", });
+      if (!response.ok) {
+        console.log("We are having issues");
+        const errorText = await response.text();
+        throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+      }
+      let data = await response.json();
+      if (data && Object.keys(data).length === 0) {
+        console.log("Possible Error, location data was empty.\nURL: " + getLocationChildrenURL + "\nData: " + data + "\nSetting data to empty state");
+        data = [{
+          name: "No locations found",
+        }];
+      }
+      return data;
+    } catch (error: any) {
+      console.log(error.message);
+      setErrorMsg(error.message);
+      setLoadError(true);
+    }
+  }
+
+
+  // Render Loading Screen
+
+  if (isLoading) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      </View>
+    );
+  }
+
+  // Render Error Screen
+
+  if (loadError) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <Text style={styles.errorText}>Error: {errorMsg}</Text>
+          <Button title="Go Back" onPress={() => router.back()} />
+        </View>
+      </View>
+    );
+  }
+
   // Render
 
   return (
@@ -696,7 +1108,7 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.backButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <Text style={styles.backText}>
@@ -791,13 +1203,11 @@ export default function Edit_Profile() {
                     </Text>
 
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, styles.inputReadOnly]}
                       value={userId}
-                      onChangeText={setUserId}
-                      placeholder="User ID"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="User ID"
-                      maxLength={255}
+                      editable={false}
+                      selectTextOnFocus={false}
+                      accessibilityLabel="User ID (read only)"
                     />
                   </View>
                 </View>
@@ -821,7 +1231,7 @@ export default function Edit_Profile() {
                       Location
                     </Text>
 
-                    <Pressable
+                    {locationOptionsVisible ? (<Pressable
                       onPress={() =>
                         openSelector(
                           'location'
@@ -832,7 +1242,7 @@ export default function Edit_Profile() {
                       style={({ pressed }) => [
                         styles.selectInput,
                         pressed &&
-                          styles.selectPressed,
+                        styles.selectPressed,
                       ]}
                     >
                       <Text
@@ -840,8 +1250,8 @@ export default function Edit_Profile() {
                         style={[
                           styles.selectText,
                           location ===
-                            'Location Name' &&
-                            styles.placeholderText,
+                          'Location Name' &&
+                          styles.placeholderText,
                         ]}
                       >
                         {location}
@@ -854,7 +1264,20 @@ export default function Edit_Profile() {
                       >
                         ⌄
                       </Text>
-                    </Pressable>
+                    </Pressable>) : (<View
+                      style={
+                        styles.locationDefault
+                      }
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={
+                          styles.selectText
+                        }
+                      >
+                        {location}
+                      </Text>
+                    </View>)}
                   </View>
 
                   {/* Phone Number */}
@@ -881,7 +1304,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phoneArea,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -909,7 +1332,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phonePrefix,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -937,7 +1360,7 @@ export default function Edit_Profile() {
                           styles.phoneButton,
                           styles.phoneLine,
                           pressed &&
-                            styles.selectPressed,
+                          styles.selectPressed,
                         ]}
                       >
                         <Text
@@ -1001,12 +1424,18 @@ export default function Edit_Profile() {
                           'role'
                         )
                       }
+                      disabled={!canEditRole}
                       accessibilityRole="button"
                       accessibilityLabel="Select role"
+                      accessibilityState={{
+                        disabled: !canEditRole,
+                      }}
                       style={({ pressed }) => [
                         styles.selectInput,
                         pressed &&
-                          styles.selectPressed,
+                        styles.selectPressed,
+                        !canEditRole &&
+                        styles.selectDisabled,
                       ]}
                     >
                       <Text
@@ -1014,8 +1443,8 @@ export default function Edit_Profile() {
                         style={[
                           styles.selectText,
                           role ===
-                            'Role' &&
-                            styles.placeholderText,
+                          'Role' &&
+                          styles.placeholderText,
                         ]}
                       >
                         {role}
@@ -1050,18 +1479,32 @@ export default function Edit_Profile() {
                     <Text style={styles.label}>
                       Password
                     </Text>
-
-                    <TextInput
-                      style={styles.input}
-                      value={password}
-                      onChangeText={setPassword}
-                      placeholder="Password"
-                      placeholderTextColor="#C9CFE9"
-                      accessibilityLabel="Password"
-                      secureTextEntry
-                      autoCapitalize="none"
-                      maxLength={255}
-                    />
+                    <View style={styles.passwordWrapper}>
+                      <TextInput
+                        style={[styles.input, styles.passwordInput]}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Password"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="Password"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        maxLength={255}
+                      />
+                      <Pressable
+                        style={styles.eyeButton}
+                        onPress={() => setShowPassword((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                          size={22}
+                          color="#C9CFE9"
+                        />
+                      </Pressable>
+                    </View>
                   </View>
 
                   {isLandscape && (
@@ -1074,8 +1517,9 @@ export default function Edit_Profile() {
             {/* Save */}
             <View style={styles.saveButton}>
               <GradientButton
-                title="Save"
+                title={isSaving ? 'Saving...' : 'Save Changes'}
                 onPress={openReviewChanges}
+                disabled={reviewChanges.length === 0 || isSaving}
                 width="100%"
                 height={50}
                 borderRadius={10}
@@ -1090,7 +1534,7 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.changeLogCard,
                 pressed &&
-                  styles.cardPressed,
+                styles.cardPressed,
               ]}
             >
               <View
@@ -1267,7 +1711,7 @@ export default function Edit_Profile() {
                   style={({ pressed }) => [
                     styles.optionButton,
                     pressed &&
-                      styles.selectPressed,
+                    styles.selectPressed,
                   ]}
                 >
                   <Text
@@ -1281,6 +1725,51 @@ export default function Edit_Profile() {
               )
             )}
 
+            {
+              isNewLocationVisible && selectorType == 'location' && (
+                <Pressable
+                  onPress={showAddNewLocation}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create New Location"
+                  style={({ pressed }) => [
+                    styles.cancelButton,
+                    pressed &&
+                    styles.buttonPressed,
+                  ]}
+                >
+                  <LinearGradient
+                    colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                    locations={[0, 0.27, 0.49, 0.75, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  >
+                    <LinearGradient
+                      colors={['#2983ff', '#1b3de9']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={{
+                        position: 'absolute',
+                        top: 2,
+                        bottom: 2,
+                        left: 2,
+                        right: 2,
+                        borderRadius: 7,
+                      }}
+                    />
+                  </LinearGradient>
+                  <Text
+                    style={
+                      styles.cancelText
+                    }
+                  >
+                    Add New Location
+                  </Text>
+                </Pressable>
+              )
+            }
+
+
             <Pressable
               onPress={closeSelector}
               accessibilityRole="button"
@@ -1288,30 +1777,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.cancelButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.cancelText
@@ -1410,7 +1899,7 @@ export default function Edit_Profile() {
                       >
                         {
                           getPhoneValue()[
-                            columnIndex
+                          columnIndex
                           ]
                         }
                       </Text>
@@ -1444,20 +1933,20 @@ export default function Edit_Profile() {
                             style={[
                               styles.phoneWheelOption,
                               getPhoneValue()[
-                                columnIndex
+                              columnIndex
                               ] ===
-                                character &&
-                                styles.phoneWheelOptionActive,
+                              character &&
+                              styles.phoneWheelOptionActive,
                             ]}
                           >
                             <Text
                               style={[
                                 styles.phoneWheelText,
                                 getPhoneValue()[
-                                  columnIndex
+                                columnIndex
                                 ] ===
-                                  character &&
-                                  styles.phoneWheelTextActive,
+                                character &&
+                                styles.phoneWheelTextActive,
                               ]}
                             >
                               {character}
@@ -1480,30 +1969,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.phoneDoneButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.phoneDoneText
@@ -1616,8 +2105,8 @@ export default function Edit_Profile() {
                     style={[
                       styles.filterChip,
                       historyFilter ===
-                        filter &&
-                        styles.filterChipActive,
+                      filter &&
+                      styles.filterChipActive,
                     ]}
                   >
                     <LinearGradient
@@ -1646,8 +2135,8 @@ export default function Edit_Profile() {
                       style={[
                         styles.filterText,
                         historyFilter ===
-                          filter &&
-                          styles.filterTextActive,
+                        filter &&
+                        styles.filterTextActive,
                       ]}
                     >
                       {filter}
@@ -1682,7 +2171,7 @@ export default function Edit_Profile() {
                     style={({ pressed }) => [
                       styles.historyCard,
                       pressed &&
-                        styles.cardPressed,
+                      styles.cardPressed,
                     ]}
                   >
                     <View
@@ -1696,7 +2185,7 @@ export default function Edit_Profile() {
                         }
                       >
                         {item.Change ===
-                        'Edit'
+                          'Edit'
                           ? 'Profile edited'
                           : `${item.Change} changed`}
                       </Text>
@@ -1712,7 +2201,7 @@ export default function Edit_Profile() {
                           }
                         >
                           {item.Change ===
-                          'Edit'
+                            'Edit'
                             ? '________ → ________ → ________'
                             : '________ → ________'}
                         </Text>
@@ -2127,30 +2616,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.reviewSaveButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.reviewSaveText
@@ -2169,30 +2658,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.reviewCancelButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.reviewCancelText
@@ -2272,30 +2761,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.confirmButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2375,30 +2864,30 @@ export default function Edit_Profile() {
               style={({ pressed }) => [
                 styles.confirmButton,
                 pressed &&
-                  styles.buttonPressed,
+                styles.buttonPressed,
               ]}
             >
               <LinearGradient
-                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
-                      locations={[0, 0.27, 0.49, 0.75, 1]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    >
-                      <LinearGradient
-                        colors={['#2983ff', '#1b3de9']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 2,
-                          bottom: 2,
-                          left: 2,
-                          right: 2,
-                          borderRadius: 7,
-                        }}
-                      />
-                    </LinearGradient>
+                colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                locations={[0, 0.27, 0.49, 0.75, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              >
+                <LinearGradient
+                  colors={['#2983ff', '#1b3de9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    bottom: 2,
+                    left: 2,
+                    right: 2,
+                    borderRadius: 7,
+                  }}
+                />
+              </LinearGradient>
               <Text
                 style={
                   styles.confirmButtonText
@@ -2410,6 +2899,281 @@ export default function Edit_Profile() {
           </View>
         </View>
       </Modal>
+
+
+
+      {/* New Location */}
+
+      <Modal
+        visible={newLocationVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={
+          closeNewLocation
+        }
+      >
+        <View
+          style={
+            styles.confirmBackground
+          }
+        >
+          <BlurView
+            intensity={50}
+            tint="dark"
+            style={
+              StyleSheet.absoluteFillObject
+            }
+          />
+
+          {newLocationError && (
+            <View style={styles.confirmCard}>
+              <Text style={styles.confirmTitle}>
+                Error creating new location.
+              </Text>
+              <View style={{ padding: 10 }}></View>
+              <Text style={styles.errorText}>
+                {errorMsg}
+              </Text>
+              <View style={{ padding: 10 }}></View>
+              <Pressable
+                onPress={closeNewLocation}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel Add Location"
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                  locations={[0, 0.35, 0.56, 0.89, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                >
+                  <LinearGradient
+                    colors={['#2983ff', '#1b3de9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      borderRadius: 7,
+                    }}
+                  />
+                </LinearGradient>
+                <Text
+                  style={
+                    styles.confirmButtonText
+                  }
+                >
+                  Go Back
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {newLocationSuccess && !newLocationError && (
+            <View style={styles.confirmCard}>
+              <Text style={styles.confirmTitle}>
+                New Location Successfully Added
+              </Text>
+              <View style={{ padding: 5 }}></View>
+              <Pressable
+                onPress={closeNewLocation}
+                accessibilityRole="button"
+                accessibilityLabel="Button to leave new Location"
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed &&
+                  styles.buttonPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                  locations={[0, 0.35, 0.56, 0.89, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                >
+                  <LinearGradient
+                    colors={['#2983ff', '#1b3de9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      borderRadius: 7,
+                    }}
+                  />
+                </LinearGradient>
+                <Text
+                  style={
+                    styles.confirmButtonText
+                  }
+                >
+                  Go Back
+                </Text>
+              </Pressable>
+            </View>
+          )
+
+          }
+          {newLocationLoading && !newLocationError && (
+            <View style={styles.confirmCard}>
+              <View style={styles.loadingIndicator}>
+                <ActivityIndicator size="large" color="#0000ff" />
+              </View>
+              <Pressable
+                onPress={closeNewLocation}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel Add Location in load"
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed &&
+                  styles.buttonPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                  locations={[0, 0.35, 0.56, 0.89, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                >
+                  <LinearGradient
+                    colors={['#2983ff', '#1b3de9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      borderRadius: 7,
+                    }}
+                  />
+                </LinearGradient>
+                <Text
+                  style={
+                    styles.confirmButtonText
+                  }
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {!newLocationError && !newLocationLoading && !newLocationSuccess && (
+            <View style={styles.confirmCard}>
+              <Text style={styles.confirmTitle}>
+                Type in location name:
+              </Text>
+              <View style={{ padding: 5 }}></View>
+              <TextInput
+                style={styles.input}
+                placeholder="New Location"
+                placeholderTextColor="#C9CFE9"
+                accessibilityLabel="New Location Input"
+                value={newLocation}
+                onChangeText={setNewLocation}
+                maxLength={255}
+              />
+              <View style={{ padding: 10 }}></View>
+              <Pressable
+                onPress={addNewLocation}
+                accessibilityRole="button"
+                accessibilityLabel="Add New Location"
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed &&
+                  styles.buttonPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                  locations={[0, 0.27, 0.49, 0.75, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                >
+                  <LinearGradient
+                    colors={['#2983ff', '#1b3de9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      borderRadius: 7,
+                    }}
+                  />
+                </LinearGradient>
+                <Text
+                  style={
+                    styles.confirmButtonText
+                  }
+                >
+                  Add Location
+                </Text>
+              </Pressable>
+              <View style={{ padding: 2 }}></View>
+              <Pressable
+                onPress={
+                  closeNewLocation
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Cancel Add Location"
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed &&
+                  styles.buttonPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                  locations={[0, 0.35, 0.56, 0.89, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                >
+                  <LinearGradient
+                    colors={['#2983ff', '#1b3de9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      borderRadius: 7,
+                    }}
+                  />
+                </LinearGradient>
+                <Text
+                  style={
+                    styles.confirmButtonText
+                  }
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -2602,6 +3366,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 
+  locationDefault: {
+    width: '100%',
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: '#223044',
+    borderRadius: 9,
+    backgroundColor: '#02021C',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+
   selectText: {
     color: '#FFFFFF',
     fontFamily: FONT.regular,
@@ -2626,6 +3401,10 @@ const styles = StyleSheet.create({
   selectPressed: {
     borderColor: '#3B82F6',
     backgroundColor: '#131338',
+  },
+
+  selectDisabled: {
+    opacity: 0.45,
   },
 
   changeLogCard: {
@@ -2784,7 +3563,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#334155',
-        justifyContent: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
     marginBottom: 7,
@@ -2901,7 +3680,7 @@ const styles = StyleSheet.create({
   phoneDoneButton: {
     minHeight: 46,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -3198,7 +3977,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 48,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 6,
@@ -3308,7 +4087,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 48,
     borderRadius: 10,
-        borderWidth: 1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -3319,5 +4098,38 @@ const styles = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: FONT_SIZE.button,
     lineHeight: 20,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+  },
+
+  passwordWrapper: {
+    justifyContent: 'center',
+  },
+
+  passwordInput: {
+    paddingRight: 64, // keeps typed text from running under the button
+  },
+
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+  },
+
+  eyeText: {
+    color: '#C9CFE9',
+    fontSize: 14,
+  },
+
+  inputReadOnly: {
+    opacity: 0.6,
   },
 });
