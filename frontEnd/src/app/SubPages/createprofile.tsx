@@ -266,7 +266,7 @@ export default function CreateProfile() {
   const addNewLocation = async () => {
         setNewLocationLoading(true);
         let data = {
-                        user_id: USER_TEST,
+                        user_id: activeUser?.userID,
                         new_location: newLocation,
         };
         try {
@@ -347,7 +347,7 @@ export default function CreateProfile() {
       }, []);
 
       const checkUser = async() => {
-          if(USER_ACCESS <= 1){
+          if(activeUser?.accessLevel <= 1){
               setIsNewLocationVisible(true);
           }
           }
@@ -379,7 +379,7 @@ export default function CreateProfile() {
               if (data && Object.keys(data).length === 0){
                   console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
                   data = [{
-                      name: "Error Loading Locations",
+                      name: "No locations found",
                   }];
               }
               return data;

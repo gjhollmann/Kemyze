@@ -23,6 +23,7 @@ import { useUserState } from '../../app/contexts/UserState'; // Shared-state imp
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49235; // replace with actual user ID (KM#85)
 const USER_ACCESS = 1;
@@ -208,6 +209,8 @@ export default function Edit_Container() {
     useState('');
 
   const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+    
+  const [isNewChildLocationVisible, setIsNewChildLocationVisible] = useState(false);
 
   const [newLocation, setNewLocation] = useState('');
 
@@ -352,7 +355,6 @@ export default function Edit_Container() {
   const closeSelector = () => {
     haptic();
     setSelectorVisible(false);
-    setSelectorType(null);
   };
 
   const getSelectorTitle = () => {
@@ -1014,6 +1016,12 @@ export default function Edit_Container() {
       closeSelector();
       setNewLocationVisible(true);
     };
+  
+    const showAddNewChildLocation = () => {
+        haptic();
+        closeSelector();
+        setNewChildLocationVisible(true);
+      };
 
   const closeSavedConfirmation = () => {
     haptic();
@@ -1029,7 +1037,7 @@ export default function Edit_Container() {
       haptic();
       setNewLocationVisible(false);
       openSelector(
-        'location'
+        selectorType
       )
     };
 
@@ -1047,6 +1055,13 @@ export default function Edit_Container() {
                       user_id: activeUser?.userID,
                       new_location: newLocation,
       };
+      if (selectorType == 'room'){
+          data = {...data, location: location, type: 'room'}
+      } else if (selectorType == 'cabinet'){
+          data = {...data, location: location, room: room, type:'cabinet'}
+      } else if (selectorType == 'shelf'){
+          data = {...data, location: location, room: room, cabinet: cabinet, type:'shelf'}
+      }
       try {
         const editURL = BASE_URL + "containers/addLocation"
         let now = new Date();
@@ -1076,8 +1091,15 @@ export default function Edit_Container() {
             setNewLocationLoading(false);
             setNewLocationSuccess(true);
             loadLocationOptions();
+            if (selectorType == 'room'){
+                loadRoomOptions();
+            } else if (selectorType == 'cabinet'){
+                loadCabinetOptions();
+            } else if (selectorType == 'shelf'){
+                loadShelfOptions();
+            }
         }
-        }
+      };
 
 
   // Navigation
@@ -1175,6 +1197,9 @@ export default function Edit_Container() {
     const checkUser = async() => {
         if(activeUser?.accessLevel <= 1){
             setIsNewLocationVisible(true);
+        }
+        if(activeUser?.accessLevel <= 2){
+            setIsNewChildLocationVisible(true);
         }
         }
     
@@ -1333,7 +1358,7 @@ export default function Edit_Container() {
             if (data && Object.keys(data).length === 0){
                 console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
                 data = [{
-                    name: "Error Loading Locations",
+                    name: "No locations found",
                 }];
             }
             return data;
@@ -2210,9 +2235,7 @@ export default function Edit_Container() {
             }
             onPress={closeSelector}
           />
-
-          <View
-            style={
+          <View style={
               styles.selectorSheet
             }
           >
@@ -2260,7 +2283,7 @@ export default function Edit_Container() {
               )
             )}
 {
-    isNewLocationVisible && selectorType == 'location' &&(
+    ((isNewLocationVisible && selectorType == 'location')|(isNewChildLocationVisible && (selectorType == 'room'|selectorType =='shelf'|selectorType =='cabinet'))) && (
             <Pressable
                           onPress={showAddNewLocation}
                           accessibilityRole="button"
@@ -2297,7 +2320,7 @@ export default function Edit_Container() {
                               styles.cancelText
                             }
                           >
-                            Add New Location
+                            Add New
                           </Text>
                         </Pressable>
         )
@@ -3731,7 +3754,7 @@ export default function Edit_Container() {
                 { newLocationSuccess && !newLocationError && (
                     <View style={styles.confirmCard}>
                         <Text style={styles.confirmTitle}>
-                                                New Location Successfully Added
+                                                              New {selectorType} Successfully Added
                                             </Text>
                                             <View style={{padding:5}}></View>
                         <Pressable
@@ -3826,8 +3849,24 @@ export default function Edit_Container() {
 
                 {!newLocationError && !newLocationLoading && !newLocationSuccess &&(
                     <View style={styles.confirmCard}>
+                    {(selectorType != 'location') && (
+                                                  <View style={{width: '100%'}}>
+                        <Text style={styles.confirmTitle}>
+                            Current Location Info:
+                        </Text>
+                                                  <View>
+                                                  <Text style = {styles.newLocationLabel}>
+                                                      Location: {location}
+                                                      {(selectorType =='cabinet'|selectorType=='shelf') ? (<Text>{"\n"}Room: {room}</Text>):("")}
+                                                      {(selectorType=='shelf') ? (<Text>{"\n"}Cabinet: {cabinet}</Text>):("")}
+                                                  </Text>
+                                                  </View>
+                                                  <View style={{padding:15}}></View>
+                                </View>
+                                                  
+                    )}
                     <Text style={styles.confirmTitle}>
-                        Type in location name:
+                        Type in new {selectorType} name:
                     </Text>
                     <View style={{padding:5}}></View>
                     <TextInput
@@ -3876,7 +3915,7 @@ export default function Edit_Container() {
                         styles.confirmButtonText
                       }
                     >
-                      Add Location
+                      Add {selectorType}
                     </Text>
                   </Pressable>
                   <View style={{padding:2}}></View>
@@ -5053,4 +5092,21 @@ const styles = StyleSheet.create({
   loadingIndicator: {
       padding: 20,
       },
+    newLocationLabel: {
+      width: '100%',
+      marginTop: 6,
+      borderRadius: 11,
+      borderWidth: 1,
+      borderColor: 'rgba(33, 142, 255, 0.5)',
+      paddingHorizontal: 10,
+      paddingTop: 8,
+      paddingBottom: 9,
+      overflow: 'hidden',
+        color: '#FFFFFF',
+        fontFamily: FONT.regular,
+        fontSize: FONT_SIZE.body,
+        lineHeight: 20,
+        paddingHorizontal: 9,
+        backgroundColor: '#09091C',
+    },
 });
