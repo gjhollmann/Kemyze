@@ -20,6 +20,7 @@ import { useUserState } from '../../app/contexts/UserState';
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
+import { useUserState } from '../contexts/UserState';
 
 const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
@@ -99,11 +100,32 @@ const LOCATION_OPTIONS = [
   'Elk Grove Lab',
 ];
 
+// Ordered by access level (index 0 = level 1 = Primary)
 const ROLE_OPTIONS = [
   'Primary',
   'Secondary',
   'Tertiary',
+  'Quaternary',
+  'Quinary',
 ];
+
+const PRIMARY_LEVEL = 1;
+
+// Roles the active user may assign: every role below their own level.
+// Primary users may also assign Primary.
+const getAllowedRoles = (accessLevel: number | null) => {
+  if (!accessLevel) {
+    return [];
+  }
+
+  return ROLE_OPTIONS.filter((_, index) => {
+    const roleLevel = index + 1;
+
+    return accessLevel === PRIMARY_LEVEL
+      ? roleLevel >= accessLevel
+      : roleLevel > accessLevel;
+  });
+};
 
 const PHONE_DIGITS = [
   '0',
@@ -157,6 +179,22 @@ export default function Edit_Profile() {
     
     
   const router = useRouter();
+
+  // Active user
+
+  const { activeUser } = useUserState();
+
+  const activeAccessLevel = activeUser
+    ? Number(activeUser.accessLevel)
+    : null;
+
+  const isOwnProfile =
+    activeUser !== null &&
+    String(activeUser.userID) === String(user_id);
+
+  const allowedRoles = getAllowedRoles(activeAccessLevel);
+
+  const canEditRole = !isOwnProfile && allowedRoles.length > 0;
 
   const { width, height } = useWindowDimensions();
 
@@ -389,7 +427,7 @@ export default function Edit_Profile() {
     }
 
     if (selectorType === 'role') {
-      return ROLE_OPTIONS;
+      return allowedRoles;
     }
 
     return [];
@@ -1226,12 +1264,18 @@ export default function Edit_Profile() {
                           'role'
                         )
                       }
+                      disabled={!canEditRole}
                       accessibilityRole="button"
                       accessibilityLabel="Select role"
+                      accessibilityState={{
+                        disabled: !canEditRole,
+                      }}
                       style={({ pressed }) => [
                         styles.selectInput,
                         pressed &&
                           styles.selectPressed,
+                        !canEditRole &&
+                          styles.selectDisabled,
                       ]}
                     >
                       <Text
@@ -3205,6 +3249,10 @@ const styles = StyleSheet.create({
   selectPressed: {
     borderColor: '#3B82F6',
     backgroundColor: '#131338',
+  },
+
+  selectDisabled: {
+    opacity: 0.45,
   },
 
   changeLogCard: {
