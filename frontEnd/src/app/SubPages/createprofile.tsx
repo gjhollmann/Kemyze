@@ -18,7 +18,6 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 
 import NavBar from '../components/NavBar';
@@ -89,7 +88,6 @@ export default function CreateProfile() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-    const { activeUser } = useUserState(); // Insert active user.
     
     // Invoke useEffect to prevent active user state from flooding console.
     useEffect(() => {
