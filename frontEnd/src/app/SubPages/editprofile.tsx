@@ -21,7 +21,7 @@ import { useUserState } from '../../app/contexts/UserState';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "https://kemyze.vercel.app";
+const BASE_URL = "https://kemyze.vercel.app/";
 const USER_TEST = 49035; // replace with active user ID (KM#85)
 const USER_ACCESS = 1;
 // Typography
