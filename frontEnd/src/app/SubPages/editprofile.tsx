@@ -179,7 +179,6 @@ export default function Edit_Profile() {
   const router = useRouter();
 
   // Active user
-
   const activeAccessLevel = activeUser
     ? Number(activeUser.accessLevel)
     : null;
