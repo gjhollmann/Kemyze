@@ -110,6 +110,8 @@ Reserved for 191
    
 ### Developer Instructions
 Reserved for 191
+
+AI coding assistant: the team uses Cline in VS Code with Google Gemini. Follow [CLINE_SETUP.md](CLINE_SETUP.md) to configure it. Shared rules, skills, workflows, and hooks live in `.clinerules/` and `.cline/skills/`.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
