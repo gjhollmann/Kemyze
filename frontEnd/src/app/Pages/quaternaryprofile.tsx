@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 
 import { Stack, useRouter } from 'expo-router';
@@ -48,10 +49,19 @@ type ChangeLogEntry = {
 // Replace these values with backend/API data later.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SAMPLE_PROFILE: ProfileInfo = {
+/*const SAMPLE_PROFILE: ProfileInfo = {
   name: 'John Smith',
   location: 'Sacramento Lab',
   kemyzeId: 'KMY-001',
+};*/
+type UserProfileResponse = {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  access_level: number;
+  location: string | null;
 };
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
@@ -64,10 +74,68 @@ export default function QuaternaryProfile() {
   const userId = activeUser?.userID;
   console.log('Quaternary activeUser:', activeUser);
   console.log('Quaternary userId:', userId);
+
+  // Active user profile state
+const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+const [profileLoading, setProfileLoading] = useState(true);
+const [profileError, setProfileError] = useState('');
+
   // Change log state
   const [changeLog, setChangeLog] = useState<ChangeLogEntry[]>([]);
   const [changeLogLoading, setChangeLogLoading] = useState(false);
   const [changeLogError, setChangeLogError] = useState('');
+
+  // Load active user's profile information
+useEffect(() => {
+  if (userId == null) {
+    setProfile(null);
+    setProfileLoading(false);
+    setProfileError('You must be logged in to view your profile.');
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadProfile = async () => {
+    setProfileLoading(true);
+    setProfileError('');
+    setProfile(null);
+
+    try {
+      const url =
+        'http://127.0.0.1:8000/login/getUser?active_user_id=' +
+        encodeURIComponent(String(userId)) +
+        '&user_id=' +
+        encodeURIComponent(String(userId));
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to load profile: ${response.status}`);
+      }
+
+      const data: UserProfileResponse = await response.json();
+
+      if (!cancelled) {
+        setProfile(data);
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setProfileError('Unable to load your profile information.');
+      }
+    } finally {
+      if (!cancelled) {
+        setProfileLoading(false);
+      }
+    }
+  };
+
+  loadProfile();
+
+  return () => {
+    cancelled = true;
+  };
+}, [userId]);
   // Paste the useEffect API request here
   useEffect(() => {
     if (userId == null) {
@@ -198,7 +266,26 @@ export default function QuaternaryProfile() {
       }
     },
   } as any;
+if (profileLoading) {
+  return (
+    <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+      <ActivityIndicator size="large" color="#3B82F6" />
+      <Text style={{ color: 'white', marginTop: 15 }}>
+        Loading your profile...
+      </Text>
+    </View>
+  );
+}
 
+if (profileError || !profile) {
+  return (
+    <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+      <Text style={{ color: 'white', textAlign: 'center' }}>
+        {profileError || 'Profile information is unavailable.'}
+      </Text>
+    </View>
+  );
+}
   return (
     <View style={styles.screen}>
       <Stack.Screen
@@ -229,35 +316,36 @@ export default function QuaternaryProfile() {
           {/* Page title */}
           <Text style={styles.title}>Your profile</Text>
 
+
           {/* Profile Information */}
-          <View style={styles.profileBox}>
-            <View style={styles.profileField}>
-              <Text style={styles.profileLabel}>Name:</Text>
-              <Text style={styles.profileValue}>
-                {SAMPLE_PROFILE.name}
-              </Text>
-            </View>
+<View style={styles.profileBox}>
+  <View style={styles.profileField}>
+    <Text style={styles.profileLabel}>Name:</Text>
+    <Text style={styles.profileValue}>
+      {profile?.first_name} {profile?.last_name}
+    </Text>
+  </View>
 
-            <View style={styles.divider} />
+  <View style={styles.divider} />
 
-            <View style={styles.profileField}>
-              <Text style={styles.profileLabel}>
-                Site/Location:
-              </Text>
-              <Text style={styles.profileValue}>
-                {SAMPLE_PROFILE.location}
-              </Text>
-            </View>
+  <View style={styles.profileField}>
+    <Text style={styles.profileLabel}>
+      Site/Location:
+    </Text>
+    <Text style={styles.profileValue}>
+      {profile?.location ?? 'No location assigned'}
+    </Text>
+  </View>
 
-            <View style={styles.divider} />
+  <View style={styles.divider} />
 
-            <View style={styles.profileField}>
-              <Text style={styles.profileLabel}>Kemyze ID:</Text>
-              <Text style={styles.profileValue}>
-                {SAMPLE_PROFILE.kemyzeId}
-              </Text>
-            </View>
-          </View>
+  <View style={styles.profileField}>
+    <Text style={styles.profileLabel}>Kemyze ID:</Text>
+    <Text style={styles.profileValue}>
+      {profile?.user_id}
+    </Text>
+  </View>
+</View>
 
           {/* Change Log title */}
           <Text style={styles.sectionTitle}>
