@@ -602,7 +602,74 @@ def getContainerChangeLog(request):
             return HttpResponseServerError(f"An unexpected error occurred: {e}")
     else:
         return HttpResponseNotAllowed(["GET"])
+def getUserChangeLog(request):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
 
+    user_id = request.GET.get("user_id")
+
+    if not user_id:
+        return HttpResponseBadRequest("Missing 'user_id' parameter")
+
+    if not user_id.isdigit():
+        return HttpResponseBadRequest("Invalid 'user_id' parameter")
+
+    logs = ContainerAuditLog.objects.filter(
+        changed_by=int(user_id)
+    ).order_by("-changed_at")[:20]
+
+    data = []
+
+    fields = {
+        "chemical_name": "Name",
+        "cas_number": "CAS",
+        "quantity": "Quantity",
+        "acqn_date": "Acqn Date",
+        "expr_date": "Expr Date",
+        "location_id": "Location",
+    }
+
+    def get_location_name(location_id):
+        if location_id is None:
+            return ""
+
+        try:
+            location = Locations.objects.get(location_id=location_id)
+            names = [location.name]
+
+            while location.parent is not None:
+                location = location.parent
+                names.insert(0, location.name)
+
+            return ", ".join(names)
+        except Locations.DoesNotExist:
+            return str(location_id)
+
+    for log in logs:
+        old_values = log.old_values or {}
+        new_values = log.new_values or {}
+
+        for field, label in fields.items():
+            old_value = old_values.get(field)
+            new_value = new_values.get(field)
+
+            if old_value == new_value:
+                continue
+
+            if field == "location_id":
+                old_value = get_location_name(old_value)
+                new_value = get_location_name(new_value)
+
+            data.append({
+                "Date": log.changed_at.date().isoformat(),
+                "Time": log.changed_at.time().isoformat(),
+                "ContainerID": log.container_id,
+                "Change": label,
+                "Old": old_value,
+                "New": new_value,
+            })
+
+    return JsonResponse(data, safe=False)
 """
 View to upload an SDS PDF for a container.
 Route: /containers/uploadSDS

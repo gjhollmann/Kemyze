@@ -665,6 +665,21 @@ export default function ManagedAccounts() {
               </LinearGradient>
             </View>
           </View>
+          <View style={{ marginVertical: 12, paddingHorizontal: 20 }}>
+            <Pressable
+            onPress={() => router.push('/Pages/quaternaryprofile')}
+            style={{
+              backgroundColor: '#2563EB',
+              padding: 16,
+              borderRadius: 10,
+              alignItems: 'center',
+            }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
+                View My Profile (Test)
+                </Text>
+              </Pressable>
+            </View>
 
           {/* Managed Accounts */}
           <View

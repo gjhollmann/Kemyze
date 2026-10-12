@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NavBar from '../components/NavBar';
+import { useUserState } from '../contexts/UserState';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Typography
@@ -22,7 +24,6 @@ const FONT = Object.freeze({
 } as const);
 
 const NAV_BAR_HEIGHT = 76;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,11 +35,12 @@ type ProfileInfo = {
 };
 
 type ChangeLogEntry = {
-  id: string;
-  chemical: string;
-  containerId: string;
-  change: string;
-  dateChanged: string;
+  Date: string;
+  Time: string;
+  ContainerID: number;
+  Change: string;
+  Old: string | number | null;
+  New: string | number | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,39 +53,75 @@ const SAMPLE_PROFILE: ProfileInfo = {
   location: 'Sacramento Lab',
   kemyzeId: 'KMY-001',
 };
-
-const SAMPLE_CHANGE_LOG: ChangeLogEntry[] = [
-  {
-    id: '1',
-    chemical: 'Acetone',
-    containerId: 'C-1024',
-    change: 'Location = Storage Room B',
-    dateChanged: '09/27/2026',
-  },
-  {
-    id: '2',
-    chemical: 'Ethanol',
-    containerId: 'C-2048',
-    change: 'Location = Chemical Cabinet 2',
-    dateChanged: '09/26/2026',
-  },
-  {
-    id: '3',
-    chemical: 'Methanol',
-    containerId: 'C-3091',
-    change: 'Location = Storage Room A',
-    dateChanged: '09/25/2026',
-  },
-];
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function QuaternaryProfile() {
   const router = useRouter();
+  //Get the currently logged-in user
+  const { activeUser } = useUserState();
+  const userId = activeUser?.userID;
+  console.log('Quaternary activeUser:', activeUser);
+  console.log('Quaternary userId:', userId);
+  // Change log state
+  const [changeLog, setChangeLog] = useState<ChangeLogEntry[]>([]);
+  const [changeLogLoading, setChangeLogLoading] = useState(false);
+  const [changeLogError, setChangeLogError] = useState('');
+  // Paste the useEffect API request here
+  useEffect(() => {
+    if (userId == null) {
+      setChangeLog([]);
+      return;
+    }
+    let cancelled = false;
+    const loadChangeLog = async () => {
+      setChangeLogLoading(true);
+      setChangeLogError('');
+      try {
+        const url =
+        'http://127.0.0.1:8000/containers/getUserChangeLog?user_id=' +
+        encodeURIComponent(String(userId));
+       // const url =
+          //'https://kemyze.vercel.app/containers/getUserChangeLog?user_id=' +
+          //encodeURIComponent(String(userId));
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to load change log: ${response.status}`);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid change log response');
+        }
+
+        if (!cancelled) {
+          setChangeLog(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setChangeLogError(
+            error instanceof Error ? error.message : 'Unable to load change log'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setChangeLogLoading(false);
+        }
+      }
+    };
+
+    loadChangeLog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+
+
 
   const isLandscape = width > height;
   const isSmallScreen = width < 430;
@@ -227,6 +265,7 @@ export default function QuaternaryProfile() {
           </Text>
 
           {/* Scrollable Change Log */}
+
           <View style={styles.changeLogBox}>
             <ScrollView
               style={styles.changeLogScroll}
@@ -234,27 +273,56 @@ export default function QuaternaryProfile() {
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled
             >
-              {SAMPLE_CHANGE_LOG.map((item) => (
-                <View key={item.id} style={styles.changeCard}>
-                  <View style={styles.changeTopRow}>
+              {!activeUser ? (
+                <Text style={styles.changeText}>
+                  Please log in to view your changes.
+                </Text>
+              ) : changeLogLoading ? (
+                <Text style={styles.changeText}>
+                  Loading change log...
+                </Text>
+              ) : changeLogError ? (
+                <Text style={styles.changeText}>
+                  Error: {changeLogError}
+                </Text>
+              ) : changeLog.length === 0 ? (
+                <Text style={styles.changeText}>
+                  No recent changes found.
+                </Text>
+              ) : (
+                changeLog.map((item, index) => (
+                  <View
+                    key={`${item.ContainerID}-${index}`}
+                    style={styles.changeCard}
+                  >
+                    <View style={styles.changeTopRow}>
+                      <Text style={styles.changeText}>
+                        Container ID: {item.ContainerID}
+                      </Text>
+                    </View>
+
                     <Text style={styles.changeText}>
-                      Chemical: {item.chemical}
+                      Change: {item.Change}
                     </Text>
 
                     <Text style={styles.changeText}>
-                      ContainerID: {item.containerId}
+                      Old: {String(item.Old ?? '')}
+                    </Text>
+
+                    <Text style={styles.changeText}>
+                      New: {String(item.New ?? '')}
+                    </Text>
+
+                    <Text style={styles.changeText}>
+                      Date changed: {item.Date}
+                    </Text>
+
+                    <Text style={styles.changeText}>
+                      Time: {item.Time}
                     </Text>
                   </View>
-
-                  <Text style={styles.changeText}>
-                    Change: {item.change}
-                  </Text>
-
-                  <Text style={styles.changeText}>
-                    Date changed: {item.dateChanged}
-                  </Text>
-                </View>
-              ))}
+                ))
+              )}
             </ScrollView>
           </View>
         </View>
