@@ -1,3 +1,188 @@
-from django.test import TestCase
+import json
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
-# Create your tests here.
+from django.test import RequestFactory, SimpleTestCase
+
+from .views import deleteUser, searchManagedUsers
+
+
+class DeleteUserTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def post_delete_request(self, data):
+        return self.factory.post(
+            '/login/users/delete/',
+            data=json.dumps(data),
+            content_type='application/json',
+        )
+
+    @patch('login.views.Users.objects')
+    def test_authorized_user_deletes_target_user(self, users):
+        requesting_user = SimpleNamespace(access_level=3)
+        target_user = MagicMock()
+        users.get.side_effect = [requesting_user, target_user]
+
+        response = deleteUser(self.post_delete_request({'user_id': 10, 'target_user_id': 20}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {
+            'success': True,
+            'message': 'User deleted successfully.',
+            'user_id': 20,
+        })
+        target_user.delete.assert_called_once_with()
+
+    @patch('login.views.Users.objects')
+    def test_quaternary_user_cannot_delete_an_account(self, users):
+        users.get.return_value = SimpleNamespace(access_level=4)
+
+        response = deleteUser(self.post_delete_request({'user_id': 10, 'target_user_id': 20}))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(users.get.call_count, 1)
+
+    @patch('login.views.Users.objects')
+    def test_user_cannot_delete_own_account(self, users):
+        response = deleteUser(self.post_delete_request({'user_id': 10, 'target_user_id': 10}))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(users.get.call_count, 0)
+
+    def test_delete_requires_both_user_ids(self):
+        response = deleteUser(self.post_delete_request({'user_id': 10}))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('target_user_id', json.loads(response.content)['message'])
+
+
+class SearchManagedUsersTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def post_search_request(self, data):
+        return self.factory.post(
+            '/login/users/search/',
+            data=json.dumps(data),
+            content_type='application/json',
+        )
+
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_search_returns_only_matching_manageable_accounts(self, users, locations):
+        requesting_user = SimpleNamespace(access_level=3, location_id=10)
+        users.select_related.return_value.get.return_value = requesting_user
+        locations.filter.return_value.values_list.side_effect = [[11], []]
+
+        managed_users = users.filter.return_value
+        searchable_users = managed_users.filter.return_value
+        searchable_users.select_related.return_value.order_by.return_value.__getitem__.return_value = [
+            SimpleNamespace(
+                user_id=20,
+                first_name='Maria',
+                last_name='Delgado',
+                location=SimpleNamespace(name='Chemistry Lab'),
+                access_level=4,
+            )
+        ]
+
+        response = searchManagedUsers(
+            self.post_search_request({'user_id': 5, 'search': 'chem', 'offset': 0})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {
+            'success': True,
+            'results': [{
+                'id': 20,
+                'name': 'Maria Delgado',
+                'location': 'Chemistry Lab',
+                'access_level': 4,
+            }],
+            'offset': 0,
+            'next_offset': None,
+            'has_more': False,
+        })
+        users.filter.assert_called_once_with(
+            location_id__in={10, 11},
+            access_level__gt=3,
+        )
+        managed_users.filter.assert_called_once()
+
+    @patch('login.views.Users.objects')
+    def test_quaternary_user_cannot_search_managed_accounts(self, users):
+        users.select_related.return_value.get.return_value = SimpleNamespace(
+            access_level=4,
+            location_id=10,
+        )
+
+        response = searchManagedUsers(self.post_search_request({'user_id': 5}))
+
+        self.assertEqual(response.status_code, 403)
+        users.filter.assert_not_called()
+
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_empty_search_returns_all_manageable_accounts(self, users, locations):
+        users.select_related.return_value.get.return_value = SimpleNamespace(
+            access_level=3,
+            location_id=10,
+        )
+        locations.filter.return_value.values_list.return_value = []
+        managed_users = users.filter.return_value
+        managed_users.select_related.return_value.order_by.return_value.__getitem__.return_value = [
+            SimpleNamespace(
+                user_id=20,
+                first_name='Stacy',
+                last_name='Reyes',
+                location=SimpleNamespace(name='Main Lab'),
+                access_level=4,
+            ),
+            SimpleNamespace(
+                user_id=21,
+                first_name='Bill',
+                last_name='Roberts',
+                location=SimpleNamespace(name='Main Lab'),
+                access_level=4,
+            ),
+        ]
+
+        response = searchManagedUsers(
+            self.post_search_request({'user_id': 5, 'search': '', 'offset': 0})
+        )
+
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([account['id'] for account in data['results']], [20, 21])
+        self.assertFalse(data['has_more'])
+        managed_users.filter.assert_not_called()
+
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_search_paginates_to_ten_results(self, users, locations):
+        users.select_related.return_value.get.return_value = SimpleNamespace(
+            access_level=2,
+            location_id=10,
+        )
+        locations.filter.return_value.values_list.return_value = []
+        paged_users = [
+            SimpleNamespace(
+                user_id=index,
+                first_name='User',
+                last_name=str(index),
+                location=SimpleNamespace(name='Main Lab'),
+                access_level=4,
+            )
+            for index in range(1, 12)
+        ]
+        users.filter.return_value.select_related.return_value.order_by.return_value.__getitem__.return_value = paged_users
+
+        response = searchManagedUsers(self.post_search_request({'user_id': 5, 'offset': 20}))
+
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data['results']), 10)
+        self.assertEqual(data['offset'], 20)
+        self.assertEqual(data['next_offset'], 30)
+        self.assertTrue(data['has_more'])
