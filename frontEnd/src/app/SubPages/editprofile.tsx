@@ -1103,13 +1103,6 @@ export default function Edit_Profile() {
         return str.slice(0, maxLength) + "...";
     }
   // Render Error Screen
-  
-    // String clamping
-    const clampString = (str, maxLength) => {
-        if (!str) return '';
-        if (str.length <= maxLength) return str;
-        return str.slice(0, maxLength) + "...";
-    }
   if (loadError) {
     return (
       <View style={styles.screen}>
