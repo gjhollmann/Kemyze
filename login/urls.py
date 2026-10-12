@@ -11,3 +11,4 @@ urlpatterns = [
     path('getUser', views.getUser, name='getUser'),
     path('editUser', views.editUser, name='editUser')
 ]
+

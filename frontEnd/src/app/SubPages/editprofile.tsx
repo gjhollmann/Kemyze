@@ -1104,6 +1104,69 @@ export default function Edit_Profile() {
     }
   // Render Error Screen
 
+    // Load Change Log
+    {/* Changes should be in the form below and added to changeLog array
+    {
+      Date: '',
+      Time: '',
+      ContainerID: String(container_id ?? ''),
+      User: '',
+      Type: 'Edit, Location, Quantity, or SDS',
+      Change: 'Name, Quantity, Location, Acqn Date, Expr_Date, CAS',
+      Old: '',
+      New: '',
+    },
+      */}
+    
+    const loadChangeLog = async () => {
+        setChangeLogLoading(true);
+        setChangeLogError(false);
+        const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?user_id=" + user_id
+        try{
+            const response = await fetch(getChangeLogURL,{method: "GET",});
+            if (!response.ok){
+                console.log("We are having issues");
+                const errorText = await response.text();
+                throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+            let data = await response.json();
+            if (data && Object.keys(data).length === 0){
+                console.log("Possible Error, ChangeLog data was empty.\nURL: "+getChangeLogURL+"\nData: "+data+"\nSetting data to empty state");
+                data = [{
+                    Date: '',
+                    Time: '',
+                    ContainerID: String(container_id ?? ''),
+                    User: '',
+                    Type: 'Edit',
+                    Change: 'Edit',
+                    Old: 'Error loading',
+                    New: 'Change Log',
+                }];
+            }
+            data = data.map((entry) => {
+                            if (!entry.Timestamp) return entry;
+                            const changedAt = new Date(entry.Timestamp);
+                            if (isNaN(changedAt.getTime())) return entry; // skip if the date can't be read
+                            return {
+                                ...entry,
+                                Date: changedAt.toLocaleDateString(),
+                                Time: changedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                            };
+                        });
+            setChangeLog(data)
+        } catch (error: any) {
+            setChangeLogError(true);
+        } finally {
+            setChangeLogLoading(false);
+        }
+    }
+    
+    // String clamping
+    const clampString = (str, maxLength) => {
+        if (!str) return '';
+        if (str.length <= maxLength) return str;
+        return str.slice(0, maxLength) + "...";
+    }
   if (loadError) {
     return (
       <View style={styles.screen}>
