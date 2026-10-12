@@ -1025,20 +1025,6 @@ export default function Edit_Profile() {
     }
   }
 
-
-  // Render Loading Screen
-
-  if (isLoading) {
-    return (
-      <View style={styles.screen}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#0000ff" />
-        </View>
-      </View>
-    );
-  }
-
     // Load Change Log
     {/* Changes should be in the form below and added to changeLog array
     {
@@ -1096,6 +1082,20 @@ export default function Edit_Profile() {
         }
     }
     
+
+  // Render Loading Screen
+
+  if (isLoading) {
+    return (
+      <View style={styles.screen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      </View>
+    );
+  }
+
     // String clamping
     const clampString = (str, maxLength) => {
         if (!str) return '';
