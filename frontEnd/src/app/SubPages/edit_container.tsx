@@ -211,6 +211,8 @@ export default function Edit_Container() {
   const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
     
   const [isNewChildLocationVisible, setIsNewChildLocationVisible] = useState(false);
+    
+    const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
 
   const [newLocation, setNewLocation] = useState('');
 
@@ -1201,6 +1203,9 @@ export default function Edit_Container() {
         if(activeUser?.accessLevel <= 2){
             setIsNewChildLocationVisible(true);
         }
+        if (activeUser?.accessLevel <= 2) {
+          setLocationOptionsVisible(true);
+        }
         }
     
     const getContainer = async () => {
@@ -1823,40 +1828,53 @@ export default function Edit_Container() {
                   Location
                 </Text>
 
-                <Pressable
-                  onPress={() =>
-                    openSelector(
-                      'location'
-                    )
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Select location"
-                  style={({ pressed }) => [
-                    styles.selectInput,
-                    pressed &&
-                      styles.selectPressed,
-                  ]}
-                >
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.selectText,
-                      location ===
-                        'Location Name' &&
-                        styles.placeholderText,
-                    ]}
-                  >
-                    {location}
-                  </Text>
+          {locationOptionsVisible ? (<Pressable
+            onPress={() =>
+              openSelector(
+                'location'
+              )
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Select location"
+            style={({ pressed }) => [
+              styles.selectInput,
+              pressed &&
+              styles.selectPressed,
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.selectText,
+                location ===
+                'Location Name' &&
+                styles.placeholderText,
+              ]}
+            >
+              {location}
+            </Text>
 
-                  <Text
-                    style={
-                      styles.selectArrow
-                    }
-                  >
-                    ⌄
-                  </Text>
-                </Pressable>
+            <Text
+              style={
+                styles.selectArrow
+              }
+            >
+              ⌄
+            </Text>
+          </Pressable>) : (<View
+            style={
+              styles.locationDefault
+            }
+          >
+            <Text
+              numberOfLines={1}
+              style={
+                styles.selectText
+              }
+            >
+              {location}
+            </Text>
+          </View>)}
               </View>
 
               {/* Room / Cabinet / Shelf */}
@@ -5108,5 +5126,15 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         paddingHorizontal: 9,
         backgroundColor: '#09091C',
+    },
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#223044',
+      borderRadius: 9,
+      backgroundColor: '#02021C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
     },
 });
