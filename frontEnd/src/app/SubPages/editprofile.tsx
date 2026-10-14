@@ -3447,11 +3447,12 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#223044',
+    borderColor: '#334155',
     borderRadius: 9,
-    backgroundColor: '#02021C',
+    backgroundColor: '#09091C',
     justifyContent: 'center',
     paddingHorizontal: 8,
+    opacity: 0.6,
   },
 
   selectText: {
