@@ -15,3 +15,8 @@ frontEnd/package-lock.json
 frontEnd/assets/images/
 *.pdf
 .DS_Store
+
+# Acceptance tests: test passwords, the web build, and Run For Record results (screenshots, .docx)
+frontEnd/acceptance/logins.json
+frontEnd/acceptance/results/
+frontEnd/dist/

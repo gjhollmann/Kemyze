@@ -12,7 +12,8 @@ Whenever you create or significantly modify code, you **must** also create or up
 - **Test runner**: Jest with the `jest-expo` preset. (Vitest from the course example does not support React Native.)
 - **Component testing**: React Native Testing Library (`@testing-library/react-native`). Do not use `@testing-library/react` — it is for web React.
 - **User interactions**: `fireEvent` / `userEvent` from `@testing-library/react-native`.
-- These packages are not installed yet. If they are missing, stop and ask before installing. Proposed setup: `npx expo install jest-expo jest @testing-library/react-native`, then add `"test": "jest"` to `frontEnd/package.json`.
+- Installed in `frontEnd/` (KM-151). Run the tests with `cd frontEnd && npm test`.
+- Shared mocks (fetch, router, camera, logged-in user) are in `frontEnd/test-utils/`. Every fetch a test does not set up fails, so tests never reach the live server.
 
 ## Preferred Stack (Django — backend)
 - `django.test.TestCase` in each app's `tests.py`; call views with `self.client`.
@@ -21,6 +22,7 @@ Whenever you create or significantly modify code, you **must** also create or up
 
 ## Test File Conventions
 - Place test files next to the source file when possible: `ScanResUtils.ts` → `ScanResUtils.test.ts`.
+- Exception: tests for screens in `frontEnd/src/app/` go in `frontEnd/src/__tests__/`, because Expo Router treats every file in `src/app/` as a screen.
 - Backend tests go in the app's `tests.py` (e.g. `containers/tests.py`).
 
 ## Before Finishing

@@ -3,15 +3,17 @@
 // Requires: Cline Settings > Features > "Enable Hooks".
 //
 // Blocks:
-//   - edits to secret/local files (.env*, secrets.json, providers.json, db.sqlite3)
+//   - reading or editing secret/local files (.env*, secrets.json, providers.json, db.sqlite3,
+//     and logins.json, which holds the acceptance test passwords)
 //   - edits inside node_modules/ or venv/
 //   - destructive commands (force push, reset --hard, clean -f, rm -rf, migrate/flush)
 // Fails open: any unexpected input lets the tool call through.
 
 const EDIT_TOOLS = new Set(['editor', 'apply_patch', 'write_to_file', 'replace_in_file', 'apply_diff']);
+const READ_TOOLS = new Set(['read_file']);
 const COMMAND_TOOLS = new Set(['run_commands', 'execute_command']);
 
-const PROTECTED_FILE = /(^|[\\/])(\.env(\.[^\\/]*)?|secrets\.json|providers\.json|db\.sqlite3)$/i;
+const PROTECTED_FILE = /(^|[\\/])(\.env(\.[^\\/]*)?|secrets\.json|providers\.json|db\.sqlite3|logins\.json)$/i;
 const PROTECTED_DIR = /(^|[\\/])(node_modules|venv|\.venv)[\\/]/i;
 const DESTRUCTIVE = [
   /git\s+push\b.*(\s--force\b|\s-f\b|\s--force-with-lease\b)/i,
@@ -58,6 +60,10 @@ function check(raw) {
         respond(true, `Kemyze rule: do not edit files inside node_modules or venv ('${p}').`);
       }
     }
+  }
+
+  if (READ_TOOLS.has(tool) && params.path && PROTECTED_FILE.test(String(params.path))) {
+    respond(true, `Kemyze rule: '${params.path}' holds secrets and must not be read by Cline.`);
   }
 
   if (COMMAND_TOOLS.has(tool)) {
