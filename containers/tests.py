@@ -1,6 +1,5 @@
 import base64
 import json
-from datetime import date
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -18,13 +17,13 @@ class ContainerViewsTestCase(TestCase):
 
         # Set up users with different access levels
         cls.admin_user = Users.objects.create(
-            user_id=1, access_level=1, first_name="Admin", last_name="User", location=cls.site_loc
+            user_id=1, access_level=1, first_name="Admin", last_name="User", location=cls.site_loc, email="Admin@test.com"
         )
         cls.standard_user = Users.objects.create(
-            user_id=2, access_level=3, first_name="Standard", last_name="User", location=cls.site_loc
+            user_id=2, access_level=3, first_name="Standard", last_name="User", location=cls.site_loc, email="Standard@test.com"
         )
         cls.restricted_user = Users.objects.create(
-            user_id=3, access_level=4, first_name="Restricted", last_name="User", location=cls.room_loc
+            user_id=3, access_level=4, first_name="Restricted", last_name="User", location=cls.room_loc, email="Restricted@test.com"
         )
 
         # Sample PDF bytes and base64
@@ -58,7 +57,7 @@ class ContainerViewsTestCase(TestCase):
     # 1. containersMain Tests
     # ----------------------------------------------------
     def test_containers_main(self):
-        response = self.client.get("/containers/containersMain/")  # Adjust URL pattern name if using reverse
+        response = self.client.get(reverse("containersMain"))
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Hello from the containers backend", response.content)
 
@@ -66,7 +65,7 @@ class ContainerViewsTestCase(TestCase):
     # 2. getContainer Tests
     # ----------------------------------------------------
     def test_get_container_with_access_level(self):
-        response = self.client.get("/containers/getContainer/", {"kemID": 100, "accessLevel": "full"})
+        response = self.client.get(reverse("getContainer"), {"kemID": 100, "accessLevel": "full"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["container_id"], 100)
@@ -74,73 +73,73 @@ class ContainerViewsTestCase(TestCase):
         self.assertIn("Shelf1", data["location"])
 
     def test_get_container_without_access_level(self):
-        response = self.client.get("/containers/getContainer/", {"kemID": 100})
+        response = self.client.get(reverse("getContainer"), {"kemID": 100})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("sds_sheet", data)
         self.assertNotIn("chemical_name", data)
 
     def test_get_container_missing_params(self):
-        response = self.client.get("/containers/getContainer/")
+        response = self.client.get(reverse("getContainer"))
         self.assertEqual(response.status_code, 400)
 
     def test_get_container_not_found(self):
-        response = self.client.get("/containers/getContainer/", {"kemID": 999, "accessLevel": "full"})
+        response = self.client.get(reverse("getContainer"), {"kemID": 999, "accessLevel": "full"})
         self.assertEqual(response.status_code, 400)
 
     def test_get_container_invalid_method(self):
-        response = self.client.post("/containers/getContainer/", {"kemID": 100})
+        response = self.client.post(reverse("getContainer"), {"kemID": 100})
         self.assertEqual(response.status_code, 405)
 
     # ----------------------------------------------------
     # 3. getSDS Tests
     # ----------------------------------------------------
     def test_get_sds_success(self):
-        response = self.client.get("/containers/getSDS/", {"kemID": 100})
+        response = self.client.get(reverse("getSDS"), {"kemID": 100})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/pdf")
 
     def test_get_sds_missing_param(self):
-        response = self.client.get("/containers/getSDS/")
+        response = self.client.get(reverse("getSDS"))
         self.assertEqual(response.status_code, 400)
 
     def test_get_sds_not_found(self):
-        response = self.client.get("/containers/getSDS/", {"kemID": 999})
+        response = self.client.get(reverse("getSDS"), {"kemID": 999})
         self.assertEqual(response.status_code, 400)
 
     def test_get_sds_invalid_method(self):
-        response = self.client.post("/containers/getSDS/", {"kemID": 100})
+        response = self.client.post(reverse("getSDS"), {"kemID": 100})
         self.assertEqual(response.status_code, 405)
 
     # ----------------------------------------------------
     # 4. getSearch Tests
     # ----------------------------------------------------
     def test_get_search_success(self):
-        response = self.client.get("/containers/getSearch/", {"input": "Acetone", "userID": 1})
+        response = self.client.get(reverse("getSearch"), {"input": "Acetone", "userID": 1})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertGreaterEqual(len(data), 1)
         self.assertEqual(data[0]["chemical_name"], "Acetone")
 
     def test_get_search_missing_input_with_show_low(self):
-        response = self.client.get("/containers/getSearch/", {"show_low": "true", "userID": 1})
+        response = self.client.get(reverse("getSearch"), {"show_low": "true", "userID": 1})
         self.assertEqual(response.status_code, 200)
 
     def test_get_search_missing_userid(self):
-        response = self.client.get("/containers/getSearch/", {"input": "Acetone"})
+        response = self.client.get(reverse("getSearch"), {"input": "Acetone"})
         self.assertEqual(response.status_code, 400)
 
     # ----------------------------------------------------
     # 5. getSearchRecent Tests
     # ----------------------------------------------------
     def test_get_search_recent_success(self):
-        response = self.client.get("/containers/getSearchRecent/", {"userID": 1})
+        response = self.client.get(reverse("getSearchRecent"), {"userID": 1})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIsInstance(data, list)
 
     def test_get_search_recent_missing_userid(self):
-        response = self.client.get("/containers/getSearchRecent/")
+        response = self.client.get(reverse("getSearchRecent"))
         self.assertEqual(response.status_code, 400)
 
     # ----------------------------------------------------
@@ -158,7 +157,7 @@ class ContainerViewsTestCase(TestCase):
             "shelf": "Shelf1"
         }
         response = self.client.post(
-            "/containers/editContainer/",
+            reverse("editContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -169,7 +168,7 @@ class ContainerViewsTestCase(TestCase):
     def test_edit_container_forbidden(self):
         payload = {"user_id": 3, "container_id": 100, "chemical_name": "Bad Edit"}
         response = self.client.post(
-            "/containers/editContainer/",
+            reverse("editContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -178,7 +177,7 @@ class ContainerViewsTestCase(TestCase):
     def test_edit_container_missing_user(self):
         payload = {"container_id": 100, "chemical_name": "No User"}
         response = self.client.post(
-            "/containers/editContainer/",
+            reverse("editContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -188,13 +187,13 @@ class ContainerViewsTestCase(TestCase):
     # 7. getLocationChildren Tests
     # ----------------------------------------------------
     def test_get_location_children_root(self):
-        response = self.client.get("/containers/getLocationChildren/")
+        response = self.client.get(reverse("getLocationChildren"))
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIsInstance(data, list)
 
     def test_get_location_children_specific(self):
-        response = self.client.get("/containers/getLocationChildren/", {"location": "SiteA"})
+        response = self.client.get(reverse("getLocationChildren"), {"location": "SiteA"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data[0]["name"], "Room101")
@@ -203,13 +202,13 @@ class ContainerViewsTestCase(TestCase):
     # 8. Change Log Tests (getContainerChangeLog & getUserChangeLog)
     # ----------------------------------------------------
     def test_get_container_change_log(self):
-        response = self.client.get("/containers/getContainerChangeLog/", {"container_id": 100})
+        response = self.client.get(reverse("getContainerChangeLog"), {"container_id": 100})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIsInstance(data, list)
 
     def test_get_user_change_log(self):
-        response = self.client.get("/containers/getUserChangeLog/", {"user_id": 1})
+        response = self.client.get(reverse("getUserChangeLog"), {"user_id": 1})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIsInstance(data, list)
@@ -219,19 +218,19 @@ class ContainerViewsTestCase(TestCase):
     # ----------------------------------------------------
     def test_upload_sds_success(self):
         pdf_file = SimpleUploadedFile("test_sds.pdf", self.sample_pdf_bytes, content_type="application/pdf")
-        response = self.client.post("/containers/uploadSDS/", {"user_id": 1, "container_id": 100, "sds_file": pdf_file})
+        response = self.client.post(reverse("uploadSDS"), {"user_id": 1, "container_id": 100, "sds_file": pdf_file})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
 
     def test_upload_sds_invalid_file(self):
         invalid_file = SimpleUploadedFile("test.txt", b"not a pdf", content_type="text/plain")
-        response = self.client.post("/containers/uploadSDS/", {"user_id": 1, "sds_file": invalid_file})
+        response = self.client.post(reverse("uploadSDS"), {"user_id": 1, "sds_file": invalid_file})
         self.assertEqual(response.status_code, 415)
 
     def test_upload_sds_missing_user(self):
         pdf_file = SimpleUploadedFile("test_sds.pdf", self.sample_pdf_bytes, content_type="application/pdf")
-        response = self.client.post("/containers/uploadSDS/", {"sds_file": pdf_file})
+        response = self.client.post(reverse("uploadSDS"), {"sds_file": pdf_file})
         self.assertEqual(response.status_code, 400)
 
     # ----------------------------------------------------
@@ -251,7 +250,7 @@ class ContainerViewsTestCase(TestCase):
             "sds_base64": self.sample_pdf_base64.decode("utf-8")
         }
         response = self.client.post(
-            "/containers/createContainer/",
+            reverse("createContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -264,10 +263,9 @@ class ContainerViewsTestCase(TestCase):
         payload = {
             "user_id": 1,
             "chemical_name": "Ethanol"
-            # Missing mandatory parameters
         }
         response = self.client.post(
-            "/containers/createContainer/",
+            reverse("createContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -283,7 +281,7 @@ class ContainerViewsTestCase(TestCase):
             "type": "site"
         }
         response = self.client.post(
-            "/containers/addLocation/",
+            reverse("addLocation"),
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -293,9 +291,8 @@ class ContainerViewsTestCase(TestCase):
     def test_add_location_missing_user(self):
         payload = {"new_location": "BuildingC"}
         response = self.client.post(
-            "/containers/addLocation/",
+            reverse("addLocation"),
             data=json.dumps(payload),
             content_type="application/json"
         )
         self.assertEqual(response.status_code, 400)
-

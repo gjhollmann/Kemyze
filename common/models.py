@@ -49,13 +49,6 @@ class Locations(models.Model):
         db_table = 'locations'
 
 
-class TesterTesttable(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    testname = models.CharField(db_column='testName', max_length=255)  # Field name made lowercase.
-    testphrase = models.CharField(db_column='testPhrase', max_length=255)  # Field name made lowercase.
-
-    class Meta:
-        db_table = 'tester_testtable'
 
 
 class Users(models.Model):
