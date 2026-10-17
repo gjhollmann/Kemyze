@@ -19,7 +19,6 @@ class Containers(models.Model):
     sds_sheet = MediumBlobField()
 
     class Meta:
-        managed = False
         db_table = 'containers'
 
 # Model for container_audit_log.
@@ -38,7 +37,6 @@ class ContainerAuditLog(models.Model):
     changed_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        managed = False
         db_table = 'container_audit_log'
 
 class Locations(models.Model):
@@ -48,18 +46,9 @@ class Locations(models.Model):
     parent = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'locations'
 
 
-class TesterTesttable(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    testname = models.CharField(db_column='testName', max_length=255)  # Field name made lowercase.
-    testphrase = models.CharField(db_column='testPhrase', max_length=255)  # Field name made lowercase.
-
-    class Meta:
-        managed = False
-        db_table = 'tester_testtable'
 
 
 class Users(models.Model):
@@ -73,5 +62,4 @@ class Users(models.Model):
     location = models.ForeignKey(Locations, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'users'
