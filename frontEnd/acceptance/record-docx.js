@@ -195,7 +195,7 @@ async function writeDocx(runDir, { testBed, software, features, notes, deviation
     line(`1. Get the code: git clone ${testBed.repository}, then cd Kemyze, then git checkout ${testBed.commit}, then cd frontEnd.`),
     line('2. Run the tests: npm run tester'),
     item('Other important test setup procedures'),
-    line('You need Node.js and Google Chrome installed. npm run tester installs everything else, builds and starts the app, asks once for the test account details, and asks the Tester to pick their name from a list.'),
+    line('You need Node.js and Google Chrome installed. npm run tester installs everything else, builds and starts the app, fills in the test accounts from db-testing/ec-users-testing.sql, and asks the Tester to pick their name from a list.'),
     line('Before testing, it checks the app, the server and the test accounts, and prints "Environment ready". If something is missing, it stops and says what to fix.'),
     line("The Tester and the Recorder work from separate computers. The Recorder watches the Tester's screen share for the whole run, then runs npm run record on their own computer to pick their name and record what they saw."),
     line('Each run saves the logs, screenshots, this document and a .tar.gz package in frontEnd/acceptance/results/.'),

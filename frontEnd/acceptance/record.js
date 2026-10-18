@@ -62,11 +62,14 @@ function ask(question, { hidden = false } = {}) {
 }
 
 // Shows the name list and returns the chosen name. `refuse` maps a name to the reason it
-// cannot be chosen; the question repeats until an allowed name is picked.
-async function pickName(question, refuse = {}) {
+// cannot be chosen and `labels` to its role, shown next to it, for example "(Author - cannot
+// be picked)"; the question repeats until an allowed name is picked.
+async function pickName(question, refuse = {}, labels = {}) {
   const roles = readRoles();
   const names = [...roles.team, ...(roles.others || [])];
-  const list = names.map((name, i) => `  ${String(i + 1).padStart(2)}  ${name}`).join('\n');
+  const list = names
+    .map((name, i) => `  ${String(i + 1).padStart(2)}  ${name}${labels[name] ? ` (${labels[name]} - cannot be picked)` : ''}`)
+    .join('\n');
   for (;;) {
     const answer = await ask(`\n${question} Type a number, then press Enter.\n${list}\n> `);
     const name = names[Number(answer) - 1];
@@ -140,7 +143,7 @@ async function askForLogins() {
   const logins = readLogins();
   const missing = ROLE_NAMES.filter((name) => !logins[name]?.email || !logins[name]?.password);
   if (!missing.length || !interactive) return;
-  console.log('\nEnter the test account details you were given. They are saved only on this computer.');
+  console.log('\nThe test accounts in db-testing/ec-users-testing.sql were not found. Enter the test account details you were given. They are saved only on this computer.');
   for (const name of missing) {
     const email = await ask(`${name} account email: `);
     const password = await ask(`${name} account password: `, { hidden: true });
@@ -248,6 +251,19 @@ function summary(runDir, problemCount) {
   const passed = acceptance.filter((t) => t.status === 'PASS').length;
   const shots = fs.existsSync(path.join(runDir, 'screenshots')) ? fs.readdirSync(path.join(runDir, 'screenshots')).length : 0;
   const folder = path.join(resultsDir, name);
+  // Author, Tester and Recorder are shown only once they are known.
+  const authors = [...new Set(tests.map((t) => t.author).filter(Boolean))].join(', ');
+  const people = [
+    authors && ` Author:            ${authors}`,
+    tests[0].tester && ` Tester:            ${tests[0].tester}`,
+    notes?.recorder && ` Recorder:          ${notes.recorder}`,
+  ].filter(Boolean).join('\n');
+  const toFix = problemCount
+    ? `
+
+ Things to fix before the official run: ${problemCount}
+   They are listed at the end of ${path.join(folder, 'run-for-record.md')}`
+    : '';
   console.log(`
 ==================================================================
  Run For Record ${name}
@@ -255,15 +271,11 @@ function summary(runDir, problemCount) {
  Unit tests:        ${unit ? `${unit.numPassedTests} of ${unit.numTotalTests} passed` : 'not run'}
  Acceptance tests:  ${passed} of ${acceptance.length} passed
  Screenshots:       ${shots} saved
- Tester:            ${tests[0].tester || 'not picked'}
- Recorder:          ${notes ? notes.recorder : 'not added yet'}
+${people}
 
  Open the report at any time with: npm run report
  Or copy and paste this line into PowerShell:
-   start "${path.join(folder, 'run-for-record.docx')}"
-
- Things to fix before the official run: ${problemCount}
-   They are listed at the end of ${path.join(folder, 'run-for-record.md')}
+   start "${path.join(folder, 'run-for-record.docx')}"${toFix}
 ==================================================================`);
 }
 
@@ -294,7 +306,7 @@ async function tester() {
   const authors = [...new Set(Object.values(readRoles().authors))];
   const tester = await pickName('Tester: who is running the tests?', Object.fromEntries(
     authors.map((a) => [a, `${a} wrote these tests, so ${a} cannot be the Tester. Pick someone else.`]),
-  ));
+  ), Object.fromEntries(authors.map((a) => [a, 'Author'])));
 
   install();
   await askForLogins();
@@ -395,6 +407,9 @@ async function recorder() {
   const recorder = await pickName('Recorder: who watched this run?', {
     [testBed.tester]: `${testBed.tester} ran the tests, so ${testBed.tester} cannot be the Recorder. Pick someone else.`,
     ...Object.fromEntries(authors.map((a) => [a, `${a} wrote these tests, so ${a} cannot be the Recorder. Pick someone else.`])),
+  }, {
+    [testBed.tester]: 'Tester',
+    ...Object.fromEntries(authors.map((a) => [a, 'Author'])),
   });
 
   if (testBed.detected?.length) console.log(`\nThe computer detected: ${testBed.detected.join('; ')}.`);

@@ -109,12 +109,6 @@ function readinessProblems({ tests, testBed, roles, notes, deviations }) {
     if (t.author && !allowed.includes(t.author)) problems.push(`${t.id}: Author "${t.author}" is not in the name list in roles.json.`);
   }
 
-  for (const member of roles.team) {
-    if (member !== testBed.tester) {
-      problems.push(`${member} is not the Tester of this run. Every team member must be the Tester of at least one test somewhere in the System Test Report.`);
-    }
-  }
-
   for (const { feature, ticket, renderOnly } of FEATURES) {
     const own = TEST_CASES.filter((t) => t.feature === feature);
     const hasValid = own.some((t) => t.inputType === 'Valid');

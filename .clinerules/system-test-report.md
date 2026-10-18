@@ -210,9 +210,10 @@ committed and pushed. Delete practice runs.
   `frontEnd/acceptance/helpers.js` to simulate those server answers.
 - Never run `npm run tester`, `npm run record` or `npm run save`. Only the human
   Tester and Recorder run them, and `save` commits and pushes.
-- Never open, read or print `frontEnd/acceptance/logins.json`. It holds the test passwords.
-- Test account details live only in `frontEnd/acceptance/logins.json`, which git ignores.
-  Never commit them. Never put a password in the report, a screenshot or a log. (The login
+- Never open, read or print `frontEnd/acceptance/logins.json`. It can hold test passwords.
+- The test accounts come from the seed users in `db-testing/ec-users-testing.sql`;
+  `frontEnd/acceptance/logins.json` (git ignores it) overrides them. Never commit
+  `logins.json`. Never put a password in the report, a screenshot or a log. (The login
   screen shows the masked password and the typed email in some screenshots; that is fine.)
 - Screenshots support results. They never replace the written expected outcome, PASS or FAIL,
   or the logs.

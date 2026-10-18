@@ -34,8 +34,8 @@ start (Get-ChildItem .\acceptance\results -Directory | Sort-Object Name | Select
 `npm run report` gets the latest uploaded run on your current branch from GitHub, shows its
 summary and opens the report. It changes nothing.
 
-`npm run tester` installs the packages and asks for the test account details the first
-time (they are sent to you separately). It builds and starts the app, checks everything is
+`npm run tester` installs the packages the first time and fills in the test accounts by
+itself from `db-testing/ec-users-testing.sql`. It builds and starts the app, checks everything is
 ready and prints **Environment ready**, runs the unit and acceptance tests, and prints
 **Tests finished**. The test details are not shown on screen; they are all in the report and
 in `run.log`. It saves the report, logs, screenshots and a `.tar.gz` package. If something is missing, it stops before
@@ -109,9 +109,9 @@ runs from `acceptance/results/` before the official run.
 
 - The test cases are written once, in [`test-cases.js`](test-cases.js). Each test's title
   starts with its ID, for example `AT-01`.
-- Test account details are saved only on your computer, in `acceptance/logins.json`. Git
-  ignores this file. Never commit it or put the details in the report. Send them to the
-  instructor privately, in the submission comment or by email.
+- The test accounts (Primary, Secondary, Tertiary) are the seed users in
+  `db-testing/ec-users-testing.sql`, so the Tester never types them. To use other accounts,
+  put them in `acceptance/logins.json` (git ignores it). Never put a password in the report.
 - No test changes live data or sends a real password reset email. Forgot Password success,
   server error and timeout use a simulated server answer (`fakeServer` in `helpers.js`).
 - The login result ("Login Failed" or "Success") uses `Alert.alert`, which shows nothing in a

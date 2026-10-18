@@ -11,18 +11,39 @@ const chrome = require('selenium-webdriver/chrome');
 const BASE_URL = process.env.KEMYZE_WEB_URL || 'http://localhost:8082';
 const WAIT = 15000;
 
-// Test logins live in acceptance/logins.json, which git ignores. npm run tester asks for
-// any that are missing. After login each role sees the "Accounts" tab (KM-117), which shows the
+// Test logins come from the seed test accounts in db-testing/ec-users-testing.sql (already in
+// the repo), so the Tester types nothing. acceptance/logins.json, which git ignores, overrides
+// them if it exists. After login each role sees the "Accounts" tab (KM-117), which shows the
 // app set the right access level.
 const LOGINS_FILE = path.join(__dirname, 'logins.json');
+const SEED_FILE = path.join(__dirname, '..', '..', 'db-testing', 'ec-users-testing.sql');
+const SEED_EMAILS = { Primary: 'something1@mail.com', Secondary: 'john1@mymail.com', Tertiary: 'mjj123@mymail.com' };
 const ROLE_NAMES = ['Primary', 'Secondary', 'Tertiary'];
 
-function readLogins() {
+// Seed rows are (id, first, last, 'email', 'phone', 'password', level, location).
+function seedLogins() {
   try {
-    return JSON.parse(fs.readFileSync(LOGINS_FILE, 'utf8'));
+    const sql = fs.readFileSync(SEED_FILE, 'utf8');
+    return Object.fromEntries(
+      Object.entries(SEED_EMAILS).flatMap(([name, email]) => {
+        const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const row = sql.match(new RegExp(`'${escaped}',\\s*'[^']*',\\s*'([^']*)'`));
+        return row ? [[name, { email, password: row[1] }]] : [];
+      }),
+    );
   } catch {
     return {};
   }
+}
+
+function readLogins() {
+  let saved = {};
+  try {
+    saved = JSON.parse(fs.readFileSync(LOGINS_FILE, 'utf8'));
+  } catch {
+    // No logins.json: the seed accounts are used.
+  }
+  return { ...seedLogins(), ...saved };
 }
 
 const logins = readLogins();

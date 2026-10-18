@@ -126,7 +126,7 @@ describe('Login (KM-68)', () => {
     expect(await readAlert(driver, 20000)).toBe('Error\n\nRequest timed out. Please try again.');
   });
 
-  // Log in as Primary, Secondary and Tertiary. Each is skipped until its login is saved in logins.json.
+  // Log in as Primary, Secondary and Tertiary. Each is skipped if its login is missing.
   ROLES.forEach(({ level, name, tab, account: user }, index) => {
     const id = `AT-${11 + index}`;
     (user ? it : it.skip)(`${id} logs in as ${name} (level ${level}) and shows the ${tab} tab`, async () => {
