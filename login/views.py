@@ -559,18 +559,24 @@ def searchManagedUsers(request):
     if requesting_user.access_level > 3:
         return HttpResponseForbidden("User does not have permission to search managed accounts.")
 
-    if requesting_user.location_id is None:
-        return JsonResponse(
-            {"success": False, "message": "Requesting user does not have an assigned location."},
-            status=400,
+    is_primary = requesting_user.access_level == 1
+
+    # If primary user, return ALL users in database.
+    if is_primary:
+        managed_users = Users.objects.all()
+    else:
+        if requesting_user.location_id is None:
+            return JsonResponse(
+                {"success": False, "message": "Requesting user does not have an assigned location."},
+                status=400,
+            )
+
+        accessible_location_ids = _get_accessible_location_ids(requesting_user.location_id)
+
+        managed_users = Users.objects.filter(
+            location_id__in=accessible_location_ids,
+            access_level__gt=requesting_user.access_level,
         )
-
-    accessible_location_ids = _get_accessible_location_ids(requesting_user.location_id)
-
-    managed_users = Users.objects.filter(
-        location_id__in=accessible_location_ids,
-        access_level__gt=requesting_user.access_level,
-    )
 
     normalized_search = search.strip()
     if normalized_search:
