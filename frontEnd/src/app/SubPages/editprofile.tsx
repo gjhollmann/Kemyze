@@ -25,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "https://kemyze.vercel.app/";
+import { BASE_URL } from '../../../constants/api';
 
 const showPopup = (title: string, message: string) => {
   if (Platform.OS === 'web') {

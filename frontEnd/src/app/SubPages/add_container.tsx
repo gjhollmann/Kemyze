@@ -24,7 +24,8 @@ import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 
-const BASE_URL = "http://127.0.0.1:8000/";
+import { BASE_URL } from '../../../constants/api';
+
 const USER_TEST = 49035; // replace with active user ID (KM#85)
 const USER_ACCESS = 1;
 // Typography

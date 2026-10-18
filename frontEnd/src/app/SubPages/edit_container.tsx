@@ -23,8 +23,8 @@ import { useUserState } from '../../app/contexts/UserState'; // Shared-state imp
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+import { BASE_URL} from '../../../constants/api';
 
-const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49235; // replace with actual user ID (KM#85)
 const USER_ACCESS = 1;
 

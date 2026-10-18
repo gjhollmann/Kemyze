@@ -3,8 +3,7 @@
 // It receives email and password from KM-130's input boxes via the onLogin prop in login.tsx,
 // validates them, and sends a GET request to the backend as specified in KM-127.
 
-// TODO: Replace this with the actual backend base URL from KM-127
-const BASE_URL = "https://kemyze.vercel.app";
+import { BASE_URL } from '../../constants/api';
 
 // The shape of a successful login response from the backend
 interface LoginSuccess {
@@ -45,7 +44,7 @@ export async function handleLogin(email: string, password: string): Promise<Logi
 
   try {
     // --- Send GET Request ---
-    const response = await fetch(`${BASE_URL}/login/?${params.toString()}`, {
+    const response = await fetch(`${BASE_URL}login/?${params.toString()}`, {
       method: "GET",
     });
 
