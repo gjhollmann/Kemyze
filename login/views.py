@@ -290,6 +290,8 @@ def editUser(request):
         print(e)
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
 
+    return HttpResponse("Success")
+
 """ 
 View to add a User
 Route: /login/addUser
@@ -605,6 +607,4 @@ def searchManagedUsers(request):
         },
         status=200,
     )
-  
-    return HttpResponse("Success")
 
