@@ -80,7 +80,7 @@ export default function QuaternaryProfile() {
       setChangeLogError('');
       try {
         const url =
-        'http://127.0.0.1:8000/containers/getUserChangeLog?user_id=' +
+        'https://kemyze.vercel.app/containers/getUserChangeLog?user_id=' +
         encodeURIComponent(String(userId));
        // const url =
           //'https://kemyze.vercel.app/containers/getUserChangeLog?user_id=' +
