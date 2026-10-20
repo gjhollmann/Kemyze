@@ -26,7 +26,9 @@ export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRequestingPasswordReset, setIsRequestingPasswordReset] = useState(false);
   const loginRequestInFlightRef = useRef(false);
+  const forgotPasswordRequestInFlightRef = useRef(false);
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
@@ -86,6 +88,14 @@ export default function Index() {
       return;
     }
 
+    // Refs update synchronously, preventing duplicate requests before React re-renders.
+    if (forgotPasswordRequestInFlightRef.current) {
+      return;
+    }
+
+    forgotPasswordRequestInFlightRef.current = true;
+    setIsRequestingPasswordReset(true);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -97,7 +107,6 @@ export default function Index() {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (response.ok && result.success !== false && !result.error && !result.detail) {
@@ -111,6 +120,10 @@ export default function Index() {
       } else {
         showPopup("Error", "Network error. Please try again.");
       }
+    } finally {
+      clearTimeout(timeoutId);
+      forgotPasswordRequestInFlightRef.current = false;
+      setIsRequestingPasswordReset(false);
     }
   };
 
@@ -161,6 +174,9 @@ export default function Index() {
       setIsLoggingIn(false);
     }
   };
+
+  const isLoading = isLoggingIn || isRequestingPasswordReset;
+  const loadingLabel = isLoggingIn ? "Logging in" : "Sending password reset email";
 
   
   return (
@@ -235,7 +251,7 @@ export default function Index() {
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  editable={!isLoggingIn}
+                  editable={!isLoading}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   placeholderTextColor="rgba(255,255,255,0.3)"
@@ -251,7 +267,7 @@ export default function Index() {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
-                  editable={!isLoggingIn}
+                  editable={!isLoading}
                 />
               </View>
             </View>
@@ -260,13 +276,18 @@ export default function Index() {
               <GradientButton
                 title={isLoggingIn ? "Logging In..." : "Log In"}
                 onPress={onPressLogin}
-                disabled={isLoggingIn}
+                disabled={isLoading}
                 width="100%"
               />
             </View>
 
             <View style={styles.forgotBtn}>
-              <GradientButton title="Forgot Password" onPress={handleForgotPassword} width="100%" />
+              <GradientButton
+                title={isRequestingPasswordReset ? "Sending Reset Email..." : "Forgot Password"}
+                onPress={handleForgotPassword}
+                disabled={isLoading}
+                width="100%"
+              />
             </View>
           </View>
 
@@ -281,7 +302,7 @@ export default function Index() {
 
         <Modal
           transparent
-          visible={isLoggingIn}
+          visible={isLoading}
           animationType="fade"
           onRequestClose={() => {}}
         >
@@ -289,11 +310,11 @@ export default function Index() {
             <View
               style={styles.loadingCard}
               accessibilityRole="progressbar"
-              accessibilityLabel="Logging in"
+              accessibilityLabel={loadingLabel}
               accessibilityState={{ busy: true }}
             >
               <ActivityIndicator size="large" color="#00C8FF" />
-              <Text style={styles.loadingText}>Logging in...</Text>
+              <Text style={styles.loadingText}>{loadingLabel}...</Text>
             </View>
           </View>
         </Modal>
