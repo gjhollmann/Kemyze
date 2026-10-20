@@ -41,9 +41,8 @@ const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
 const Inventory: React.FC = () => {
   const router = useRouter();
-  const { activeUser } = useUserState();
+  const { activeUser } = useUserState(); // Insert active user, assign call to useUserState()
   const [search, setSearch] = useState('');
-  const { activeUser } = useUserState();// Insert active user, assign call to useUserState().
   
   useEffect(() => { 
     console.log("Active user:", activeUser); // Additional console check for active user. 
