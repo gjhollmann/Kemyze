@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models import Q
-from .models import TestTable
 from .models import Container
 from .serializers import ContainerSerializer
 
@@ -13,10 +12,6 @@ from .serializers import ContainerSerializer
 def tester(request):
     return HttpResponse("Hello from Kemyze")
 
-
-def dbtester(request):
-    myData = TestTable.objects.all().values()
-    return HttpResponse(myData)
 
 
 @api_view(['GET'])

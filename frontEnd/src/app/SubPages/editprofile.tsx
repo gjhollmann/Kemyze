@@ -1103,7 +1103,6 @@ export default function Edit_Profile() {
         return str.slice(0, maxLength) + "...";
     }
   // Render Error Screen
-
   if (loadError) {
     return (
       <View style={styles.screen}>

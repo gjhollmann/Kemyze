@@ -432,7 +432,7 @@ export default function CreateProfile() {
               loadLocationOptions();
           }
         };
-  
+
   // Bottom Navigation Config
   const navState = {
     index: 2,
