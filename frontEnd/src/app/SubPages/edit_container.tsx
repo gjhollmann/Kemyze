@@ -18,14 +18,17 @@ import { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
-import { useUserState } from "../../app/contexts/UserState";
+import { useUserState } from '../../app/contexts/UserState'; // Shared-state import for user state.
 
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "https://kemyze.vercel.app/";
 
-// Typography
+const BASE_URL = "http://127.0.0.1:8000/";
+const USER_TEST = 49235; // replace with actual user ID (KM#85)
+const USER_ACCESS = 1;
+
+// Typography 
 
 const FONT = Object.freeze({
   regular: 'JetBrains Mono',
@@ -132,7 +135,12 @@ const PANEL_GRADIENT: [string, string] = [
 export default function Edit_Container() {
   const { container_id } = useLocalSearchParams();
   const router = useRouter();
-  const { activeUser } = useUserState();
+  const { activeUser } = useUserState(); // Insert active user.
+  
+  // Invoke useEffect to prevent active user state from flooding console.
+  useEffect(() => { 
+    console.log("Active user:", activeUser); // Additional console check for active user. 
+  }, [activeUser]);
 
   const { width, height } = useWindowDimensions();
 
@@ -149,6 +157,10 @@ export default function Edit_Container() {
   const [reviewVisible, setReviewVisible] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const [canceledVisible, setCanceledVisible] = useState(false);
+  const [newLocationVisible, setNewLocationVisible] = useState(false);
+  const [newLocationLoading, setNewLocationLoading] = useState(false);
+  const [newLocationError, setNewLocationError] = useState(false);
+  const [newLocationSuccess, setNewLocationSuccess] = useState(true);
 
   // Selection state
 
@@ -195,6 +207,13 @@ export default function Edit_Container() {
 
   const [sdsLocation, setSdsLocation] =
     useState('');
+
+  const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
+    
+  const [isNewChildLocationVisible, setIsNewChildLocationVisible] = useState(false);
+
+  const [newLocation, setNewLocation] = useState('');
+
 
   // SDS upload state
   const [sdsFile, setSdsFile] =
@@ -336,7 +355,6 @@ export default function Edit_Container() {
   const closeSelector = () => {
     haptic();
     setSelectorVisible(false);
-    setSelectorType(null);
   };
 
   const getSelectorTitle = () => {
@@ -765,6 +783,10 @@ export default function Edit_Container() {
   };
 
   const uploadSdsFile = async () => {
+    if (!activeUser) {
+      Alert.alert('Error', 'Active user not found');
+    }
+
     if (!sdsFile) {
       Alert.alert('No file selected', 'Please select an SDS PDF before importing');
     }
@@ -774,7 +796,7 @@ export default function Edit_Container() {
 
     try {
       const formData = new FormData();
-      formData.append('user_id', String(activeUser?.userID));
+      formData.append('user_id', String(activeUser?.userID)); // Replaced hard-coded user ID.
       formData.append('container_id', String(container_id ?? ''));
       formData.append('sds_file', {
         uri: sdsFile.uri,
@@ -913,7 +935,7 @@ export default function Edit_Container() {
     const sendEditContainer = async () => {
         setIsLoading(true);
         let data = {
-                user_id: activeUser?.userID,
+                user_id: activeUser?.userID, // Replaced hard-coded user ID
                 container_id: container_id,
             };
 
@@ -959,9 +981,20 @@ export default function Edit_Container() {
                 body: JSON.stringify(data),
             });
             
-            if (!response.ok){
+            /*if (!response.ok){
               console.log("We are having issues");
               const errorText = await response.text();
+              throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }*/
+            
+            if (response.status === 403) { // Alert user of permissions in event of bypass.
+              Alert.alert("Access Denied", "You don't have permission to edit containers");
+              return;
+            }
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              Alert.alert("Edit Failed", "The container could not be updated");
               throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
             }
             
@@ -979,6 +1012,18 @@ export default function Edit_Container() {
     setCanceledVisible(true);
   };
 
+  const showAddNewLocation = () => {
+      haptic();
+      closeSelector();
+      setNewLocationVisible(true);
+    };
+  
+    const showAddNewChildLocation = () => {
+        haptic();
+        closeSelector();
+        setNewChildLocationVisible(true);
+      };
+
   const closeSavedConfirmation = () => {
     haptic();
     setSavedVisible(false);
@@ -988,6 +1033,75 @@ export default function Edit_Container() {
     haptic();
     setCanceledVisible(false);
   };
+
+  const closeNewLocation = () => {
+      haptic();
+      setNewLocationVisible(false);
+      openSelector(
+        selectorType
+      )
+    };
+
+    useEffect(() => {
+        if(newLocationVisible == false){
+            setNewLocationLoading(false);
+            setNewLocationError(false);
+            setNewLocationSuccess(false);
+        }
+    }, [newLocationVisible]);
+
+  const addNewLocation = async () => {
+      setNewLocationLoading(true);
+      let data = {
+                      user_id: activeUser?.userID,
+                      new_location: newLocation,
+      };
+      if (selectorType == 'room'){
+          data = {...data, location: location, type: 'room'}
+      } else if (selectorType == 'cabinet'){
+          data = {...data, location: location, room: room, type:'cabinet'}
+      } else if (selectorType == 'shelf'){
+          data = {...data, location: location, room: room, cabinet: cabinet, type:'shelf'}
+      }
+      try {
+        const editURL = BASE_URL + "containers/addLocation"
+        let now = new Date();
+        let formattedTime = now.toLocaleTimeString();
+        console.log("${formattedTime} Sending add location URL: " + editURL);
+        const response = await fetch(editURL, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            });
+
+        if (!response.ok){
+            now = new Date();
+            formattedTime = now.toLocaleTimeString();
+            console.log("${formattedTime} We are having issues");
+            const errorText = await response.text();
+            throw new Error("BAD TIME STATUS: " + response.status + "\nError Reason: " + errorText);
+            }
+        } catch (error) {
+            console.error('Error sending data:', error);
+            setErrorMsg(error?.message ?? "Unknown error");
+            setNewLocationError(true);
+        } finally {
+            setNewLocationLoading(false);
+            setNewLocationSuccess(true);
+            loadLocationOptions();
+            if (selectorType == 'room'){
+                loadRoomOptions();
+            } else if (selectorType == 'cabinet'){
+                loadCabinetOptions();
+            } else if (selectorType == 'shelf'){
+                loadShelfOptions();
+            }
+        }
+      };
+
 
   // Navigation
 
@@ -1069,11 +1183,26 @@ export default function Edit_Container() {
     const [loadError, setLoadError] = useState(false);
     const [errorMsg, setErrorMsg] = useState("Test Error Message");
     
+    // KM-84: The change log gets its own loading/error state, so if it fails
+    // only the change log section shows an error, not the whole page.
+    const [changeLogLoading, setChangeLogLoading] = useState(true);
+    const [changeLogError, setChangeLogError] = useState(false);
+    
     //Initial fetch
     useEffect(() => {
         getContainer();
         loadChangeLog();
+        checkUser();
     }, []);
+
+    const checkUser = async() => {
+        if(activeUser?.accessLevel <= 1){
+            setIsNewLocationVisible(true);
+        }
+        if(activeUser?.accessLevel <= 2){
+            setIsNewChildLocationVisible(true);
+        }
+        }
     
     const getContainer = async () => {
         setIsLoading(true);
@@ -1230,7 +1359,7 @@ export default function Edit_Container() {
             if (data && Object.keys(data).length === 0){
                 console.log("Possible Error, location data was empty.\nURL: "+getLocationChildrenURL+"\nData: "+data+"\nSetting data to empty state");
                 data = [{
-                    name: "Error Loading Locations",
+                    name: "No locations found",
                 }];
             }
             return data;
@@ -1256,6 +1385,10 @@ export default function Edit_Container() {
       */}
     
     const loadChangeLog = async () => {
+        // KM-84: Show the loading spinner and clear any old error before trying.
+        setChangeLogLoading(true);
+        setChangeLogError(false);
+
         const getChangeLogURL = BASE_URL + "containers/getContainerChangeLog?container_id=" + container_id
         try{
             const response = await fetch(getChangeLogURL,{method: "GET",});
@@ -1278,11 +1411,27 @@ export default function Edit_Container() {
                     New: 'Change Log',
                 }];
             }
+            // KM-78: Convert each change's timestamp from UTC (server time)
+            // into the user's own timezone before showing it.
+            // If an entry has no Timestamp (e.g. the error placeholder), leave it as is.
+            data = data.map((entry) => {
+                if (!entry.Timestamp) return entry;
+                const changedAt = new Date(entry.Timestamp);
+                if (isNaN(changedAt.getTime())) return entry; // skip if the date can't be read
+                return {
+                    ...entry,
+                    Date: changedAt.toLocaleDateString(),
+                    Time: changedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                };
+            });
             setChangeLog(data)
         } catch (error: any) {
+            // KM-84: Only the change log shows the error (the rest of the page still works).
             console.log(error.message);
-            setErrorMsg(error.message);
-            setLoadError(true);
+            setChangeLogError(true);
+        } finally {
+            // KM-84: Whether it worked or failed, we're done loading.
+            setChangeLogLoading(false);
         }
     }
     
@@ -1329,7 +1478,8 @@ export default function Edit_Container() {
         </View>
         )
     }
-    
+
+
     
   // Render
 
@@ -1903,106 +2053,83 @@ export default function Edit_Container() {
             />
           </View>
 
-          {/* Change Log */}
+                    {/* Change Log */}
+          {/* KM-84: Tapping opens the full history normally, but if loading failed,
+              tapping retries instead. Tapping does nothing while it's still loading. */}
           <Pressable
-            onPress={openHistory}
+            onPress={changeLogError ? loadChangeLog : openHistory}
+            disabled={changeLogLoading}
             accessibilityRole="button"
-            accessibilityLabel="Open Change Log"
+            accessibilityLabel={changeLogError ? "Retry loading Change Log" : "Open Change Log"}
             style={({ pressed }) => [
               styles.changeLogCard,
               pressed &&
                 styles.cardPressed,
             ]}
           >
-            <View
-              style={
-                styles.changeLogHeader
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogTitle
-                }
-              >
+            <View style={styles.changeLogHeader}>
+              <Text style={styles.changeLogTitle}>
                 Most Recent Change
               </Text>
 
-              <Text
-                style={
-                  styles.changeLogArrow
-                }
-              >
-                ›
-              </Text>
+              {/* Only show the arrow when there's a history to open */}
+              {!changeLogLoading && !changeLogError && (
+                <Text style={styles.changeLogArrow}>›</Text>
+              )}
             </View>
 
-            <View
-              style={
-                styles.changeLogRow
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-                Date: {changeLog[0].Date}
-              </Text>
+            {changeLogLoading ? (
+              // KM-84: Loading indicator while the change log is being fetched
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <ActivityIndicator size="small" color="#C9CFE9" />
+                <Text style={[styles.changeLogText, { marginTop: 8 }]}>
+                  Loading change log...
+                </Text>
+              </View>
+            ) : changeLogError ? (
+              // KM-84: Error shown only in this section, with a tap-to-retry hint
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <Text style={[styles.changeLogText, { color: '#FF6B6B' }]}>
+                  Couldn't load the change log.
+                </Text>
+                <Text style={[styles.changeLogText, { marginTop: 4 }]}>
+                  Tap to retry
+                </Text>
+              </View>
+            ) : (
+              // Loaded successfully: show the most recent change (same as before)
+              <>
+                <View style={styles.changeLogRow}>
+                  <Text style={styles.changeLogText}>
+                    Date: {changeLog[0].Date}
+                  </Text>
+                  <Text style={styles.changeLogText}>
+                    Time: {changeLog[0].Time}
+                  </Text>
+                </View>
 
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          Time: {changeLog[0].Time}
-              </Text>
-            </View>
+                <Text style={styles.changeLogText}>
+                  ContainerID: {String(container_id ?? '__________')}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-              ContainerID: {String(container_id ?? '__________')}
-            </Text>
+                <Text style={styles.changeLogText}>
+                  User: {changeLog[0].User}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-          User: {changeLog[0].User}
-            </Text>
+                <Text style={styles.changeLogText}>
+                  Change: {changeLog[0].Change}
+                </Text>
 
-            <Text
-              style={
-                styles.changeLogText
-              }
-            >
-          Change: {changeLog[0].Change}
-            </Text>
-
-            <View
-              style={
-                styles.changeLogRow
-              }
-            >
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          Old: {changeLog[0].Old}
-              </Text>
-
-              <Text
-                style={
-                  styles.changeLogText
-                }
-              >
-          New: {changeLog[0].New}
-              </Text>
-            </View>
+                <View style={styles.changeLogRow}>
+                  <Text style={styles.changeLogText}>
+                    Old: {changeLog[0].Old}
+                  </Text>
+                  <Text style={styles.changeLogText}>
+                    New: {changeLog[0].New}
+                  </Text>
+                </View>
+              </>
+            )}
           </Pressable>
 
           {/* Container Insights */}
@@ -2109,9 +2236,7 @@ export default function Edit_Container() {
             }
             onPress={closeSelector}
           />
-
-          <View
-            style={
+          <View style={
               styles.selectorSheet
             }
           >
@@ -2158,6 +2283,49 @@ export default function Edit_Container() {
                 </Pressable>
               )
             )}
+{
+    ((isNewLocationVisible && selectorType == 'location')|(isNewChildLocationVisible && (selectorType == 'room'|selectorType =='shelf'|selectorType =='cabinet'))) && (
+            <Pressable
+                          onPress={showAddNewLocation}
+                          accessibilityRole="button"
+                          accessibilityLabel="Create New Location"
+                          style={({ pressed }) => [
+                            styles.cancelButton,
+                            pressed &&
+                              styles.buttonPressed,
+                          ]}
+                        >
+                          <LinearGradient
+                                  colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                  locations={[0, 0.27, 0.49, 0.75, 1]}
+                                  start={{ x: 0, y: 0 }}
+                                  end={{ x: 1, y: 1 }}
+                                  style={StyleSheet.absoluteFillObject}
+                                >
+                                  <LinearGradient
+                                    colors={['#2983ff', '#1b3de9']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 0, y: 1 }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 2,
+                                      bottom: 2,
+                                      left: 2,
+                                      right: 2,
+                                      borderRadius: 7,
+                                    }}
+                                  />
+                                </LinearGradient>
+                          <Text
+                            style={
+                              styles.cancelText
+                            }
+                          >
+                            Add New
+                          </Text>
+                        </Pressable>
+        )
+    }
 
             <Pressable
               onPress={closeSelector}
@@ -3509,6 +3677,294 @@ export default function Edit_Container() {
           </View>
         </View>
       </Modal>
+
+      {/* New Location */}
+
+            <Modal
+              visible={newLocationVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={
+                closeNewLocation
+              }
+            >
+              <View
+                style={
+                  styles.confirmBackground
+                }
+              >
+                <BlurView
+                  intensity={50}
+                  tint="dark"
+                  style={
+                    StyleSheet.absoluteFillObject
+                  }
+                />
+
+                {newLocationError && (
+                    <View style={styles.confirmCard}>
+                    <Text style={styles.confirmTitle}>
+                        Error creating new location.
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Text style ={styles.errorText}>
+                    {errorMsg}
+                    </Text>
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={closeNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel Add Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed && styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                        colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                        locations={[0, 0.35, 0.56, 0.89, 1]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                    >
+                    <LinearGradient
+                        colors={['#2983ff', '#1b3de9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{
+                            position: 'absolute',
+                            top: 2,
+                            bottom: 2,
+                            left: 2,
+                            right: 2,
+                            borderRadius: 7,
+                        }}
+                    />
+                    </LinearGradient>
+                        <Text
+                            style={
+                                styles.confirmButtonText
+                            }
+                        >
+                        Go Back
+                        </Text>
+                    </Pressable>
+                    </View>
+                )}
+
+                { newLocationSuccess && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <Text style={styles.confirmTitle}>
+                                                              New {selectorType} Successfully Added
+                                            </Text>
+                                            <View style={{padding:5}}></View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Button to leave new Location"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Go Back
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )
+
+                }
+                {newLocationLoading && !newLocationError && (
+                    <View style={styles.confirmCard}>
+                        <View style={styles.loadingIndicator}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        </View>
+                        <Pressable
+                            onPress={closeNewLocation}
+                            accessibilityRole="button"
+                            accessibilityLabel="Cancel Add Location in load"
+                            style={({ pressed }) => [
+                                styles.confirmButton,
+                                pressed &&
+                                styles.buttonPressed,
+                            ]}
+                            >
+                                                              <LinearGradient
+                                                                      colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                                                      locations={[0, 0.35, 0.56, 0.89, 1]}
+                                                                      start={{ x: 0, y: 0 }}
+                                                                      end={{ x: 1, y: 1 }}
+                                                                      style={StyleSheet.absoluteFillObject}
+                                                                    >
+                                                                      <LinearGradient
+                                                                        colors={['#2983ff', '#1b3de9']}
+                                                                        start={{ x: 0, y: 0 }}
+                                                                        end={{ x: 0, y: 1 }}
+                                                                        style={{
+                                                                          position: 'absolute',
+                                                                          top: 2,
+                                                                          bottom: 2,
+                                                                          left: 2,
+                                                                          right: 2,
+                                                                          borderRadius: 7,
+                                                                        }}
+                                                                      />
+                                                                    </LinearGradient>
+                                                              <Text
+                                                                style={
+                                                                  styles.confirmButtonText
+                                                                }
+                                                              >
+                                                                Cancel
+                                                              </Text>
+                                                            </Pressable>
+                    </View>
+                    )}
+
+                {!newLocationError && !newLocationLoading && !newLocationSuccess &&(
+                    <View style={styles.confirmCard}>
+                    {(selectorType != 'location') && (
+                                                  <View style={{width: '100%'}}>
+                        <Text style={styles.confirmTitle}>
+                            Current Location Info:
+                        </Text>
+                                                  <View>
+                                                  <Text style = {styles.newLocationLabel}>
+                                                      Location: {location}
+                                                      {(selectorType =='cabinet'|selectorType=='shelf') ? (<Text>{"\n"}Room: {room}</Text>):("")}
+                                                      {(selectorType=='shelf') ? (<Text>{"\n"}Cabinet: {cabinet}</Text>):("")}
+                                                  </Text>
+                                                  </View>
+                                                  <View style={{padding:15}}></View>
+                                </View>
+                                                  
+                    )}
+                    <Text style={styles.confirmTitle}>
+                        Type in new {selectorType} name:
+                    </Text>
+                    <View style={{padding:5}}></View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="New Location"
+                        placeholderTextColor="#C9CFE9"
+                        accessibilityLabel="New Location Input"
+                        value = {newLocation}
+                        onChangeText = {setNewLocation}
+                        maxLength={255}
+                    />
+                    <View style={{padding:10}}></View>
+                    <Pressable
+                        onPress={addNewLocation}
+                        accessibilityRole="button"
+                        accessibilityLabel="Add New Location"
+                        style={({ pressed }) => [
+                            styles.confirmButton,
+                            pressed &&
+                            styles.buttonPressed,
+                        ]}
+                    >
+                    <LinearGradient
+                            colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                            locations={[0, 0.27, 0.49, 0.75, 1]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFillObject}
+                    >
+                            <LinearGradient
+                              colors={['#2983ff', '#1b3de9']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 0, y: 1 }}
+                              style={{
+                                position: 'absolute',
+                                top: 2,
+                                bottom: 2,
+                                left: 2,
+                                right: 2,
+                                borderRadius: 7,
+                              }}
+                            />
+                          </LinearGradient>
+                    <Text
+                      style={
+                        styles.confirmButtonText
+                      }
+                    >
+                      Add {selectorType}
+                    </Text>
+                  </Pressable>
+                  <View style={{padding:2}}></View>
+                  <Pressable
+                                      onPress={
+                                        closeNewLocation
+                                      }
+                                      accessibilityRole="button"
+                                      accessibilityLabel="Cancel Add Location"
+                                      style={({ pressed }) => [
+                                        styles.confirmButton,
+                                        pressed &&
+                                          styles.buttonPressed,
+                                      ]}
+                                    >
+                                      <LinearGradient
+                                              colors={['#0026E4', '#00C8FF', '#0026E4', '#00C8FF', '#0026E4']}
+                                              locations={[0, 0.35, 0.56, 0.89, 1]}
+                                              start={{ x: 0, y: 0 }}
+                                              end={{ x: 1, y: 1 }}
+                                              style={StyleSheet.absoluteFillObject}
+                                            >
+                                              <LinearGradient
+                                                colors={['#2983ff', '#1b3de9']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 2,
+                                                  bottom: 2,
+                                                  left: 2,
+                                                  right: 2,
+                                                  borderRadius: 7,
+                                                }}
+                                              />
+                                            </LinearGradient>
+                                      <Text
+                                        style={
+                                          styles.confirmButtonText
+                                        }
+                                      >
+                                        Cancel
+                                      </Text>
+                                    </Pressable>
+                                    </View>
+                                    )}
+              </View>
+            </Modal>
     </View>
   );
 }
@@ -4633,4 +5089,25 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16
   },
+
+  loadingIndicator: {
+      padding: 20,
+      },
+    newLocationLabel: {
+      width: '100%',
+      marginTop: 6,
+      borderRadius: 11,
+      borderWidth: 1,
+      borderColor: 'rgba(33, 142, 255, 0.5)',
+      paddingHorizontal: 10,
+      paddingTop: 8,
+      paddingBottom: 9,
+      overflow: 'hidden',
+        color: '#FFFFFF',
+        fontFamily: FONT.regular,
+        fontSize: FONT_SIZE.body,
+        lineHeight: 20,
+        paddingHorizontal: 9,
+        backgroundColor: '#09091C',
+    },
 });

@@ -31,13 +31,13 @@ export default function Index() {
 
   const logoWidth = isTablet
     ? isLandscape
-      ? width * 0.18
-      : width * 0.28
+      ? width * 0.38
+      : width * 0.48
     : isLandscape
-    ? width * 0.22
-    : width * 0.42;
+    ? width * 0.42
+    : width * 1.00;
 
-  const logoHeight = logoWidth * 0.52;
+  const logoHeight = logoWidth * 0.32;
   const markWidth = logoWidth * 1.02;
   const markHeight = markWidth * 0.38;
 
@@ -253,7 +253,11 @@ export default function Index() {
           </View>
 
           <View style={styles.bypassBtn}>
-            <GradientButton title="QR Scanner Bypass" onPress={handleForgotPassword} width="100%" />
+            <GradientButton
+            title="QR Scanner Bypass"
+            onPress={() => router.navigate('/SubPages/scannerbypass')}
+            width="100%"
+            />
           </View>
         </ScrollView>
       </View>
