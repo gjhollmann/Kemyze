@@ -328,15 +328,9 @@ export default function Add_Container() {
 
   // State Variables for Options that are dynamic
 
-      const [locationOptions, setLocationOptions] = useState([
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-        ]);
+      const [locationOptions, setLocationOptions] = useState([{
+                    name: "No locations found",
+                }]);
 
 
       const [roomOptions, setRoomOptions] = useState(null);
