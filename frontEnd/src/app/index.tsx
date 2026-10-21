@@ -10,8 +10,10 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "../utils/handleLogin";
 import { useRouter } from 'expo-router';
@@ -23,6 +25,10 @@ import { useUserState } from '../app/contexts/UserState';
 export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRequestingPasswordReset, setIsRequestingPasswordReset] = useState(false);
+  const loginRequestInFlightRef = useRef(false);
+  const forgotPasswordRequestInFlightRef = useRef(false);
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
@@ -82,6 +88,14 @@ export default function Index() {
       return;
     }
 
+    // Refs update synchronously, preventing duplicate requests before React re-renders.
+    if (forgotPasswordRequestInFlightRef.current) {
+      return;
+    }
+
+    forgotPasswordRequestInFlightRef.current = true;
+    setIsRequestingPasswordReset(true);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -93,7 +107,6 @@ export default function Index() {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (response.ok && result.success !== false && !result.error && !result.detail) {
@@ -107,6 +120,10 @@ export default function Index() {
       } else {
         showPopup("Error", "Network error. Please try again.");
       }
+    } finally {
+      clearTimeout(timeoutId);
+      forgotPasswordRequestInFlightRef.current = false;
+      setIsRequestingPasswordReset(false);
     }
   };
 
@@ -129,27 +146,37 @@ export default function Index() {
       return;
     }
 
-    const result = await handleLogin(email, password);
+    // Refs update synchronously, preventing duplicate requests before React re-renders.
+    if (loginRequestInFlightRef.current) {
+      return;
+    }
 
-    /*if (!result.success) {
-      Alert.alert("Login Failed", result.message);
-    } else {
-      Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
-      router.navigate('/Pages/scanner');
-    }*/
+    loginRequestInFlightRef.current = true;
+    setIsLoggingIn(true);
 
-    if (!result.success || !result.data) {
-      Alert.alert("Login Failed", result.message);
-    } else {
+    try {
+      const result = await handleLogin(email, password);
+
+      if (!result.success || !result.data) {
+        Alert.alert("Login Failed", result.message);
+        return;
+      }
+
       setActiveUser({
         userID: result.data.userID,
         accessLevel: result.data.accessLevel,
       });
-      
-      Alert.alert("Success", `Welcome! Access level: ${result.data?.accessLevel}`);
+
+      Alert.alert("Success", `Welcome! Access level: ${result.data.accessLevel}`);
       router.navigate('/Pages/scanner');
+    } finally {
+      loginRequestInFlightRef.current = false;
+      setIsLoggingIn(false);
     }
   };
+
+  const isLoading = isLoggingIn || isRequestingPasswordReset;
+  const loadingLabel = isLoggingIn ? "Logging in" : "Sending password reset email";
 
   
   return (
@@ -224,6 +251,7 @@ export default function Index() {
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
+                  editable={!isLoading}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   placeholderTextColor="rgba(255,255,255,0.3)"
@@ -239,16 +267,27 @@ export default function Index() {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
+                  editable={!isLoading}
                 />
               </View>
             </View>
 
             <View style={styles.loginBtn}>
-              <GradientButton title="Log In" onPress={onPressLogin} width="100%" />
+              <GradientButton
+                title={isLoggingIn ? "Logging In..." : "Log In"}
+                onPress={onPressLogin}
+                disabled={isLoading}
+                width="100%"
+              />
             </View>
 
             <View style={styles.forgotBtn}>
-              <GradientButton title="Forgot Password" onPress={handleForgotPassword} width="100%" />
+              <GradientButton
+                title={isRequestingPasswordReset ? "Sending Reset Email..." : "Forgot Password"}
+                onPress={handleForgotPassword}
+                disabled={isLoading}
+                width="100%"
+              />
             </View>
           </View>
 
@@ -260,6 +299,25 @@ export default function Index() {
             />
           </View>
         </ScrollView>
+
+        <Modal
+          transparent
+          visible={isLoading}
+          animationType="fade"
+          onRequestClose={() => {}}
+        >
+          <View style={styles.loadingOverlay}>
+            <View
+              style={styles.loadingCard}
+              accessibilityRole="progressbar"
+              accessibilityLabel={loadingLabel}
+              accessibilityState={{ busy: true }}
+            >
+              <ActivityIndicator size="large" color="#00C8FF" />
+              <Text style={styles.loadingText}>{loadingLabel}...</Text>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -364,5 +422,27 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  loadingCard: {
+    minWidth: 220,
+    alignItems: "center",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0, 200, 255, 0.7)",
+    backgroundColor: "#131338",
+    paddingHorizontal: 32,
+    paddingVertical: 28,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#FFFFFF",
+    fontFamily: "JetBrains Mono Bold",
+    fontSize: 16,
   },
 });

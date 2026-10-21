@@ -889,22 +889,15 @@ export default function CreateProfile() {
                         )
                     }
 
-            <Pressable
+            <GradientButton
+              title="Cancel"
               onPress={closeSelector}
-              style={({ pressed }) => [
-                styles.doneButton,
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={['#4263EB', '#2563EB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.doneGradient}
-              >
-                <Text style={styles.doneText}>Cancel</Text>
-              </LinearGradient>
-            </Pressable>
+              width="100%"
+              height={42}
+              borderRadius={14}
+              style={styles.selectorActionButton}
+              accessibilityLabel="Cancel location or authorization selection"
+            />
           </View>
         </View>
       </Modal>
@@ -972,22 +965,15 @@ export default function CreateProfile() {
               ))}
             </View>
 
-            <Pressable
+            <GradientButton
+              title="Done"
               onPress={closePhoneSelector}
-              style={({ pressed }) => [
-                styles.doneButton,
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={['#3B82F6', '#2563EB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.doneGradient}
-              >
-                <Text style={styles.doneText}>Done</Text>
-              </LinearGradient>
-            </Pressable>
+              width="100%"
+              height={42}
+              borderRadius={14}
+              style={styles.selectorActionButton}
+              accessibilityLabel="Done selecting phone number"
+            />
           </View>
         </View>
       </Modal>
@@ -1640,21 +1626,8 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.body,
   },
-  doneButton: {
-    height: 42,
-    borderRadius: 14,
-    overflow: 'hidden',
+  selectorActionButton: {
     marginTop: 16,
-  },
-  doneGradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  doneText: {
-    color: '#FFFFFF',
-    fontFamily: FONT.bold,
-    fontSize: 15,
   },
   phonePickerGrid: {
     flexDirection: 'row',
