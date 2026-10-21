@@ -251,25 +251,13 @@ export default function Add_Container() {
   const [calendarYear, setCalendarYear] =
     useState(currentDate.getFullYear());
 
-  // Placeholder data
-
-  const reviewChanges: ReviewChange[] = [
-    {
-      field: 'Quantity',
-      oldValue: '___ mL',
-      newValue: '___ mL',
-    },
-    {
-      field: 'Location',
-      oldValue: '____________',
-      newValue: '____________',
-    },
-    {
-      field: 'Cabinet',
-      oldValue: '____',
-      newValue: '____',
-    },
-  ];
+    const [reviewChanges, setReviewChanges] = useState<ReviewChange>([
+        {
+        field: 'No Changes Detected. \nExample Change shown',
+        oldValue: 'Currently Saved Value goes here',
+        newValue: 'New Value goes here',
+        },
+        ]);
 
   // Haptics
 
@@ -695,8 +683,68 @@ export default function Add_Container() {
     }
 
     mediumHaptic()
-    setReviewVisible(true);
+      getChanges().then(()=> {
+          setReviewVisible(true);
+      });
     };
+    
+    const getChanges = async () => {
+        const newChanges = [];
+        let nameReview: ReviewChange = {
+            field: 'Chemical Name',
+            oldValue: '',
+            newValue: chemicalName,
+        }
+        newChanges.push(nameReview);
+        
+        let casReview: ReviewChange = {
+            field: 'CAS Number',
+            oldValue: '',
+            newValue: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join(''),
+        }
+        newChanges.push(casReview);
+        
+        
+        let quantityReview: ReviewChange = {
+            field: 'Quantity',
+            oldValue: '',
+            newValue: quantity,
+        }
+        newChanges.push(quantityReview);
+        
+        
+        let acqnReview: ReviewChange = {
+            field: 'Acquisition Date',
+            oldValue: '',
+            newValue: acquisitionDate,
+        }
+        newChanges.push(acqnReview);
+        
+        
+        let exprReview: ReviewChange = {
+            field: 'Expiration Date',
+            oldValue: '',
+            newValue: expirationDate,
+        }
+        newChanges.push(exprReview);
+        
+        
+        let locationReview: ReviewChange = {
+            field: 'Location',
+            oldValue: '',
+            newValue: location + ", " + room + ", " + cabinet + ", " + shelf,
+        }
+        newChanges.push(locationReview);
+
+        let sdsReview: ReviewChange = {
+            field: 'SDS',
+            oldValue: '',
+            newValue: sdsLocation,
+        }
+        newChanges.push(sdsReview);
+        setReviewChanges(newChanges);
+    }
+
 
   const saveReviewedChanges = async() => {
     if (isSavingContainer) {
@@ -2335,49 +2383,13 @@ export default function Add_Container() {
                         styles.reviewValues
                       }
                     >
-                      <View
-                        style={
-                          styles.reviewValueSection
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.reviewValueLabel
-                          }
-                        >
-                          Current
-                        </Text>
 
-                        <Text
-                          style={
-                            styles.reviewValue
-                          }
-                        >
-                          {change.oldValue}
-                        </Text>
-                      </View>
-
-                      <Text
-                        style={
-                          styles.reviewArrow
-                        }
-                      >
-                        →
-                      </Text>
 
                       <View
                         style={
                           styles.reviewValueSection
                         }
                       >
-                        <Text
-                          style={
-                            styles.reviewValueLabel
-                          }
-                        >
-                          New
-                        </Text>
-
                         <Text
                           style={
                             styles.reviewValue
