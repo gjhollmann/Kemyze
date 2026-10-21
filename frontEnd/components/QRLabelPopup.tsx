@@ -1,8 +1,9 @@
 import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions, Platform, } from "react-native";
-import { useState, useRef } from "react";
+import { Modal, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import { useRef } from "react";
 import QRCode from 'react-native-qrcode-svg';
 import { handlePrintLabel } from "../utils/PrintLabelUtils"; // Import primary print handler.
+import GradientButton from './GradientButton';
 console.log("handlePrintLabel:", handlePrintLabel); // Confirm imported module for testing. 
 
 type QRLabelPopupProps = {
@@ -73,13 +74,22 @@ export function QRLabelPopup({
                 />
                 </View>   
                 
-                <Pressable onPress={onClose} style={styling.closeButton}>
-                    <Text>Done</Text> 
-                </Pressable>
+                <GradientButton
+                    title="Done"
+                    onPress={onClose}
+                    width={68}
+                    height={34}
+                    style={styling.closeButton}
+                    textStyle={styling.closeButtonText}
+                />
 
-                <Pressable onPress={onPrintPress}style={styling.printLabelButton}>
-                    <Text style={styling.printLabelButtonText}>Print this QR label</Text>
-                </Pressable>
+                <GradientButton
+                    title="Print QR Label"
+                    onPress={onPrintPress}
+                    width="100%"
+                    height={46}
+                    style={styling.printLabelButton}
+                />
                 
                 </View>
             </View>
@@ -116,18 +126,12 @@ const styling = StyleSheet.create({
         zIndex: 1,
     },
 
-    printLabelButton: {
-        backgroundColor: '#6e99ef',
-        alignSelf: 'center',
-        borderRadius: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginTop: 16,
+    closeButtonText: {
+        fontSize: 12,
     },
 
-    printLabelButtonText: {
-        textAlign: 'center',
-        color: 'white',
+    printLabelButton: {
+        marginTop: 16,
     },
 }) // const styling
 

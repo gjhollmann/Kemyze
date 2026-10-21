@@ -8,16 +8,14 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image,
   Platform,
   Alert,
-  RefreshControl,
   Linking,
   Modal,
-  ActivityIndicator
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
+import GradientButton from '../../../components/GradientButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
 
@@ -35,6 +33,8 @@ interface Chemical {
   sds_document?: string;
 }
 
+type QuickFilter = 'recentlyChanged' | 'expiringSoon' | 'showLow' | null;
+
 const BASE_URL = "https://kemyze.vercel.app/";
 
 const USER_TEST = 49035; // replace with actual user ID (KM#85)
@@ -50,7 +50,7 @@ const Inventory: React.FC = () => {
 
   // True while we're waiting on the very first/full inventory load (KM-106)
   const [loading, setLoading] = useState(true);
-  const [showLow, setShowLow] = useState(false);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilter>(null);
 
   // Modal display toggle state
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -77,7 +77,6 @@ const Inventory: React.FC = () => {
   const [isSDSUploading, setIsSDSUploading] = useState(false);
   // Tracker for query states & pagination
   const [lastUsedSearch, setLastUsedSearch] = useState(false);
-  const [isExpiringSoon, setIsExpiringSoon] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(10);
   const [inventoryData, setInventoryData] = useState<Chemical[]>([]);
@@ -91,16 +90,21 @@ const Inventory: React.FC = () => {
               setLoadingMore(false);
           }, 2000);
           console.log("User scrolled to end");
-          if (lastUsedSearch || isExpiringSoon){
+          if (lastUsedSearch){
               addMoreContainers();
           }
       }
-  });
+  }, [lastUsedSearch, noMoreData]);
 
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
     console.log("Adding more containers based on search");
-    const queryUrl = BASE_URL+"containers/getSearch?input="+search+"&count="+currentIndex+(showLow ? "&show_low=true" : "")+(isExpiringSoon ? "&expiringSoon=true" : "")+(activeUser ? "&userID="+activeUser.userID:"");
+    const queryUrl = activeQuickFilter === 'recentlyChanged'
+      ? `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=${currentIndex}` + (activeUser ? "&userID=" + activeUser.userID : "")
+      : `${BASE_URL}containers/getSearch?input=${encodeURIComponent(search)}&count=${currentIndex}`
+        + (activeQuickFilter === 'showLow' ? "&show_low=true" : "")
+        + (activeQuickFilter === 'expiringSoon' ? "&expiringSoon=true" : "")
+        + (activeUser ? "&userID=" + activeUser.userID : "");
     console.log(queryUrl);
     try {
       const response = await fetch(queryUrl, {
@@ -146,11 +150,11 @@ const Inventory: React.FC = () => {
   // Fetches every chemical in the inventory (KM-106).
   // Reuses the existing search endpoint with an empty search term, since the
   // backend treats an empty "input" as "match everything" (see getSearch).
-  const fetchAllContainers = async () => {
+  const fetchAllContainers = async (searchTerm = '') => {
     setLoading(true);
     setLastUsedSearch(true);
     setCurrentIndex(10);
-    const getAllURL = BASE_URL + "containers/getSearch?input=&count=0"+(activeUser ? "&userID="+activeUser.userID:"");
+    const getAllURL = BASE_URL + "containers/getSearch?input=" + encodeURIComponent(searchTerm) + "&count=0" + (activeUser ? "&userID="+activeUser.userID:"");
     console.log(getAllURL);
     try {
       const response = await fetch(getAllURL, {
@@ -188,39 +192,17 @@ const Inventory: React.FC = () => {
     fetchAllContainers();
   }, []);
 
-  // function to handle when expiring soon button is pressed
-  const onExpiringSoonPress = async () => {
-    setIsExpiringSoon(true);
+  // Runs the current text search with one optional quick-filter mode.
+  const onFilterPress = async (filter: QuickFilter = activeQuickFilter) => {
+    const getSearchURL = filter === 'recentlyChanged'
+      ? `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0` + (activeUser ? "&userID=" + activeUser.userID : "")
+      : `${BASE_URL}containers/getSearch?input=${encodeURIComponent(search)}&count=0`
+        + (filter === 'showLow' ? "&show_low=true" : "")
+        + (filter === 'expiringSoon' ? "&expiringSoon=true" : "")
+        + (activeUser ? "&userID=" + activeUser.userID : "");
+    setLoading(true);
     setLastUsedSearch(true);
-    setCurrentIndex(10);
-
-    const getSearchURL = `${BASE_URL}containers/getSearch?input=${search}&expiringSoon=true&count=0&limit=10`+(activeUser ? "&userID="+activeUser.userID:"");
-    console.log(getSearchURL);
-    try {
-      const searchResponse = await fetch(getSearchURL, {
-        method: "GET",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!searchResponse.ok){
-        console.log("We are having issues");
-        throw new Error("BAD TIME STATUS: " + searchResponse.status);
-      }
-      const data = await searchResponse.json();
-      console.log(data);
-      setInventoryData(data);
-    } catch (error: any) {
-      console.log(error.message);
-    }
-  };
-
-  // function to handle when the filter button is pressed
-  const onFilterPress = async () => {
-    const getSearchURL = BASE_URL+"containers/getSearch?input="+search+"&expiringSoon=false"+(showLow ? "&show_low=true" : "")+(activeUser ? "&userID="+activeUser.userID:"");
-    setIsExpiringSoon(false);
-    setLastUsedSearch(true);
-      setNoMoreData(false);
+    setNoMoreData(false);
     setCurrentIndex(10);
     console.log(getSearchURL);
     try {
@@ -238,17 +220,20 @@ const Inventory: React.FC = () => {
       console.log(data);
       setInventoryData(data);
         if (data.length <= 0 ){
-            setNoMoreData(true);
-        }
+        setNoMoreData(true);
+      }
     } catch (error: any) {
       console.log(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // whenever showLow changes, re-runs the filter function to update the inventory list
-  useEffect(() => {
-    onFilterPress();
-  }, [showLow]);
+  const toggleQuickFilter = (filter: Exclude<QuickFilter, null>) => {
+    const nextFilter = activeQuickFilter === filter ? null : filter;
+    setActiveQuickFilter(nextFilter);
+    onFilterPress(nextFilter);
+  };
 
   // function to handle when edit button is pressed.
   // Modified to include checks for active user, access level before navigation.
@@ -329,6 +314,11 @@ const Inventory: React.FC = () => {
   const uploadSdsFile = async () => {
     if (!sdsFile) {
       showPopup('No File Selected', 'Please locate an SDS PDF before importing.');
+      return;
+    }
+
+    if (!activeUser) {
+      showPopup('Error', 'Active user not found.');
       return;
     }
  
@@ -439,58 +429,6 @@ const Inventory: React.FC = () => {
     handleCloseAddModal();
   };
 
-  // Handler for "Recently Changed" inventory button press.
-  const onRecentlyChangedPress = async () => {
-    const getRecentSearchURL = `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=0`+(activeUser ? "&userID="+activeUser.userID:"");
-    setLastUsedSearch(true);
-    setCurrentIndex(10);
-    console.log(getRecentSearchURL);
-
-    try {
-      const recentSearchResponse = await fetch(getRecentSearchURL,
-        {
-          method: "GET",
-        }
-      );
-
-      // Handle assortment of unsuccessful HTTP status codes.
-      if (!recentSearchResponse.ok) {
-        if (recentSearchResponse.status === 400) {
-          console.error("Invalid query parameters (e.g., count).");
-          return null;
-
-        } else if (recentSearchResponse.status === 405) {
-          console.error("Method not allowed. Method expected: GET");
-          return null;
-
-        } else if (recentSearchResponse.status === 401) {
-          console.error("Unauthorized; user not authenticated.");
-          return null;
-
-        } else if (recentSearchResponse.status === 404) {
-          console.error("404 Not Found; endpoint incorrect or unavailable.");
-          return null;
-
-        } else if (recentSearchResponse.status === 403) {
-          console.error("Forbidden; user does not have permission to access.");
-          return null;
-
-        } else { // Fall through; separate backend issue.
-          console.log("We are having issues");
-          return null;
-
-        }
-      }
-      const recentSearchData = await recentSearchResponse.json();
-      console.log(recentSearchData);
-      setInventoryData(recentSearchData);
-
-    } catch (error: any) {
-      console.log(error.message);
-
-    } // try/catch ...
-  }; // const onRecentlyChangedPress
-
   // New function handleAddNewContainer that verifies active user and checks access level before navigating to 
   // container creation screen
   const handleAddNewContainer = () => {
@@ -539,35 +477,75 @@ const Inventory: React.FC = () => {
             onChangeText={setSearch}
           />
         </View>
-          <TouchableOpacity style={styles.filterBtn} onPress={onFilterPress}>
-          <Text style={styles.filterText}>FILTER</Text>
-        </TouchableOpacity>
+        <GradientButton
+          title="Search"
+          onPress={() => onFilterPress()}
+          width={96}
+          height={45}
+          style={styles.searchButton}
+          textStyle={styles.searchButtonText}
+        />
       </View>
 
       {/* Quick Filter Tabs */}
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['SHOW ALL', 'RECENTLY CHANGED', 'EXPIRING SOON', 'SHOW LOW', 'ADD NEW'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.pillBtn,
-                tab === 'EXPIRING SOON' && isExpiringSoon ? { backgroundColor: '#3b82f6' } : null
-              ]}
-              // Only "SHOW ALL" and "EXPIRING SOON"/"ADD NEW"/"RECENTLY CHANGED"/"SHOW LOW"
-              // are wired up; SHOW ALL clears the search box first (KM-106) so it actually
-              // shows everything instead of staying filtered by leftover search text.
-              onPress={() => {
-                if (tab === 'EXPIRING SOON') onExpiringSoonPress();
-                if (tab === 'ADD NEW') router.push('../SubPages/add_container'); // Replace router.push(...) with handleAddNewContainer().
-                if (tab === 'SHOW ALL') { setSearch(''); setIsExpiringSoon(false); fetchAllContainers(); }
-                if (tab === 'RECENTLY CHANGED') onRecentlyChangedPress();
-                if (tab === 'SHOW LOW') setShowLow(!showLow);
-              }}
-            >
-              <Text style={styles.pillText}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
+          <GradientButton
+            title="Show All"
+            onPress={() => {
+              setSearch('');
+              setActiveQuickFilter(null);
+              fetchAllContainers();
+            }}
+            width={94}
+            height={38}
+            style={styles.quickFilterButton}
+            textStyle={styles.quickFilterText}
+          />
+          <GradientButton
+            title="Recently Changed"
+            onPress={() => toggleQuickFilter('recentlyChanged')}
+            width={152}
+            height={38}
+            style={styles.quickFilterButton}
+            textStyle={styles.quickFilterText}
+            backgroundColors={activeQuickFilter === 'recentlyChanged' ? undefined : ['#172554', '#0F172A']}
+            accessibilityRole="switch"
+            accessibilityLabel="Toggle recently changed containers"
+            accessibilityState={{ selected: activeQuickFilter === 'recentlyChanged' }}
+          />
+          <GradientButton
+            title="Expiring Soon"
+            onPress={() => toggleQuickFilter('expiringSoon')}
+            width={128}
+            height={38}
+            style={styles.quickFilterButton}
+            textStyle={styles.quickFilterText}
+            backgroundColors={activeQuickFilter === 'expiringSoon' ? undefined : ['#172554', '#0F172A']}
+            accessibilityRole="switch"
+            accessibilityLabel="Toggle expiring soon containers"
+            accessibilityState={{ selected: activeQuickFilter === 'expiringSoon' }}
+          />
+          <GradientButton
+            title="Show Low"
+            onPress={() => toggleQuickFilter('showLow')}
+            width={100}
+            height={38}
+            style={styles.quickFilterButton}
+            textStyle={styles.quickFilterText}
+            backgroundColors={activeQuickFilter === 'showLow' ? undefined : ['#172554', '#0F172A']}
+            accessibilityRole="switch"
+            accessibilityLabel="Toggle low quantity containers"
+            accessibilityState={{ selected: activeQuickFilter === 'showLow' }}
+          />
+          <GradientButton
+            title="Add New"
+            onPress={handleAddNewContainer}
+            width={94}
+            height={38}
+            style={styles.quickFilterButton}
+            textStyle={styles.quickFilterText}
+          />
         </ScrollView>
       </View>
 
@@ -607,20 +585,36 @@ const Inventory: React.FC = () => {
               </View>
 
               <View style={styles.buttonSide}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => handleViewSDS(item.container_id)}>
-                  <Text style={styles.actionText}>VIEW SDS</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}
+                <GradientButton
+                  title="View SDS"
+                  onPress={() => handleViewSDS(item.container_id)}
+                  width="100%"
+                  height={32}
+                  style={styles.actionButton}
+                  textStyle={styles.actionButtonText}
+                />
+                <GradientButton
+                  title="QR Label"
                   onPress={() => {
                     if (!item.container_id || !item.chemical_name) {
                       showPopup("Error", "Incomplete container information");
                       return;
                     }
-                    onQRLabelPress(String(item.container_id), item.chemical_name)}}>
-                    <Text style={styles.actionText}>QR LABEL</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => onEditPress(item.container_id)}>
-                    <Text style={styles.actionText}>EDIT INFO</Text></TouchableOpacity>
+                    onQRLabelPress(String(item.container_id), item.chemical_name);
+                  }}
+                  width="100%"
+                  height={32}
+                  style={styles.actionButton}
+                  textStyle={styles.actionButtonText}
+                />
+                <GradientButton
+                  title="Edit Info"
+                  onPress={() => onEditPress(item.container_id)}
+                  width="100%"
+                  height={32}
+                  style={styles.actionButton}
+                  textStyle={styles.actionButtonText}
+                />
               </View>
             </View>
 
@@ -819,27 +813,26 @@ const Inventory: React.FC = () => {
                     {sdsFileLocation || 'Tap to locate PDF file'}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.importBtn, isSDSUploading && { opacity: 0.6 }]}
+                <GradientButton
+                  title={isSDSUploading ? 'Uploading...' : sdsUploaded ? 'Uploaded ✓' : 'Import'}
                   onPress={uploadSdsFile}
                   disabled={isSDSUploading}
-                >
-                  {isSDSUploading ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text style={styles.importBtnText}>
-                      {sdsUploaded ? 'Uploaded ✓' : 'Import'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                  width={112}
+                  height={40}
+                  textStyle={styles.formActionButtonText}
+                />
               </View>
             </View>
 
             {!!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveContainer}>
-              <Text style={styles.saveBtnText}>Save</Text>
-            </TouchableOpacity>
+            <GradientButton
+              title="Save"
+              onPress={handleSaveContainer}
+              width="100%"
+              height={48}
+              style={styles.saveButton}
+            />
           </ScrollView>
 
           {/* Modal Bottom Nav */}
@@ -871,7 +864,7 @@ const Inventory: React.FC = () => {
       <QRLabelPopup
         visible={isQrLabelVisible}
         onClose={() => setIsQrLabelVisible(false)}
-        containerId={currentContainerId}
+        containerId={Number(currentContainerId)}
         chemicalName={currentChemicalName}
       />
     </SafeAreaView>
@@ -935,35 +928,21 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'monospace',
   },
-  filterBtn: {
-    backgroundColor: '#60a5fa',
-    paddingHorizontal: 20,
+  searchButton: {
     marginLeft: 10,
-    justifyContent: 'center',
-    borderRadius: 15,
   },
-  filterText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
+  searchButtonText: {
+    fontSize: 12,
   },
   tabContainer: {
     paddingLeft: 20,
     marginBottom: 20,
   },
-  pillBtn: {
-    backgroundColor: 'rgba(59, 130, 246, 0.4)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+  quickFilterButton: {
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#3b82f6',
   },
-  pillText: {
-    color: 'white',
+  quickFilterText: {
     fontSize: 10,
-    fontFamily: 'monospace',
   },
   list: {
     paddingHorizontal: 15,
@@ -1029,17 +1008,11 @@ const styles = StyleSheet.create({
   buttonSide: {
     flex: 1.2,
   },
-  actionBtn: {
-    backgroundColor: '#60a5fa',
-    paddingVertical: 6,
-    borderRadius: 12,
+  actionButton: {
     marginBottom: 6,
-    alignItems: 'center',
   },
-  actionText: {
-    color: 'white',
+  actionButtonText: {
     fontSize: 9,
-    fontWeight: '700',
   },
   locationText: {
     color: 'white',
@@ -1145,17 +1118,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  importBtn: {
-    backgroundColor: '#60a5fa',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  importBtnText: {
-    color: 'white',
-    fontFamily: 'monospace',
-    fontSize: 12,
-    fontWeight: 'bold',
+  formActionButtonText: {
+    fontSize: 11,
   },
   errorText: {
     color: '#ef4444',
@@ -1164,18 +1128,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
-  saveBtn: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
+  saveButton: {
     marginTop: 20,
-  },
-  saveBtnText: {
-    color: 'white',
-    fontFamily: 'monospace',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 
