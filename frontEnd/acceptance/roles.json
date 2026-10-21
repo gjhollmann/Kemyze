@@ -1,0 +1,34 @@
+{
+  "_instructions": "The Author of each test is set here. The Tester and the Recorder are not typed here: each picks their name from a menu when they run npm run tester (Tester) or npm run record (Recorder). The Author, Tester and Recorder must be three different people.",
+  "team": [
+    "Alexander Apolonio-Flores",
+    "Eric Cheyssial",
+    "George Joseph Hollmann",
+    "Joshua Zamora",
+    "Matthew Fronda",
+    "Reese Nelson",
+    "Saravjot Singh"
+  ],
+  "others": [
+    "Kenneth Elliott",
+    "Peng Kang",
+    "Abeer Abdel Khaleq",
+    "Maryam Siddique"
+  ],
+  "authors": {
+    "UT-ALL": "Joshua Zamora",
+    "AT-01": "Joshua Zamora",
+    "AT-02": "Joshua Zamora",
+    "AT-03": "Joshua Zamora",
+    "AT-04": "Joshua Zamora",
+    "AT-05": "Joshua Zamora",
+    "AT-06": "Joshua Zamora",
+    "AT-07": "Joshua Zamora",
+    "AT-08": "Joshua Zamora",
+    "AT-09": "Joshua Zamora",
+    "AT-10": "Joshua Zamora",
+    "AT-11": "Joshua Zamora",
+    "AT-12": "Joshua Zamora",
+    "AT-13": "Joshua Zamora"
+  }
+}
