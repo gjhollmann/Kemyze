@@ -20,6 +20,7 @@ import { Linking } from "react-native";
 import GradientButton from "../../../components/GradientButton";
 import { useUserState } from '../contexts/UserState';
 import { useRouter } from 'expo-router';
+import { BASE_URL } from '../../../constants/api';
 
 export default function Scanner() {
     const router = useRouter();
@@ -144,7 +145,7 @@ export default function Scanner() {
 
       // Edit access comes from the active user's stored access level.
       const canEdit = activeUser !== null && canEditFromAccessLevel(Number(activeUser.accessLevel));
-      const getContainerUrl = "https://kemyze.vercel.app/containers/getContainer?kemID="+kemId+"&accessLevel=1";
+      const getContainerUrl = BASE_URL + "containers/getContainer?kemID="+kemId+"&accessLevel=1";
       try {
           console.log(getContainerUrl);
           const containerResponse = await fetch(getContainerUrl,
@@ -223,7 +224,7 @@ export default function Scanner() {
         return;
       }
 
-      const sdsUrl = 'https://kemyze.vercel.app/containers/getSDS?kemID='+currentKemId; // Use current passed container ID.
+      const sdsUrl = BASE_URL + 'containers/getSDS?kemID='+currentKemId; // Use current passed container ID.
 
       try {
         await Linking.openURL(sdsUrl);

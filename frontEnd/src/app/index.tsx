@@ -16,7 +16,7 @@ import GradientButton from "../../components/GradientButton";
 import { handleLogin } from "../utils/handleLogin";
 import { useRouter } from 'expo-router';
 import { useUserState } from '../app/contexts/UserState';
-
+import { BASE_URL } from '../../constants/api';
 
 
 
@@ -86,7 +86,7 @@ export default function Index() {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const response = await fetch("https://kemyze.vercel.app/login/forgot-password/", {
+      const response = await fetch(BASE_URL + "login/forgot-password/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
