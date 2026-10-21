@@ -23,8 +23,8 @@ import { useUserState } from '../../app/contexts/UserState'; // Shared-state imp
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
+import { BASE_URL} from '../../../constants/api';
 
-const BASE_URL = "http://127.0.0.1:8000/";
 const USER_TEST = 49235; // replace with actual user ID (KM#85)
 const USER_ACCESS = 1;
 
@@ -2132,7 +2132,14 @@ export default function Edit_Container() {
             )}
           </Pressable>
 
-          {/* Container Insights */}
+          {/*
+            Container Insights - HIDDEN as of 10/18/2026.
+            The client, Matt Brimberry, was undecided on the information to
+            go in this section and wanted it hidden until he can decide at a
+            later date on the exact metrics/data to show. To restore it,
+            remove this comment wrapper. The containerInsights and kpi styles
+            below are kept so the section can be turned back on as-is.
+
           <LinearGradient
             colors={PANEL_GRADIENT}
             start={{
@@ -2193,6 +2200,7 @@ export default function Edit_Container() {
               )}
             </View>
           </LinearGradient>
+          */}
         </View>
       </ScrollView>
 

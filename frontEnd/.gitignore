@@ -10,3 +10,9 @@ frontEnd/node_modules/
 frontEnd/.expo/
 frontEnd/expo-env.d.ts
 # @end expo-cli
+
+# Web build used by the Selenium acceptance tests
+dist/
+
+# Test account logins for the acceptance tests (saved by npm run test:record; never commit)
+acceptance/logins.json

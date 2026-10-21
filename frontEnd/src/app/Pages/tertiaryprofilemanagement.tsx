@@ -27,7 +27,7 @@ import { useUserState } from '../contexts/UserState';
 
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = 'https://kemyze.vercel.app';
+import { BASE_URL } from '../../../constants/api';
 
 // Typography
 
@@ -325,7 +325,7 @@ export default function ManagedAccounts() {
       }
 
       try {
-        const response = await fetch(`${BASE_URL}/login/users/search/`, {
+        const response = await fetch(`${BASE_URL}login/users/search/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -471,7 +471,7 @@ export default function ManagedAccounts() {
     setDeletionStatus('');
 
     try {
-      const response = await fetch(`${BASE_URL}/login/users/delete/`, {
+      const response = await fetch(`${BASE_URL}login/users/delete/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

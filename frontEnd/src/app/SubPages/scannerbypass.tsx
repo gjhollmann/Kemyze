@@ -20,6 +20,7 @@ import GradientButton from "../../../components/GradientButton";
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BASE_URL } from '../../../constants/api';
 
 export default function ScannerBypass() {
   const router = useRouter();
@@ -191,7 +192,7 @@ export default function ScannerBypass() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    const getContainerUrl = "https://kemyze.vercel.app/containers/getContainer?kemID=" + kemID + "&accessLevel=" + BYPASS_ACCESS_LEVEL;
+    const getContainerUrl = BASE_URL + "containers/getContainer?kemID=" + kemID + "&accessLevel=" + BYPASS_ACCESS_LEVEL;
     try {
       console.log(getContainerUrl);
       const containerResponse = await fetch(getContainerUrl,
@@ -249,7 +250,7 @@ export default function ScannerBypass() {
       return;
     }
 
-    const sdsUrl = 'https://kemyze.vercel.app/containers/getSDS?kemID=' + currentKemId; // Use current passed container ID.
+    const sdsUrl = BASE_URL + 'containers/getSDS?kemID=' + currentKemId; // Use current passed container ID.
 
     try {
       await Linking.openURL(sdsUrl);

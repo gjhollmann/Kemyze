@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NavBar from '../components/NavBar';
 import { useUserState } from '../contexts/UserState';
-
+import { BASE_URL } from '../../../constants/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Typography
@@ -103,7 +103,7 @@ useEffect(() => {
 
     try {
       const url =
-        'http://127.0.0.1:8000/login/getUser?active_user_id=' +
+        BASE_URL + 'login/getUser?active_user_id=' +
         encodeURIComponent(String(userId)) +
         '&user_id=' +
         encodeURIComponent(String(userId));
@@ -148,11 +148,8 @@ useEffect(() => {
       setChangeLogError('');
       try {
         const url =
-        'https://kemyze.vercel.app/containers/getUserChangeLog?user_id=' +
+        BASE_URL + 'containers/getUserChangeLog?user_id=' +
         encodeURIComponent(String(userId));
-       // const url =
-          //'https://kemyze.vercel.app/containers/getUserChangeLog?user_id=' +
-          //encodeURIComponent(String(userId));
         const response = await fetch(url);
 
         if (!response.ok) {
