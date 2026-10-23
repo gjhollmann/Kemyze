@@ -134,12 +134,55 @@ describe('Quaternary Profile View', () => {
         expect(screen.getByText('Time: 12:00:00')).toBeTruthy();
     }); // it('tests loadChangeLog' ...
 
+    
+    /* 
+     * Simulate failed response (500); verify whether quaternary profile 
+     * screen displays appropriate error message when the user's profile
+     * information can't be found. 
+     */
+    it('tests loadProfile API error', async () => {
+        // Mock API endpoints for user and change log.
+        fetchMock().mockImplementation((url: string) => {
 
-    it('returns a profile API error', async () => {
-        
+            // Simulated failed profile request.
+            if (url.includes('login/getUser')) {
+                return Promise.resolve(
+                    jsonResponse(
+                        { error: 'Internal Server Error'},
+                        500
+                    )
+                );
+            }
 
+            // Return (valid) empty change log.
+            if (url.includes('containers/getUserChangeLog')) {
+                return Promise.resolve(
+                    jsonResponse([], 200)
+                );
+            }
 
-    }) // it('returns a profile API error'
+            return Promise.reject(new Error(`Unexpected URL: ${url}`));
+        });
+
+        // Render screen.
+        await renderQuaternaryProfile();
+
+        // Verofy whether profile API was called.
+        await waitFor(() => {
+            expect(fetchMock()).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'login/getUser?active_user_id=526&user_id=526'
+                )
+            );
+        });
+
+        // Check for profile API error message.
+        expect(
+            await screen.findByText(
+                'Unable to load your profile information.'
+            )
+        ).toBeTruthy();
+    }); // it('tests loadProfile API error' ...
 }); // describe('Quaternary Profile View' ...
 
 
