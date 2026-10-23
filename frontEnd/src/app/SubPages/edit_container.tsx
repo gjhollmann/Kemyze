@@ -194,16 +194,16 @@ export default function Edit_Container() {
     useState('YYYY/MM/DD');
 
   const [location, setLocation] =
-    useState(null);
+    useState<string | null>(null)
 
   const [room, setRoom] =
-    useState(null);
+    useState<string | null>(null)
 
   const [cabinet, setCabinet] =
-    useState(null);
+    useState<string | null>(null)
 
   const [shelf, setShelf] =
-    useState(null);
+    useState<string | null>(null)
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -394,11 +394,11 @@ export default function Edit_Container() {
       ]);
     
     
-    const [roomOptions, setRoomOptions] = useState(null);
+    const [roomOptions, setRoomOptions] = useState<string[] | null>(null);
     
-    const [cabinetOptions, setCabinetOptions] = useState(null);
+    const [cabinetOptions, setCabinetOptions] = useState<string[] | null>(null);
     
-    const [shelfOptions, setShelfOptions] = useState(null);
+    const [shelfOptions, setShelfOptions] = useState<string[] | null>(null);
     
     // getOptions for modules
 
@@ -438,14 +438,30 @@ export default function Edit_Container() {
     }
 
     if (selectorType === 'location') {
+      if (value !== location) {
+        setRoom(null);
+        setCabinet(null);
+        setShelf(null);
+        setCabinetOptions([]);
+        setShelfOptions([]);
+      }
+    
       setLocation(value);
     }
 
     if (selectorType === 'room') {
+      if (value !== room) {
+        setCabinet(null);
+        setShelf(null);
+        setShelfOptions([]);
+      }
       setRoom(value);
     }
 
     if (selectorType === 'cabinet') {
+      if (value !== cabinet) {
+        setShelf(null); 
+      }
       setCabinet(value);
     }
 
@@ -1892,11 +1908,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        room === 'XXXX' &&
+                        room == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {room}
+                      {room ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1936,11 +1952,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        cabinet === 'XXXX' &&
+                        cabinet == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {cabinet}
+                      {cabinet ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1980,11 +1996,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        shelf === 'XXXX' &&
+                        shelf == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {shelf}
+                      {shelf ?? 'Select'}
                     </Text>
 
                     <Text
@@ -2049,6 +2065,7 @@ export default function Edit_Container() {
               width="100%"
               height={50}
               borderRadius={10}
+              disabled={room == null || cabinet == null || shelf == null}
             />
           </View>
 
