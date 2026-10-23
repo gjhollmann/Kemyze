@@ -9,6 +9,7 @@ type ScanPopupProps = {
     scanResult: ScanData | null;
     editPrivilege: boolean;
     onViewSds: () => void;
+    onQrLabel: () => void; // KM-63: opens the QR label popup
     onEdit: () => void;
 }; // type ScanPopupProps
 
@@ -19,6 +20,7 @@ export function ScanPopup({
     scanResult,
     editPrivilege,
     onViewSds,
+    onQrLabel,
     onEdit
 }: ScanPopupProps) {
     // Start with window dimensions for scaling.
@@ -134,7 +136,7 @@ export function ScanPopup({
                             <Text style={styling.actionButtonText}>View SDS</Text>
                         </Pressable>
 
-                        <Pressable style={styling.actionButton}>
+                        <Pressable style={styling.actionButton} onPress={onQrLabel}>
                             <Text style={styling.actionButtonText}>Download QR Label</Text>
                         </Pressable>
 
