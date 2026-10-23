@@ -181,13 +181,13 @@ export default function Add_Container() {
     useState('School');
 
   const [room, setRoom] =
-    useState('Chemistry');
+    useState<string | null>('Chemistry');
 
   const [cabinet, setCabinet] =
-    useState('1');
+    useState<string | null>('1');
 
   const [shelf, setShelf] =
-    useState('1');
+    useState<string | null>('1');
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -327,11 +327,11 @@ export default function Add_Container() {
         ]);
 
 
-      const [roomOptions, setRoomOptions] = useState(null);
+      const [roomOptions, setRoomOptions] = useState<string[] | null>(null);
 
-      const [cabinetOptions, setCabinetOptions] = useState(null);
+      const [cabinetOptions, setCabinetOptions] = useState<string[] | null>(null);
 
-      const [shelfOptions, setShelfOptions] = useState(null);
+      const [shelfOptions, setShelfOptions] = useState<string[] | null>(null);
 
 
   const getOptions = () => {
@@ -369,14 +369,29 @@ export default function Add_Container() {
     }
 
     if (selectorType === 'location') {
+      if (value !== location) {
+        setRoom(null);
+        setCabinet(null);
+        setShelf(null);
+        setCabinetOptions([]);
+        setShelfOptions([]);
+      }
       setLocation(value);
     }
 
     if (selectorType === 'room') {
+      if (value !== room) {
+        setCabinet(null);
+        setShelf(null);
+        setShelfOptions([]);
+      }
       setRoom(value);
     }
 
     if (selectorType === 'cabinet') {
+      if (value !== cabinet) {
+        setShelf(null);
+      }
       setCabinet(value);
     }
 
@@ -1508,11 +1523,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        room === 'XXXX' &&
+                        room == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {room}
+                      {room ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1552,11 +1567,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        cabinet === 'XXXX' &&
+                        cabinet == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {cabinet}
+                      {cabinet ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1596,11 +1611,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        shelf === 'XXXX' &&
+                        shelf == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {shelf}
+                      {shelf ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1664,7 +1679,7 @@ export default function Add_Container() {
               width="100%"
               height={50}
               borderRadius={10}
-              disabled={!sdsUploaded}
+              disabled={!sdsUploaded || room == null || cabinet == null || shelf == null}
             />
           </View>
 
