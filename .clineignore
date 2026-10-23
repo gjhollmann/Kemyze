@@ -1,0 +1,22 @@
+# Files Cline should not list, search, or auto-load (gitignore syntax).
+# Saves tokens on the Gemini free tier. Not a security boundary: @-mentions still work,
+# and the PreToolUse hook in .clinerules/hooks/ is what blocks edits to secrets.
+# Note: Cline docs mark .clineignore as "will be deprecated soon".
+
+**/node_modules/
+venv/
+.venv/
+**/__pycache__/
+*.sqlite3
+.env
+.env.*
+frontEnd/.expo/
+frontEnd/package-lock.json
+frontEnd/assets/images/
+*.pdf
+.DS_Store
+
+# Acceptance tests: test passwords, the web build, and Run For Record results (screenshots, .docx)
+frontEnd/acceptance/logins.json
+frontEnd/acceptance/results/
+frontEnd/dist/

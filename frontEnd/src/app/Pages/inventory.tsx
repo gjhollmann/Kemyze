@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
+import { BASE_URL } from '../../../constants/api';
 
 // This matches the JSON shape the Django backend actually sends back
 // (see containers/views.py -> getContainer / getSearch)
@@ -34,8 +35,6 @@ interface Chemical {
   hasWarning?: boolean; // not sent by the backend yet, kept optional for later use
   sds_document?: string;
 }
-
-const BASE_URL = "https://kemyze.vercel.app/";
 
 const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
