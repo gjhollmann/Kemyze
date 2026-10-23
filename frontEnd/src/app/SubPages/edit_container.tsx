@@ -4288,6 +4288,9 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
+    // KM-58: Let long text shrink and wrap instead of spilling out of the box
+    flexShrink: 1,
+    minWidth: 0,
   },
 
   containerInsights: {
