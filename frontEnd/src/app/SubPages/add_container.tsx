@@ -105,6 +105,7 @@ const DAY_NAMES = [
 ];
 
 const CAS_CHARACTERS = [
+  ' ', // KM-57: blank option, so the first part can have fewer than 7 digits
   '0',
   '1',
   '2',
@@ -225,7 +226,11 @@ export default function Add_Container() {
 
   // CAS state
 
+  // KM-57: The first part of a CAS number can be up to 7 digits (same as Edit Container)
   const [casFirst, setCasFirst] = useState([
+    'X',
+    'X',
+    'X',
     'X',
     'X',
     'X',
@@ -404,7 +409,7 @@ export default function Add_Container() {
 
   const getCasLength = () => {
     if (casSelectorType === 'casFirst') {
-      return 4;
+      return 7;
     }
 
     if (casSelectorType === 'casSecond') {
@@ -700,7 +705,7 @@ export default function Add_Container() {
         let casReview: ReviewChange = {
             field: 'CAS Number',
             oldValue: '',
-            newValue: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join(''),
+            newValue: casFirst.join('').replace(/ /g, '')+"-"+casSecond.join('')+"-"+casThird.join(''), // KM-57: drop blank slots
         }
         newChanges.push(casReview);
         
@@ -757,7 +762,7 @@ export default function Add_Container() {
       const payload = {
         user_id: activeUser?.userID,
         chemical_name: chemicalName,
-        cas_number: `${casFirst.join('')}-${casSecond.join('')}-${casThird.join('')}`,
+        cas_number: `${casFirst.join('').replace(/ /g, '')}-${casSecond.join('')}-${casThird.join('')}`, // KM-57: drop blank slots
         acqn_date: acquisitionDate.replaceAll('/', '-'),
         expr_date:
           expirationDate && expirationDate !== 'YYYY/MM/DD'
@@ -1953,7 +1958,7 @@ export default function Add_Container() {
                         styles.casWheelContent
                       }
                     >
-                      {CAS_CHARACTERS.map(
+                      {(casSelectorType === 'casFirst' ? CAS_CHARACTERS : CAS_CHARACTERS.slice(1)).map(
                         (
                           character
                         ) => (
@@ -3384,7 +3389,7 @@ const styles = StyleSheet.create({
   casWheelColumn: {
     flex: 1,
     maxWidth: 82,
-    minWidth: 54,
+    minWidth: 32,
     height: 250,
     borderRadius: 10,
     borderWidth: 1,
