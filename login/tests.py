@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 
-from .views import deleteUser, searchManagedUsers, loginMain, forgotPasswordReq
+from .views import deleteUser, getUser, searchManagedUsers, loginMain, forgotPasswordReq
 from django.contrib.auth.hashers import make_password
 from common.models import Users
 
@@ -358,8 +358,120 @@ class ForgotPasswordReqTests(SimpleTestCase):
     # def test_forgotten_password_unknown_email
 # class ForgotPasswordReqTests
 
-class GetUserTests(SimpleTestCase):
 
+# getUser
+class GetUserTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # User info.
+        self.test_user = {
+            'user_id': 526,
+            'first_name': 'Johnny',
+            'last_name': 'Appleseed',
+            'email': 'john@example.com',
+            'phone': '5551234567',
+            'access_level': 4,
+        }
+
+        # Mock object for location.
+        self.test_location = SimpleNamespace(
+            location_id=10,
+            name='School',
+        )
+    # def setUp(self)
+
+    # Test for successful profile retrieval.
+    @patch('login.views.Users.objects')
+    def test_get_user_profile(self, users):
+        # Mock user with assigned location.
+        mock_user = SimpleNamespace(
+            **self.test_user,
+            location=self.test_location,
+            location_id=10,
+        )
+        
+        # Lookups for active user and requested user in getUser (with GET request).
+        users.get.side_effect = [mock_user, mock_user];
+        getUserReq = self.factory.get(
+            '/login/getUser',
+            {
+                'active_user_id': 526,
+                'user_id': 526,
+            },
+        )
+        
+        getUserRes = getUser(getUserReq)
+        self.assertEqual(getUserRes.status_code, 200)
+
+        # Convert json response, insepct returned profile info.
+        data = json.loads(getUserRes.content)
+        self.assertEqual(data, {
+            'user_id': 526,
+            'first_name': 'Johnny',
+            'last_name': 'Appleseed',
+            'email': 'john@example.com',
+            'phone': '5551234567',
+            'access_level': 4,
+            'location': 'School',
+        })
+
+        # Eneusre password not in profile response.
+        # Confirm backend search of active and requested users.
+        self.assertNotIn('password', data)
+        self.assertEqual(users.get.call_count, 2)
+    # def test_get_user_profile
+
+    # Test profile retrieval in event of missing ID.
+    @patch('login.views.Users.objects')
+    def test_get_user_missing_id(self, users):
+        getUserReq = self.factory.get(
+            '/login/getUser',
+            {
+                'active_user_id': 526,
+            },
+        )
+        getUserRes = getUser(getUserReq)
+        self.assertEqual(getUserRes.content.decode(),
+                        "Missing 'user_id' Parameter",
+                        )
+        users.get.assert_not_called()
+    # def test_get_user_missing_id
+
+    # Test for unauthorized access. One user requests a different user's information.
+    @patch('login.views.Users.objects')
+    def test_get_user_unauthorized(self, users):
+        # Requesting user.
+        active_user = SimpleNamespace(
+            user_id=526,
+            access_level=4,
+            location_id=10,
+        )
+
+        # Requested user.
+        req_user = SimpleNamespace(
+            user_id=297,
+            access_level=4,
+            location_id=10,
+        )
+
+        # Side effect for active user vs. target (requested).
+        users.get.side_effect = [active_user, req_user]
+        getUserReq = self.factory.get(
+            '/login/getUser',
+            {
+                'active_user_id': 526,
+                'user_id': 297,
+            },
+        )
+
+        # Try to deny access.
+        getUserRes = getUser(getUserReq)
+        self.assertEqual(getUserRes.status_code, 403)
+        self.assertEqual(getUserRes.content.decode(),
+                        "User does not have access to other users' information",
+                        )
+    # def test_get_user_unauthorized
 # class GetUserTests
 
 class EditUserTests(SimpleTestCase):
