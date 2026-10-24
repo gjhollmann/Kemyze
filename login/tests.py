@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 
-from .views import deleteUser, searchManagedUsers
+from .views import deleteUser, searchManagedUsers, loginMain, forgotPasswordReq
+from django.contrib.auth.hashers import make_password
+from common.models import Users
 
 
 class DeleteUserTests(SimpleTestCase):
@@ -186,3 +188,188 @@ class SearchManagedUsersTests(SimpleTestCase):
         self.assertEqual(data['offset'], 20)
         self.assertEqual(data['next_offset'], 30)
         self.assertTrue(data['has_more'])
+# class SearchManagedUsersTests
+
+
+# Tests for loginMain - getAccessibleLocationIds (KM-149).
+# loginMain
+class LoginMainTests(SimpleTestCase):
+    def setUp(self):
+       self.factory = RequestFactory() 
+       
+       # Simulated (mock) user with hashed password.
+       # User information similar to that used in frontend tests.
+       self.test_user = {
+            'user_id': 526,
+            'email': 'johnny@example.com',
+            'access_level': 4,
+            'password': make_password('Password123'),
+        }
+    # setUp(self)
+
+    # Test valid credentials.
+    @patch('login.views.Users.objects')
+    def test_login_with_valid_creds(self, users):
+        users.get.return_value = SimpleNamespace(**self.test_user)
+
+        # Simulated valid login attempt.
+        request = self.factory.get(
+            '/login',
+            {
+                'User': self.test_user['email'],
+                'Password': 'Password123',
+            },
+        )
+
+        # Call real Django API, verify success (200 OK).
+        response = loginMain(request)
+        self.assertEqual(response.status_code, 200)
+
+        # Inspect and verify returned user information.
+        data = json.loads(response.content)
+        self.assertEqual(data, { 
+            'userID': self.test_user['user_id'],
+            'accessLevel': self.test_user['access_level'],
+            },
+        )
+    # def test_login_with_valid_creds
+
+    # Test incorrect password behavior.
+    @patch('login.views.Users.objects')
+    def test_login_with_incorrect_password(self, users):
+        # Returned mock user info (converted to SimpleNamespace)
+        users.get.return_value = SimpleNamespace(**self.test_user)
+
+        # Attempted login with incorrect password.
+        request = self.factory.get(
+            '/login',
+            {
+                'User': self.test_user['email'],
+                'Password': 'WrongPassword123',
+            },
+        )
+
+        # Call loginMain view with incorrect password; verify if rejected.
+        response = loginMain(request)
+        self.assertEqual(response.status_code, 400)
+
+        data = response.content
+        self.assertEqual(data.decode(), 'Login failed. Information is invalid.')
+
+        # Confirm correct user searched.
+        users.get.assert_called_once_with(email=self.test_user['email'])
+# class LoginMainTest
+
+
+# forgotPasswordReq
+class ForgotPasswordReqTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # User info (repeated).
+        self.test_user = {
+            'user_id': 526,
+            'email': 'john@example.com',
+            'access_level': 4,
+        }
+    # def setUp(self)
+    
+    # Test for forgotten password; user has valid email address.
+    @patch('login.views.send_mail')
+    @patch('login.views.Users.objects')
+    def test_forgotten_password_valid_email(self, users, mock_send_mail):
+        users.get.return_value = SimpleNamespace(**self.test_user)
+
+        # POST request with email. 
+        request = self.factory.post(
+            '/login/forgotPasswordReq',
+            data=json.dumps({
+                'email': self.test_user['email'],
+            }),
+            content_type='application/json',
+        )
+
+        # Call to Django view, successful response verification.
+        response = forgotPasswordReq(request)
+        self.assertEqual(response.status_code, 200)
+
+        # Confirmation message.
+        data = json.loads(response.content)
+        self.assertEqual(data, {
+            'status': 'OK',
+            'message': 'Reset instructions have been sent.' 
+        })
+
+        # User found via email? Check call to email function.
+        users.get.assert_called_once_with(email=self.test_user['email'])
+        mock_send_mail.assert_called_once_with(
+            'Kemyze: Reset Password',
+            'Hello - please follow the email reset instructions below.',
+            'no-reply@kemyze.com',
+            [self.test_user['email']],
+            fail_silently=False,
+        )
+    # def test_forgotten_password_valid_email
+
+    # Test for missing email.
+    def test_forgotten_password_missing_email(self):
+        # Reset request with no email.
+        request = self.factory.post(
+            '/login/forgotPasswordReq',
+            data=json.dumps({}),
+            content_type='application/json',
+        )
+
+        response = forgotPasswordReq(request)
+        self.assertEqual(response.status_code, 400)
+
+        data = json.loads(response.content)
+        self.assertEqual(data, {
+            'status': 'error',
+            'message': 'Missing or empty email parameter.',
+        })
+    # def test_forgotten_password_missing_email
+
+    # Test with email not present in database.
+    @patch('login.views.send_mail')
+    @patch('login.views.Users.objects')
+    def test_forgotten_password_unknown_email(self, users, mock_send_mail):
+        # Nonexistent user.
+        users.get.side_effect = Users.DoesNotExist
+        request = self.factory.post(
+            '/login/forgotPasswordReq',
+            data=json.dumps({
+                'email': 'nonexistent@example.com',
+            }),
+            content_type='application/json',
+        )
+
+        response = forgotPasswordReq(request)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.content)
+        self.assertEqual(data, {
+            'status': 'OK',
+            'message': 'Reset instructions have been sent.' 
+        })
+
+        # Ensure no reset email sent.
+        mock_send_mail.assert_not_called()
+    # def test_forgotten_password_unknown_email
+# class ForgotPasswordReqTests
+
+class GetUserTests(SimpleTestCase):
+
+# class GetUserTests
+
+class EditUserTests(SimpleTestCase):
+
+# class EditUserTests
+
+class AddUserTests(SimpleTestCase):
+
+# class AddUserTests        
+
+class GetAccessibleLocationIdsTests(SimpleTestCase):
+
+# class GetAccessibleLocationIdsTests 
