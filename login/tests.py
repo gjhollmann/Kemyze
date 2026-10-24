@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 
-from .views import deleteUser, getUser, searchManagedUsers, loginMain, forgotPasswordReq
-from django.contrib.auth.hashers import make_password
+from .views import deleteUser, getUser, editUser, addUser, searchManagedUsers, loginMain, forgotPasswordReq, _get_accessible_location_ids
+from django.contrib.auth.hashers import make_password, check_password
 from common.models import Users
 
 
@@ -474,14 +474,360 @@ class GetUserTests(SimpleTestCase):
     # def test_get_user_unauthorized
 # class GetUserTests
 
-class EditUserTests(SimpleTestCase):
 
+# editUser
+class EditUserTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        # Requesting user.
+        self.active_user = {
+            'user_id': 526,
+            'access_level': 3,
+            'location_id': 10,
+        }
+
+        # Requested user whose profile is being edited.
+        self.req_user = {
+                'user_id': 297,
+                'first_name': 'Johnny',
+                'last_name': 'Appleseed',
+                'email': 'john@example.com',
+                'phone': '5551234567',
+                'access_level': 4,
+                'location_id': 10,
+            }
+    # def setUp(self)
+
+    # Test valid update to a profile's information.
+    @patch('login.views.Users.objects')
+    def test_edit_user_valid(self, users):
+        active_user = SimpleNamespace(**self.active_user)
+        req_user = MagicMock(**self.req_user)
+
+        # Simulated database searches for both users.
+        # POST request with updated profile info.
+        users.get.side_effect = [active_user, req_user]
+        editUserReq = self.factory.post(
+            '/login/editUser',
+            data=json.dumps({
+                'active_user_id': 526,
+                'user_id': 297,
+                'first_name': 'Jonathan',
+                'phone': '5559876543',
+            }),
+            content_type='application/json',
+        )
+
+        # Call to editUser Django view, successful response verification.
+        editUserRes = editUser(editUserReq)
+        self.assertEqual(editUserRes.status_code, 200)
+        self.assertEqual(editUserRes.content.decode(), 'Success')
+
+        # Check whether user information was updated and user saved.
+        self.assertEqual(req_user.first_name, 'Jonathan')
+        self.assertEqual(req_user.phone, '5559876543')
+        req_user.save.assert_called_once_with()
+    # def test_edit_user_valid
+
+    # Test editing user with a missing userID.
+    @patch('login.views.Users.objects')
+    def test_edit_user_missing_id(self, users):
+        editUserReq = self.factory.post(
+            '/login/editUser',
+            data=json.dumps({
+                'active_user_id': 526,
+                'first_name': 'Jonathan',
+            }),
+            content_type='application/json',
+        )
+        editUserRes = editUser(editUserReq)
+
+        # Check for missing parameter error.
+        self.assertEqual(editUserRes.status_code, 400)
+        self.assertEqual(
+            editUserRes.content.decode(),
+            "Missing 'user_id' Parameter",
+        )
+        users.get.assert_not_called()
+    # def test_edit_user_missing_id
+
+    # Test unauthorized attempt to edit profile.
+    # Test case uses access level 4.
+    @patch('login.views.Users.objects')
+    def test_edit_user_unauthorized(self, users):
+        active_user = SimpleNamespace(
+            **{**self.active_user, 'access_level': 4}
+        )
+
+        req_user = MagicMock(**self.req_user)
+        users.get.side_effect = [active_user, req_user]
+
+        editUserReq = self.factory.post(
+            '/login/editUser',
+            data=json.dumps({
+                'active_user_id': 526,
+                'user_id': 297,
+                'first_name': 'Jonathan',
+            }),
+            content_type='application/json',
+        )
+        editUserRes = editUser(editUserReq)
+
+        # Verify whether to attempt to edit was denied.
+        # Also ensure requested user's info. was not saved.
+        self.assertEqual(editUserRes.status_code, 403)
+        self.assertEqual(
+            editUserRes.content.decode(),
+            "User does not have permission to edit profiles",
+        )
+        req_user.save.assert_not_called()
+    # def test_edit_user_unauthorized
+
+    # Editing with invalid email.
+    @patch('login.views.Users.objects')
+    def test_edit_user_invalid_email(self, users):
+
+        active_user = SimpleNamespace(**self.active_user)
+        req_user = MagicMock(**self.req_user)
+
+        users.get.side_effect = [active_user, req_user]
+
+        editUserReq = self.factory.post(
+            '/login/editUser',
+            data=json.dumps({
+                'active_user_id': 526,
+                'user_id': 297,
+                'email': 'invalid-email',
+            }),
+            content_type='application/json',
+        )
+
+        editUserRes = editUser(editUserReq)
+
+        # Verify email validation error. Ensure information not saved.
+        self.assertEqual(editUserRes.status_code, 400)
+        self.assertEqual(
+            editUserRes.content.decode(),
+            "Invalid email",
+        )
+        req_user.save.assert_not_called()
+    # def test_edit_user_invalid_email
 # class EditUserTests
 
+# addUser
 class AddUserTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
 
+        # Info of user adding a new account.
+        self.active_user = {
+            'user_id': 989,
+            'access_level': 3,
+        }
+
+        # Location for new user (example).
+        self.test_location = SimpleNamespace(
+            location_id=10,
+            name='School',
+        )
+
+        # Info. for new user account.
+        self.new_user = {
+            'user_id': self.active_user['user_id'],
+            'name': 'Johnny Appleseed',
+            'location': 'School',
+            'phone': '5551234567',
+            'email': 'john@example.com',
+            'authorization': 'Quaternary',
+            'password': 'Password123',
+        }
+    # def setUp(self)
+
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_add_user_valid(self, users, locations):
+        # Mock requesting user.
+        active_user = SimpleNamespace(
+            **self.active_user,
+            location=self.test_location,
+        )
+
+        # First lookup finds requester. Second finds no existing email.
+        users.get.side_effect = [active_user, Users.DoesNotExist]
+
+        # Return valid location.
+        locations.filter.return_value.first.return_value = self.test_location
+
+        # Simulate request to create a user, call Django view.
+        addUserReq = self.factory.post(
+            '/login/addUser',
+            data=json.dumps(self.new_user),
+            content_type='application/json',
+        )
+        addUserRes = addUser(addUserReq)
+
+        self.assertEqual(addUserRes.status_code, 200)
+        self.assertEqual(addUserRes.content.decode(), 'User made')
+
+        # Confirm account was created.
+        users.create.assert_called_once()
+
+        # Inspect values passed to Users.objects.create().
+        created_user = users.create.call_args.kwargs
+
+        self.assertEqual(created_user['first_name'], 'Johnny')
+        self.assertEqual(created_user['last_name'], 'Appleseed')
+        self.assertEqual(created_user['email'], self.new_user['email'])
+        self.assertEqual(created_user['access_level'], 4)
+        self.assertEqual(created_user['location'], self.test_location)
+
+        # Verify password was hashed before being stored, and that hash matches original password.
+        self.assertNotEqual(
+            created_user['password'],
+            self.new_user['password'],
+        )
+
+        # Verify the hash matches the original password.
+        self.assertTrue(
+            check_password(
+                self.new_user['password'],
+                created_user['password'],
+            )
+        )
+    # def test_add_user_valid
+
+    # Test request submission with missing field (name),
+    @patch('login.views.Users.objects')
+    def test_add_user_missing_field(self, users):
+        request_data = {
+            **self.new_user,
+        }
+
+        # Remove required field manually.
+        request_data.pop('name')
+        addUserReq = self.factory.post(
+            '/login/addUser',
+            data=json.dumps(request_data),
+            content_type='application/json',
+        )
+        addUserRes = addUser(addUserReq)
+
+        self.assertEqual(addUserRes.status_code, 400)
+        self.assertEqual(
+            addUserRes.content.decode(),
+            'Missing name Parameter',
+        )
+
+        # Check database action prevention.
+        users.get.assert_not_called()
+        users.create.assert_not_called()
+    # def test_add_user_missing_field
+
+    # Test for quaternary attempt at account creation.
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_add_user_unauthorized(self, users, locations):
+        active_user = SimpleNamespace(
+            **{**self.active_user, 'access_level': 4},
+            location=self.test_location,
+        )
+
+        users.get.return_value = active_user
+        locations.filter.return_value.first.return_value = self.test_location
+
+        addUserReq = self.factory.post(
+            '/login/addUser',
+            data=json.dumps(self.new_user),
+            content_type='application/json',
+        )
+        addUserRes = addUser(addUserReq)
+
+        self.assertEqual(addUserRes.status_code, 403)
+        self.assertEqual(
+            addUserRes.content.decode(),
+            'User is not allowed to make users',
+        )
+        users.create.assert_not_called()
+
+        # Test for account creation with existing email.
+    @patch('login.views.Locations.objects')
+    @patch('login.views.Users.objects')
+    def test_add_user_duplicate_email(self, users, locations):
+        active_user = SimpleNamespace(
+            **self.active_user,
+            location=self.test_location,
+        )
+
+        existing_user = SimpleNamespace(
+            user_id=297,
+            email=self.new_user['email'],
+        )
+
+        # Requester exists, and email is already registered.
+        users.get.side_effect = [active_user, existing_user]
+        locations.filter.return_value.first.return_value = self.test_location
+
+        addUserReq = self.factory.post(
+            '/login/addUser',
+            data=json.dumps(self.new_user),
+            content_type='application/json',
+        )
+        addUserRes = addUser(addUserReq)
+
+        self.assertEqual(addUserRes.status_code, 400)
+        self.assertEqual(
+            addUserRes.content.decode(),
+            'User Already Exists',
+        )
+
+        users.create.assert_not_called()
+    # def test_add_user_duplicate_email
 # class AddUserTests        
 
-class GetAccessibleLocationIdsTests(SimpleTestCase):
 
+# _get_accessible_location_ids
+class GetAccessibleLocationIdsTests(SimpleTestCase):
+    # Setup with simulated location IDs.
+    def setUp(self):
+        self.root_id = 10
+        self.child_ids = [11, 12]
+        self.grandchild_id = 13
+    # def setUp(self)
+
+    # Test location with no descendants.
+    @patch('login.views.Locations.objects')
+    def test_get_accessible_location_root(self, locations):
+
+        # Simulate no child locations found.
+        locations.filter.return_value.values_list.return_value = []
+
+        # Call helper function directly. Root location should still be included.
+        result = _get_accessible_location_ids(self.root_id)
+        self.assertEqual(result, {10})
+
+        # Verify the database was searched.
+        locations.filter.assert_called_once_with(
+            parent_id__in=[10]
+        )
+    # def test_get_accessible_location_root
+
+    @patch('login.views.Locations.objects')
+    def test_get_accessible_location_descendants(self, locations):
+
+        # Simulate successive levels of the location hierarchy.
+        locations.filter.return_value.values_list.side_effect = [
+            [11, 12],  # Children of root 10.
+            [13],      # Grandchild under one of the children.
+            [],        # No additional descendants.
+        ]
+
+        result = _get_accessible_location_ids(self.root_id)
+
+        # All reachable locations should be returned.
+        self.assertEqual(result, {10, 11, 12, 13})
+
+        # Verify all three hierarchy levels were checked.
+        self.assertEqual(locations.filter.call_count, 3)
+    # def test_get_accessible_location_descendants
 # class GetAccessibleLocationIdsTests 
