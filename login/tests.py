@@ -254,10 +254,11 @@ class LoginMainTests(SimpleTestCase):
         self.assertEqual(response.status_code, 400)
 
         data = response.content
-        self.assertEqual(data.decode(), 'Login failed. Information is invalid.')
+        self.assertEqual(data.decode(), 'Login failed; invalid information.')
 
         # Confirm correct user searched.
         users.get.assert_called_once_with(email=self.test_user['email'])
+    # def test_login_with_incorrect_password
 # class LoginMainTest
 
 
@@ -489,14 +490,14 @@ class EditUserTests(SimpleTestCase):
 
         # Requested user whose profile is being edited.
         self.req_user = {
-                'user_id': 297,
-                'first_name': 'Johnny',
-                'last_name': 'Appleseed',
-                'email': 'john@example.com',
-                'phone': '5551234567',
-                'access_level': 4,
-                'location_id': 10,
-            }
+            'user_id': 297,
+            'first_name': 'Johnny',
+            'last_name': 'Appleseed',
+            'email': 'john@example.com',
+            'phone': '5551234567',
+            'access_level': 4,
+            'location_id': 10,
+        }
     # def setUp(self)
 
     # Test valid update to a profile's information.
@@ -602,7 +603,6 @@ class EditUserTests(SimpleTestCase):
             }),
             content_type='application/json',
         )
-
         editUserRes = editUser(editUserReq)
 
         # Verify email validation error. Ensure information not saved.
@@ -614,6 +614,7 @@ class EditUserTests(SimpleTestCase):
         req_user.save.assert_not_called()
     # def test_edit_user_invalid_email
 # class EditUserTests
+
 
 # addUser
 class AddUserTests(SimpleTestCase):
