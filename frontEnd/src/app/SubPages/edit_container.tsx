@@ -254,10 +254,6 @@ export default function Edit_Container() {
   const [oldShelf, setOldShelf] =
     useState('XXXX');
 
-  const [sdsOldLocation, setOldSdsLocation] =
-    useState('');
-
-
   // CAS state
 
   const [casFirst, setCasFirst] = useState([
@@ -826,7 +822,6 @@ export default function Edit_Container() {
       setSdsUploaded(true);
 
       successHaptic();
-      setOldSdsLocation(sdsLocation);
       setSdsFile(null);
     } catch (error: any) {
       console.log(error.message);
@@ -918,6 +913,14 @@ export default function Edit_Container() {
             }
             newChanges.push(newReview);
         }
+        if (sdsUploaded) {
+          const newReview: ReviewChange = {
+            field: 'SDS',
+            oldValue: 'Existing SDS file',
+            newValue: sdsLocation,
+          }
+          newChanges.push(newReview);
+        }
         setReviewChanges(newChanges);
     }
 
@@ -928,6 +931,7 @@ export default function Edit_Container() {
       .then(() => {
           console.log("Save complete");
           setSavedVisible(true);
+          setSdsUploaded(false);
       })
   };
     
