@@ -194,16 +194,16 @@ export default function Edit_Container() {
     useState('YYYY/MM/DD');
 
   const [location, setLocation] =
-    useState(null);
+    useState<string | null>(null)
 
   const [room, setRoom] =
-    useState(null);
+    useState<string | null>(null)
 
   const [cabinet, setCabinet] =
-    useState(null);
+    useState<string | null>(null)
 
   const [shelf, setShelf] =
-    useState(null);
+    useState<string | null>(null)
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -211,6 +211,8 @@ export default function Edit_Container() {
   const [isNewLocationVisible, setIsNewLocationVisible] = useState(false);
     
   const [isNewChildLocationVisible, setIsNewChildLocationVisible] = useState(false);
+    
+    const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
 
   const [newLocation, setNewLocation] = useState('');
 
@@ -253,10 +255,6 @@ export default function Edit_Container() {
 
   const [oldShelf, setOldShelf] =
     useState('XXXX');
-
-  const [sdsOldLocation, setOldSdsLocation] =
-    useState('');
-
 
   // CAS state
 
@@ -383,22 +381,16 @@ export default function Edit_Container() {
     
   // State Variables for Options that are dynamic
     
-    const [locationOptions, setLocationOptions] = useState([
-        'X',
-        'X',
-        'X',
-        'X',
-        'X',
-        'X',
-        'X',
-      ]);
+    const [locationOptions, setLocationOptions] = useState([{
+                    name: "No locations found",
+                }]);
     
     
-    const [roomOptions, setRoomOptions] = useState(null);
+    const [roomOptions, setRoomOptions] = useState<string[] | null>(null);
     
-    const [cabinetOptions, setCabinetOptions] = useState(null);
+    const [cabinetOptions, setCabinetOptions] = useState<string[] | null>(null);
     
-    const [shelfOptions, setShelfOptions] = useState(null);
+    const [shelfOptions, setShelfOptions] = useState<string[] | null>(null);
     
     // getOptions for modules
 
@@ -438,14 +430,30 @@ export default function Edit_Container() {
     }
 
     if (selectorType === 'location') {
+      if (value !== location) {
+        setRoom(null);
+        setCabinet(null);
+        setShelf(null);
+        setCabinetOptions([]);
+        setShelfOptions([]);
+      }
+    
       setLocation(value);
     }
 
     if (selectorType === 'room') {
+      if (value !== room) {
+        setCabinet(null);
+        setShelf(null);
+        setShelfOptions([]);
+      }
       setRoom(value);
     }
 
     if (selectorType === 'cabinet') {
+      if (value !== cabinet) {
+        setShelf(null); 
+      }
       setCabinet(value);
     }
 
@@ -791,6 +799,7 @@ export default function Edit_Container() {
       Alert.alert('No file selected', 'Please select an SDS PDF before importing');
     }
 
+    
     setIsSdsUploading(true);
 
     try {
@@ -826,7 +835,6 @@ export default function Edit_Container() {
       setSdsUploaded(true);
 
       successHaptic();
-      setOldSdsLocation(sdsLocation);
       setSdsFile(null);
     } catch (error: any) {
       console.log(error.message);
@@ -918,6 +926,14 @@ export default function Edit_Container() {
             }
             newChanges.push(newReview);
         }
+        if (sdsUploaded) {
+          const newReview: ReviewChange = {
+            field: 'SDS',
+            oldValue: 'Existing SDS file',
+            newValue: sdsLocation,
+          }
+          newChanges.push(newReview);
+        }
         setReviewChanges(newChanges);
     }
 
@@ -928,6 +944,7 @@ export default function Edit_Container() {
       .then(() => {
           console.log("Save complete");
           setSavedVisible(true);
+          setSdsUploaded(false);
       })
   };
     
@@ -1200,6 +1217,9 @@ export default function Edit_Container() {
         }
         if(activeUser?.accessLevel <= 2){
             setIsNewChildLocationVisible(true);
+        }
+        if (activeUser?.accessLevel <= 2) {
+          setLocationOptionsVisible(true);
         }
         }
     
@@ -1823,40 +1843,53 @@ export default function Edit_Container() {
                   Location
                 </Text>
 
-                <Pressable
-                  onPress={() =>
-                    openSelector(
-                      'location'
-                    )
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Select location"
-                  style={({ pressed }) => [
-                    styles.selectInput,
-                    pressed &&
-                      styles.selectPressed,
-                  ]}
-                >
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.selectText,
-                      location ===
-                        'Location Name' &&
-                        styles.placeholderText,
-                    ]}
-                  >
-                    {location}
-                  </Text>
+          {locationOptionsVisible ? (<Pressable
+            onPress={() =>
+              openSelector(
+                'location'
+              )
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Select location"
+            style={({ pressed }) => [
+              styles.selectInput,
+              pressed &&
+              styles.selectPressed,
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.selectText,
+                location ===
+                'Location Name' &&
+                styles.placeholderText,
+              ]}
+            >
+              {location}
+            </Text>
 
-                  <Text
-                    style={
-                      styles.selectArrow
-                    }
-                  >
-                    ⌄
-                  </Text>
-                </Pressable>
+            <Text
+              style={
+                styles.selectArrow
+              }
+            >
+              ⌄
+            </Text>
+          </Pressable>) : (<View
+            style={
+              styles.locationDefault
+            }
+          >
+            <Text
+              numberOfLines={1}
+              style={
+                styles.selectText
+              }
+            >
+              {location}
+            </Text>
+          </View>)}
               </View>
 
               {/* Room / Cabinet / Shelf */}
@@ -1892,11 +1925,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        room === 'XXXX' &&
+                        room == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {room}
+                      {room ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1936,11 +1969,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        cabinet === 'XXXX' &&
+                        cabinet == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {cabinet}
+                      {cabinet ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1980,11 +2013,11 @@ export default function Edit_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        shelf === 'XXXX' &&
+                        shelf == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {shelf}
+                      {shelf ?? 'Select'}
                     </Text>
 
                     <Text
@@ -2049,6 +2082,7 @@ export default function Edit_Container() {
               width="100%"
               height={50}
               borderRadius={10}
+              disabled={room == null || cabinet == null || shelf == null}
             />
           </View>
 
@@ -4288,6 +4322,9 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: FONT_SIZE.secondary,
     lineHeight: 19,
+    // KM-58: Let long text shrink and wrap instead of spilling out of the box
+    flexShrink: 1,
+    minWidth: 0,
   },
 
   containerInsights: {
@@ -5116,5 +5153,16 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         paddingHorizontal: 9,
         backgroundColor: '#09091C',
+    },
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#334155',
+      borderRadius: 9,
+      backgroundColor: '#09091C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+      opacity: 0.6,
     },
 });
