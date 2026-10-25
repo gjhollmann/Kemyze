@@ -705,7 +705,7 @@ export default function Add_Container() {
         let casReview: ReviewChange = {
             field: 'CAS Number',
             oldValue: '',
-            newValue: casFirst.join('').replace(/ /g, '')+"-"+casSecond.join('')+"-"+casThird.join(''), // KM-57: drop blank slots
+            newValue: casFirst.join('').replace(/[ X] /g, '')+"-"+casSecond.join('')+"-"+casThird.join(''), // KM-57: drop blank slots and unpicked x slots
         }
         newChanges.push(casReview);
         
@@ -762,7 +762,7 @@ export default function Add_Container() {
       const payload = {
         user_id: activeUser?.userID,
         chemical_name: chemicalName,
-        cas_number: `${casFirst.join('').replace(/ /g, '')}-${casSecond.join('')}-${casThird.join('')}`, // KM-57: drop blank slots
+        cas_number: `${casFirst.join('').replace(/[ X] /g, '')}-${casSecond.join('')}-${casThird.join('')}`, // KM-57: drop blank slots and unpicked X slots
         acqn_date: acquisitionDate.replaceAll('/', '-'),
         expr_date:
           expirationDate && expirationDate !== 'YYYY/MM/DD'
