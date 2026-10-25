@@ -1770,16 +1770,17 @@ confirmBackground: {
     paddingHorizontal: 20,
   },
     
-      locationDefault: {
-        width: '100%',
-        minHeight: 44,
-        borderWidth: 1,
-        borderColor: '#223044',
-        borderRadius: 9,
-        backgroundColor: '#02021C',
-        justifyContent: 'center',
-        paddingHorizontal: 8,
-      },
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#334155',
+      borderRadius: 9,
+      backgroundColor: '#09091C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+      opacity: 0.6,
+    },
     iconContainer: {
         padding: 5,
       },
