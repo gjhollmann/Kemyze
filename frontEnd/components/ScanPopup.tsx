@@ -8,6 +8,7 @@ type ScanPopupProps = {
     scanResult: ScanData | null;
     editPrivilege: boolean;
     onViewSds: () => void;
+    onQrLabel: () => void; // KM-63: opens the QR label popup
     onEdit: () => void;
 }; // type ScanPopupProps
 
@@ -18,6 +19,7 @@ export function ScanPopup({
     scanResult,
     editPrivilege,
     onViewSds,
+    onQrLabel,
     onEdit
 }: ScanPopupProps) {
     // Start with window dimensions for scaling.
@@ -144,11 +146,11 @@ export function ScanPopup({
 
                         <GradientButton
                             title="Download QR Label"
-                            disabled
+                            onPress={onQrLabel}
                             width="100%"
                             height={44}
                             style={styling.actionButton}
-                            accessibilityLabel="Download QR label unavailable"
+                            
                         />
 
                         {/*Third button 'Edit Information' should only be presented to privileged user. Toggled by 'editPrivilege' boolean.*/}
