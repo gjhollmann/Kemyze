@@ -639,35 +639,28 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
-                  {/* Recently Active Filter */}
-                  <View style={styles.filterRow}>
-                    <Pressable
+                 {/* Recently Active and Add New */}
+                  <View
+                    style={[
+                      styles.filterRow,
+                      {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                      },
+                    ]}
+                  >
+                    <GradientButton
+                      title={recentlyActive ? '✓ Recently Active' : 'Recently Active'}
                       onPress={() => {
                         haptic();
                         setRecentlyActive(!recentlyActive);
                       }}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: recentlyActive }}
-                      style={{
-                        padding: 12,
-                        borderRadius: 10,
-                        backgroundColor: recentlyActive ? '#3563C9' : '#30364B',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                        {recentlyActive ? '✓ Recently Active' : 'Recently Active'}
-                      </Text>
-                    </Pressable>
-                  </View>
+                      width={200}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
+                    />
 
-                  {/* Add New */}
-                  <View
-                    style={[
-                      styles.filterRow,
-                      compactHeader && styles.compactRow,
-                    ]}
-                  >
                     <GradientButton
                       title="Add New"
                       onPress={() => {
@@ -679,6 +672,8 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
+
+             
                 </View>
               </LinearGradient>
             </View>
