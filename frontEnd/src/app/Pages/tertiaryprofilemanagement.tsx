@@ -272,6 +272,7 @@ export default function ManagedAccounts() {
   // Search state
 
   const [search, setSearch] = useState('');
+  const [recentlyActive, setRecentlyActive] = useState(false);
 
   const [query, setQuery] = useState('');
 
@@ -334,6 +335,7 @@ export default function ManagedAccounts() {
             user_id: activeUser.userID,
             search: searchTerm,
             offset,
+            recently_active: recentlyActive,
           }),
         });
 
@@ -391,7 +393,7 @@ export default function ManagedAccounts() {
         }
       }
     },
-    [activeUser]
+    [activeUser, recentlyActive]
   );
 
   useEffect(() => {
@@ -636,6 +638,27 @@ export default function ManagedAccounts() {
                       height={BUTTON_HEIGHT}
                       borderRadius={10}
                     />
+                  </View>
+                  {/* Recently Active Filter */}
+                  <View style={styles.filterRow}>
+                    <Pressable
+                      onPress={() => {
+                        haptic();
+                        setRecentlyActive(!recentlyActive);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: recentlyActive }}
+                      style={{
+                        padding: 12,
+                        borderRadius: 10,
+                        backgroundColor: recentlyActive ? '#3563C9' : '#30364B',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                        {recentlyActive ? '✓ Recently Active' : 'Recently Active'}
+                      </Text>
+                    </Pressable>
                   </View>
 
                   {/* Add New */}

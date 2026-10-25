@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from django.db.models import Q
-from common.models import Locations, Users
+from django.db.models import Q, OuterRef, Subquery
+from common.models import Locations, Users, ContainerAuditLog
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseForbidden, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -519,6 +519,8 @@ def searchManagedUsers(request):
     requesting_user_id = data.get("user_id")
     search = data.get("search", "")
     offset = data.get("offset", 0)
+    recently_active = data.get("recently_active", False)
+    
 
     if requesting_user_id is None:
         return JsonResponse(
@@ -588,10 +590,32 @@ def searchManagedUsers(request):
             | Q(location__name__icontains=normalized_search)
         )
 
+    # Sort users by their most recent container activity
+    if recently_active:
+        latest_activity = (
+            ContainerAuditLog.objects
+            .filter(changed_by=OuterRef("user_id"))
+            .order_by("-changed_at")
+            .values("changed_at")[:1]
+        )
+
+        managed_users = (
+            managed_users
+            .annotate(last_activity=Subquery(latest_activity))
+            .filter(last_activity__isnull=False)
+            .order_by("-last_activity", "user_id")
+        )
+    else:
+        managed_users = managed_users.order_by(
+            "first_name", "last_name", "user_id"
+        )
+
+    # Return 10 users at a time
     page_size = 10
     page = list(
-        managed_users.select_related("location")
-        .order_by("first_name", "last_name", "user_id")[offset : offset + page_size + 1]
+        managed_users.select_related("location")[
+            offset : offset + page_size + 1
+        ]
     )
     has_more = len(page) > page_size
 
