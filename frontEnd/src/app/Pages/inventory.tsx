@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
+import { QuantityFlask, getQuantityStyle } from '../../../components/QuantityFlask';
 import GradientButton from '../../../components/GradientButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
@@ -576,13 +577,16 @@ const Inventory: React.FC = () => {
               </View>
 
               <View style={styles.visualSide}>
-                {/* Placeholder for Beaker Image */}
-                <View style={styles.beakerPlaceholder} />
-                {item.hasWarning && (
-                  <View style={styles.warningBox}>
-                    <Text style={{fontSize: 10}}>💀</Text>
-                  </View>
-                )}
+                {/* KM-79: Flask (how much is left) and hazard symbol side by side */}
+                <View style={styles.indicatorRow}>
+                  <QuantityFlask quantity={item.quantity} />
+                  {item.hasWarning && (
+                    <Image
+                      source={require('../../../assets/images/hazard-skull.png')}
+                      style={styles.hazardIcon}
+                    />
+                  )}
+                </View>
               </View>
 
               <View style={styles.buttonSide}>
@@ -622,8 +626,8 @@ const Inventory: React.FC = () => {
             <Text style={styles.locationText}>{item.location}</Text>
             <Text style={[
               styles.statusText, 
-              { color: item.quantity === 'high' || item.quantity === 'GOOD' ? '#4ade80' : '#fbbf24' }
-            ]}>
+                 // KM-79: Text color matches the flask (green / yellow / red / grey)
+                 { color: getQuantityStyle(item.quantity).color }            ]}>
               {item.quantity}
             </Text>
           </View>
@@ -991,21 +995,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  beakerPlaceholder: {
-    width: 40,
-    height: 60,
-    backgroundColor: '#4ade80',
-    borderRadius: 5,
-  },
-  warningBox: {
-    position: 'absolute',
-    right: -5,
-    top: 5,
-    backgroundColor: 'white',
-    padding: 2,
-    borderWidth: 1,
-    borderColor: 'red',
-  },
+  // KM-79: Holds the quantity flask and hazard symbol next to each other
+  indicatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+     },
+    // KM-79: GHS skull hazard symbol, sized to sit next to the flask
+  hazardIcon: {
+    width: 26,
+    height: 26,
+    marginLeft: 6,
+    resizeMode: 'contain',
+     },
+
   buttonSide: {
     flex: 1.2,
   },
