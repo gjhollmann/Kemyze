@@ -25,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../components/NavBar';
 import GradientButton from '../../../components/GradientButton';
 
-const BASE_URL = "https://kemyze.vercel.app/";
+import { BASE_URL } from '../../../constants/api';
 
 const showPopup = (title: string, message: string) => {
   if (Platform.OS === 'web') {
@@ -3447,11 +3447,12 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#223044',
+    borderColor: '#334155',
     borderRadius: 9,
-    backgroundColor: '#02021C',
+    backgroundColor: '#09091C',
     justifyContent: 'center',
     paddingHorizontal: 8,
+    opacity: 0.6,
   },
 
   selectText: {

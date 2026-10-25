@@ -110,6 +110,8 @@ Reserved for 191
    
 ### Developer Instructions
 Reserved for 191
+
+AI coding assistant (optional): anyone who wants to use Cline in VS Code with Google Gemini can follow [CLINE_SETUP.md](CLINE_SETUP.md). The rules, skills, workflows, and hooks in `.clinerules/` and `.cline/skills/` are read only by Cline and do not change the app.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
