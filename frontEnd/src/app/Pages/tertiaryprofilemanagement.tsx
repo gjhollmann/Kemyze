@@ -273,6 +273,7 @@ export default function ManagedAccounts() {
 
   const [search, setSearch] = useState('');
   const [recentlyActive, setRecentlyActive] = useState(false);
+  const [recentlyInactive, setRecentlyInactive] = useState(false);
 
   const [query, setQuery] = useState('');
 
@@ -336,6 +337,7 @@ export default function ManagedAccounts() {
             search: searchTerm,
             offset,
             recently_active: recentlyActive,
+            recently_inactive: recentlyInactive,
           }),
         });
 
@@ -393,7 +395,7 @@ export default function ManagedAccounts() {
         }
       }
     },
-    [activeUser, recentlyActive]
+    [activeUser, recentlyActive, recentlyInactive]
   );
 
   useEffect(() => {
@@ -655,12 +657,25 @@ export default function ManagedAccounts() {
                       onPress={() => {
                         haptic();
                         setRecentlyActive(!recentlyActive);
+                        setRecentlyInactive(false);
                       }}
                       width={200}
                       height={BUTTON_HEIGHT}
                       borderRadius={10}
                     />
 
+                    <GradientButton
+                      title={recentlyInactive ? '✓ Recently Inactive' : 'Recently Inactive'}
+                      onPress={() => {
+                        haptic();
+                        setRecentlyInactive(!recentlyInactive);
+                        setRecentlyActive(false);
+                      }}
+                      width={220}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
+                    />
+           
                     <GradientButton
                       title="Add New"
                       onPress={() => {

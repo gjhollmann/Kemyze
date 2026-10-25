@@ -520,7 +520,7 @@ def searchManagedUsers(request):
     search = data.get("search", "")
     offset = data.get("offset", 0)
     recently_active = data.get("recently_active", False)
-    
+    recently_inactive = data.get("recently_inactive", False)
 
     if requesting_user_id is None:
         return JsonResponse(
@@ -591,7 +591,8 @@ def searchManagedUsers(request):
         )
 
     # Sort users by their most recent container activity
-    if recently_active:
+    # Sort users based on their latest container activity
+    if recently_active or recently_inactive:
         latest_activity = (
             ContainerAuditLog.objects
             .filter(changed_by=OuterRef("user_id"))
@@ -599,12 +600,22 @@ def searchManagedUsers(request):
             .values("changed_at")[:1]
         )
 
-        managed_users = (
-            managed_users
-            .annotate(last_activity=Subquery(latest_activity))
-            .filter(last_activity__isnull=False)
-            .order_by("-last_activity", "user_id")
+        managed_users = managed_users.annotate(
+            last_activity=Subquery(latest_activity)
         )
+
+        if recently_inactive:
+            # Never-active users first, followed by oldest activity
+            managed_users = managed_users.order_by(
+                "last_activity", "user_id"
+            )
+        else:
+            # Recently active users, newest activity first
+            managed_users = (
+                managed_users
+                .filter(last_activity__isnull=False)
+                .order_by("-last_activity", "user_id")
+            )
     else:
         managed_users = managed_users.order_by(
             "first_name", "last_name", "user_id"
