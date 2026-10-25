@@ -791,6 +791,7 @@ export default function Edit_Container() {
       Alert.alert('No file selected', 'Please select an SDS PDF before importing');
     }
 
+    
     setIsSdsUploading(true);
 
     try {

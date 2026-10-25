@@ -9,6 +9,11 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   useFocusEffect: jest.fn(),
   Link: ({ children }: { children: unknown }) => children,
+
+  // Add Stack.Screen component used by createprofile.tsx
+  Stack: {
+    Screen: () => null,
+  },
 }));
 
 // CameraView renders a plain View so tests can trigger scans through its
