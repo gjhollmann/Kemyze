@@ -181,13 +181,13 @@ export default function Add_Container() {
     useState('School');
 
   const [room, setRoom] =
-    useState('Chemistry');
+    useState<string | null>('Chemistry');
 
   const [cabinet, setCabinet] =
-    useState('1');
+    useState<string | null>('1');
 
   const [shelf, setShelf] =
-    useState('1');
+    useState<string | null>('1');
 
   const [sdsLocation, setSdsLocation] =
     useState('');
@@ -196,7 +196,8 @@ export default function Add_Container() {
     
   const [isNewChildLocationVisible, setIsNewChildLocationVisible] = useState(false);
 
-
+    const [locationOptionsVisible, setLocationOptionsVisible] = useState(false);
+    
   const [newLocation, setNewLocation] = useState('');
   // SDS upload state
   
@@ -316,22 +317,16 @@ export default function Add_Container() {
 
   // State Variables for Options that are dynamic
 
-      const [locationOptions, setLocationOptions] = useState([
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-          'X',
-        ]);
+      const [locationOptions, setLocationOptions] = useState([{
+                    name: "No locations found",
+                }]);
 
 
-      const [roomOptions, setRoomOptions] = useState(null);
+      const [roomOptions, setRoomOptions] = useState<string[] | null>(null);
 
-      const [cabinetOptions, setCabinetOptions] = useState(null);
+      const [cabinetOptions, setCabinetOptions] = useState<string[] | null>(null);
 
-      const [shelfOptions, setShelfOptions] = useState(null);
+      const [shelfOptions, setShelfOptions] = useState<string[] | null>(null);
 
 
   const getOptions = () => {
@@ -369,14 +364,29 @@ export default function Add_Container() {
     }
 
     if (selectorType === 'location') {
+      if (value !== location) {
+        setRoom(null);
+        setCabinet(null);
+        setShelf(null);
+        setCabinetOptions([]);
+        setShelfOptions([]);
+      }
       setLocation(value);
     }
 
     if (selectorType === 'room') {
+      if (value !== room) {
+        setCabinet(null);
+        setShelf(null);
+        setShelfOptions([]);
+      }
       setRoom(value);
     }
 
     if (selectorType === 'cabinet') {
+      if (value !== cabinet) {
+        setShelf(null);
+      }
       setCabinet(value);
     }
 
@@ -1005,6 +1015,9 @@ export default function Add_Container() {
           if(activeUser?.accessLevel <= 2){
               setIsNewChildLocationVisible(true);
           }
+          if (activeUser?.accessLevel <= 2) {
+            setLocationOptionsVisible(true);
+          }
           }
 
 // Load Location data
@@ -1439,40 +1452,53 @@ export default function Add_Container() {
                   Location
                 </Text>
 
-                <Pressable
-                  onPress={() =>
-                    openSelector(
-                      'location'
-                    )
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Select location"
-                  style={({ pressed }) => [
-                    styles.selectInput,
-                    pressed &&
-                      styles.selectPressed,
-                  ]}
-                >
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.selectText,
-                      location ===
-                        'Location Name' &&
-                        styles.placeholderText,
-                    ]}
-                  >
-                    {location}
-                  </Text>
+          {locationOptionsVisible ? (<Pressable
+            onPress={() =>
+              openSelector(
+                'location'
+              )
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Select location"
+            style={({ pressed }) => [
+              styles.selectInput,
+              pressed &&
+              styles.selectPressed,
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.selectText,
+                location ===
+                'Location Name' &&
+                styles.placeholderText,
+              ]}
+            >
+              {location}
+            </Text>
 
-                  <Text
-                    style={
-                      styles.selectArrow
-                    }
-                  >
-                    ⌄
-                  </Text>
-                </Pressable>
+            <Text
+              style={
+                styles.selectArrow
+              }
+            >
+              ⌄
+            </Text>
+          </Pressable>) : (<View
+            style={
+              styles.locationDefault
+            }
+          >
+            <Text
+              numberOfLines={1}
+              style={
+                styles.selectText
+              }
+            >
+              {location}
+            </Text>
+          </View>)}
               </View>
 
               {/* Room / Cabinet / Shelf */}
@@ -1508,11 +1534,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        room === 'XXXX' &&
+                        room == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {room}
+                      {room ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1552,11 +1578,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        cabinet === 'XXXX' &&
+                        cabinet == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {cabinet}
+                      {cabinet ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1596,11 +1622,11 @@ export default function Add_Container() {
                       numberOfLines={1}
                       style={[
                         styles.selectText,
-                        shelf === 'XXXX' &&
+                        shelf == null &&
                           styles.placeholderText,
                       ]}
                     >
-                      {shelf}
+                      {shelf ?? 'Select'}
                     </Text>
 
                     <Text
@@ -1664,7 +1690,7 @@ export default function Add_Container() {
               width="100%"
               height={50}
               borderRadius={10}
-              disabled={!sdsUploaded}
+              disabled={!sdsUploaded || room == null || cabinet == null || shelf == null}
             />
           </View>
 
@@ -3809,5 +3835,16 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         paddingHorizontal: 9,
         backgroundColor: '#09091C',
+    },
+    locationDefault: {
+      width: '100%',
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: '#334155',
+      borderRadius: 9,
+      backgroundColor: '#09091C',
+      justifyContent: 'center',
+      paddingHorizontal: 8,
+      opacity: 0.6,
     },
 });

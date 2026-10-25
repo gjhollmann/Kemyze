@@ -1,7 +1,6 @@
 import React from "react";
-import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
-import { useState } from "react";
-import { Alert } from "react-native";
+import { Modal, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import GradientButton from './GradientButton';
 
 type ScanPopupProps = {
     visible: boolean;
@@ -39,9 +38,14 @@ export function ScanPopup({
                         },
                     ]}
                     >
-                    <Pressable onPress={onClose} style={styling.closeButton}>
-                        <Text>Done</Text>
-                    </Pressable>
+                    <GradientButton
+                        title="Done"
+                        onPress={onClose}
+                        width={68}
+                        height={34}
+                        style={styling.closeButton}
+                        textStyle={styling.closeButtonText}
+                    />
 
                     <View style={styling.top}>
                         <View
@@ -130,19 +134,32 @@ export function ScanPopup({
 
                     {/*Footer, or bottom section, holds buttons for */}
                     <View style={styling.footer}>
-                        <Pressable style={styling.actionButton} onPress={onViewSds}>
-                            <Text style={styling.actionButtonText}>View SDS</Text>
-                        </Pressable>
+                        <GradientButton
+                            title="View SDS"
+                            onPress={onViewSds}
+                            width="100%"
+                            height={44}
+                            style={styling.actionButton}
+                        />
 
-                        <Pressable style={styling.actionButton}>
-                            <Text style={styling.actionButtonText}>Download QR Label</Text>
-                        </Pressable>
+                        <GradientButton
+                            title="Download QR Label"
+                            disabled
+                            width="100%"
+                            height={44}
+                            style={styling.actionButton}
+                            accessibilityLabel="Download QR label unavailable"
+                        />
 
                         {/*Third button 'Edit Information' should only be presented to privileged user. Toggled by 'editPrivilege' boolean.*/}
                         {editPrivilege && (
-                            <Pressable style={styling.actionButton} onPress={onEdit}>
-                            <Text style={styling.actionButtonText}>Edit Information</Text>
-                            </Pressable>
+                            <GradientButton
+                                title="Edit Information"
+                                onPress={onEdit}
+                                width="100%"
+                                height={44}
+                                style={styling.actionButton}
+                            />
                         )}
                     </View>
                 </View>
@@ -176,6 +193,10 @@ const styling = StyleSheet.create({
         top: 12,
         right: 12,
         zIndex: 1,
+    },
+
+    closeButtonText: {
+        fontSize: 12,
     },
 
     partition: {
@@ -260,21 +281,7 @@ const styling = StyleSheet.create({
     },
 
     actionButton: {
-        width: "100%",
-        height: 44,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#0B5C7A",
-        justifyContent: "center",
-        alignItems: "center",
         marginBottom: 10,
-        backgroundColor: "#FFFFFF",
-    },
-
-    actionButtonText: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#0B5C7A",
     },
 
     quantityIndicator: {
