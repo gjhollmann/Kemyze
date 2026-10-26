@@ -272,6 +272,7 @@ export default function ManagedAccounts() {
   // Search state
 
   const [search, setSearch] = useState('');
+  const [recentlyActive, setRecentlyActive] = useState(false);
 
   const [query, setQuery] = useState('');
 
@@ -334,6 +335,7 @@ export default function ManagedAccounts() {
             user_id: activeUser.userID,
             search: searchTerm,
             offset,
+            recently_active: recentlyActive,
           }),
         });
 
@@ -391,7 +393,7 @@ export default function ManagedAccounts() {
         }
       }
     },
-    [activeUser]
+    [activeUser, recentlyActive]
   );
 
   useEffect(() => {
@@ -637,14 +639,28 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
-
-                  {/* Add New */}
+                 {/* Recently Active and Add New */}
                   <View
                     style={[
                       styles.filterRow,
-                      compactHeader && styles.compactRow,
+                      {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                      },
                     ]}
                   >
+                    <GradientButton
+                      title={recentlyActive ? '✓ Recently Active' : 'Recently Active'}
+                      onPress={() => {
+                        haptic();
+                        setRecentlyActive(!recentlyActive);
+                      }}
+                      width={200}
+                      height={BUTTON_HEIGHT}
+                      borderRadius={10}
+                    />
+
                     <GradientButton
                       title="Add New"
                       onPress={() => {
@@ -656,6 +672,8 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
+
+             
                 </View>
               </LinearGradient>
             </View>
