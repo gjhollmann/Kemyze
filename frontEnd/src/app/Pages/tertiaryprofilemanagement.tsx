@@ -641,52 +641,54 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
-                 {/* Recently Active and Add New */}
-                  <View
-                    style={[
-                      styles.filterRow,
-                      {
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                      },
-                    ]}
-                  >
-                    <GradientButton
-                      title={recentlyActive ? '✓ Recently Active' : 'Recently Active'}
-                      onPress={() => {
-                        haptic();
-                        setRecentlyActive(!recentlyActive);
-                        setRecentlyInactive(false);
-                      }}
-                      width={200}
-                      height={BUTTON_HEIGHT}
-                      borderRadius={10}
-                    />
+              {/* Account Filters and Add New */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ width: '100%' }}
+                  contentContainerStyle={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingVertical: 4,
+                    paddingRight: 16,
+                  }}
+                >
+                  <GradientButton
+                    title={recentlyActive ? '✓ Recently Active' : 'Recently Active'}
+                    onPress={() => {
+                      haptic();
+                      setRecentlyActive(!recentlyActive);
+                      setRecentlyInactive(false);
+                    }}
+                    width={200}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
 
-                    <GradientButton
-                      title={recentlyInactive ? '✓ Recently Inactive' : 'Recently Inactive'}
-                      onPress={() => {
-                        haptic();
-                        setRecentlyInactive(!recentlyInactive);
-                        setRecentlyActive(false);
-                      }}
-                      width={220}
-                      height={BUTTON_HEIGHT}
-                      borderRadius={10}
-                    />
-           
-                    <GradientButton
-                      title="Add New"
-                      onPress={() => {
-                        haptic();
-                        router.push('/SubPages/createprofile');
-                      }}
-                      width={ACTION_BUTTON_WIDTH}
-                      height={BUTTON_HEIGHT}
-                      borderRadius={10}
-                    />
-                  </View>
+                  <GradientButton
+                    title={recentlyInactive ? '✓ Recently Inactive' : 'Recently Inactive'}
+                    onPress={() => {
+                      haptic();
+                      setRecentlyInactive(!recentlyInactive);
+                      setRecentlyActive(false);
+                    }}
+                    width={220}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
+
+                  <GradientButton
+                    title="Add New"
+                    onPress={() => {
+                      haptic();
+                      router.push('/SubPages/createprofile');
+                    }}
+                    width={ACTION_BUTTON_WIDTH}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
+                </ScrollView>
 
              
                 </View>
