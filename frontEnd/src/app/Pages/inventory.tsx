@@ -37,8 +37,6 @@ interface Chemical {
 
 type QuickFilter = 'recentlyChanged' | 'expiringSoon' | 'showLow' | null;
 
-const BASE_URL = "https://kemyze.vercel.app/";
-
 const USER_TEST = 49035; // replace with actual user ID (KM#85)
 
 const Inventory: React.FC = () => {
