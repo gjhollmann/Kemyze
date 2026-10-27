@@ -862,6 +862,10 @@ def createContainer(request):
         # to utf-8 str for its own response), so it needs to be re-encoded
         # back to bytes here - sds_sheet stores the same raw base64 bytes
         # uploadSDS/getContainer use everywhere else in this file.
+        if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
+            is_hazard = True
+        else:
+            is_hazard = False
         NewContainer = Containers.objects.create(
             chemical_name=chemical_name,
             cas_number=data.get("cas_number"),
@@ -870,10 +874,9 @@ def createContainer(request):
             location=FoundLocation,
             quantity=quantity,
             sds_sheet=sds_base64.encode("utf-8"),
-            is_hazard=False,
+            is_hazard=is_hazard,
         )
-        if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
-            NewContainer.is_hazard = True
+
     except Exception as e:
         print(e)
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
