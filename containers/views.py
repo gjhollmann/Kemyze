@@ -206,6 +206,7 @@ def getSearch(request):
                     'acqn_date': container.acqn_date,
                     'location': location,
                     'quantity': container.quantity,
+                    'hasWarning': container.is_hazard,
                 })
             return JsonResponse(data, safe=False)
         except Exception as error:
@@ -279,6 +280,7 @@ def getSearchRecent(request):
                     'acqn_date': container.acqn_date,
                     'location': location,
                     'quantity': container.quantity,
+                    'hasWarning': container.is_hazard,
                 })
             return JsonResponse(recently_changed_data, safe=False)
         except Exception as error:
