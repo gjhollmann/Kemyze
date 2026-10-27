@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import dj_database_url
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -80,16 +81,29 @@ WSGI_APPLICATION = 'kemyze.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'kemyzeDatabase',
-        'USER': 'kemyzeAdmin',
-        'PASSWORD': 'Ch3m1stryRul3s.',
-        'HOST': '129.153.88.118',
-        'PORT': '3306',
+if os.environ.get("DATABASE_NAME"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get('DATABASE_NAME'),
+            "USER": os.environ.get('DATABASE_USER'),
+            "PASSWORD": os.environ.get('DATABASE_PASSWORD'),
+            "HOST": os.environ.get('DATABASE_HOST'),
+            "PORT": os.environ.get('DATABASE_PORT'),
+        }
     }
-}
+else:
+    # Fall back to testing database that was set up
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'kemyzeDatabase',
+            'USER': 'kemyzeAdmin',
+            'PASSWORD': 'Ch3m1stryRul3s.',
+            'HOST': '129.153.88.118',
+            'PORT': '3306',
+        }
+    }
 
 
 
