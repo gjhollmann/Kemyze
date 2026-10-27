@@ -923,14 +923,22 @@ def addLocation(request):
         try:
             if (location_type == 'room'):
                 FoundLocation = Locations.objects.get(name=data.get("location"))
+                if Locations.objects.filter(name=new_location, type = data.get("type"), parent = FoundLocation).exists:
+                    return HttpResponseBadRequest("Room already exists")
                 new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
             elif (location_type == 'cabinet'):
                 FoundLocation = Locations.objects.get(name=data.get("room"),parent__name=data.get("location"))
+                if Locations.objects.filter(name=new_location, type = data.get("type"), parent = FoundLocation).exists:
+                    return HttpResponseBadRequest("Cabinet already exists")
                 new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
             elif (location_type == 'shelf'):
                 FoundLocation = Locations.objects.get(name=data.get("cabinet"),parent__name=data.get("room"), parent__parent__name=data.get("location"))
+                if Locations.objects.filter(name=new_location, type = data.get("type"), parent = FoundLocation).exists:
+                    return HttpResponseBadRequest("Shelf already exists")
                 new_row = Locations.objects.create(name=new_location, type = data.get("type"), parent = FoundLocation)
             else:
+                if Locations.objects.filter(name=new_location, type = 'site').exists:
+                    return HttpResponseBadRequest("Location already exists")
                 new_row = Locations.objects.create(name=new_location, type = 'site')
             return HttpResponse("Location made")
         except Exception as e:
