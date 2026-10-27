@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db.models import Subquery, OuterRef, Q
-from common.models import Containers, Locations, ContainerAuditLog, Users
+from common.models import Containers, Locations, ContainerAuditLog, Users, ACS_Hazards
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
@@ -336,6 +336,10 @@ def editContainer(request):
                 FoundContainer.chemical_name = data.get("chemical_name")
             if (data.get("cas_number") != None):
                 FoundContainer.cas_number = data.get("cas_number")
+                if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
+                    FoundContainer.is_hazard = True
+                else:
+                    FoundContainer.is_hazard = False
             if (data.get("expr_date") != None):
                 FoundContainer.expr_date = data.get("expr_date")
             if (data.get("acqn_date") != None):
@@ -864,7 +868,10 @@ def createContainer(request):
             location=FoundLocation,
             quantity=quantity,
             sds_sheet=sds_base64.encode("utf-8"),
+            is_hazard=False,
         )
+        if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
+            NewContainer.is_hazard = True
     except Exception as e:
         print(e)
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
