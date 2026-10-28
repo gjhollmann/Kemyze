@@ -24,7 +24,7 @@ jest.mock('expo-camera', () => {
   return {
     CameraView: (props: object) => React.createElement(View, { testID: 'camera-view', ...props }),
     Camera: {},
-    useCameraPermissions: () => [{ granted: true }, jest.fn()],
+    useCameraPermissions: () => [{ granted: true, status: 'granted' }, jest.fn()],
   };
 });
 
