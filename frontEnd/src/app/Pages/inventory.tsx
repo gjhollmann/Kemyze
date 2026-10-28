@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
   Modal,
+  Image,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
@@ -572,20 +573,37 @@ const Inventory: React.FC = () => {
                 <Text style={styles.chemName}>{item.chemical_name}</Text>
                 <Text style={styles.casText}>{item.cas_number || 'N/A'}</Text>
                 <Text style={styles.idText}>{item.container_id}</Text>
+                <Text style={styles.exprText}>Expr. Date: {item.expr_date}</Text>
+                            <Text style={styles.locationText}>Location: {item.location}</Text>
+                            <Text style={[
+                              styles.statusText,
+                                 // KM-79: Text color matches the flask (green / yellow / red / grey)
+                                 { color: getQuantityStyle(item.quantity).color }            ]}>
+                              quantity: {item.quantity}
+                            </Text>
               </View>
+
 
               <View style={styles.visualSide}>
                 {/* KM-79: Flask (how much is left) and hazard symbol side by side */}
                 <View style={styles.indicatorRow}>
-                  <QuantityFlask quantity={item.quantity} />
                   {item.hasWarning && (
-                    <Image
-                      source={require('../../../assets/images/hazard-skull.png')}
-                      style={styles.hazardIcon}
-                    />
-                  )}
+                      <View style={{
+                                    paddingRight: 15,
+                                  }}>
+                                    <Image
+                                      source={require('../../../assets/images/hazard-skull.png')}
+                                      style={styles.hazardIcon}
+                                    />
+                                    </View>
+                                  )}
+                  <QuantityFlask quantity={item.quantity} />
+
                 </View>
               </View>
+              <View style={{
+                                                  paddingRight: 40,
+                                                }}></View>
 
               <View style={styles.buttonSide}>
                 <GradientButton
@@ -619,15 +637,8 @@ const Inventory: React.FC = () => {
                   textStyle={styles.actionButtonText}
                 />
               </View>
-            </View>
 
-            <Text style={styles.locationText}>{item.location}</Text>
-            <Text style={[
-              styles.statusText, 
-                 // KM-79: Text color matches the flask (green / yellow / red / grey)
-                 { color: getQuantityStyle(item.quantity).color }            ]}>
-              {item.quantity}
-            </Text>
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -1000,8 +1011,8 @@ const styles = StyleSheet.create({
      },
     // KM-79: GHS skull hazard symbol, sized to sit next to the flask
   hazardIcon: {
-    width: 26,
-    height: 26,
+    width: 40,
+    height: 40,
     marginLeft: 6,
     resizeMode: 'contain',
      },
@@ -1019,8 +1030,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'monospace',
     fontSize: 11,
-    marginTop: 10,
   },
+  exprText: {
+      color: 'white',
+      fontFamily: 'monospace',
+      fontSize: 11,
+      marginTop: 10,
+    },
   statusText: {
     fontFamily: 'monospace',
     fontSize: 12,

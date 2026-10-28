@@ -17,9 +17,17 @@ class Containers(models.Model):
     location = models.ForeignKey('Locations', models.DO_NOTHING, blank=True, null=True)
     quantity = models.CharField(max_length=6)
     sds_sheet = MediumBlobField()
+    is_hazard = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'containers'
+
+class ACS_Hazards(models.Model):
+    id = models.AutoField(primary_key=True)
+    chemical_name = models.CharField(max_length=255)
+    cas_number = models.CharField(max_length=12, blank = True, null=True)
+    class Meta:
+        db_table = 'restricted_chemicals'
 
 # Model for container_audit_log.
 class ContainerAuditLog(models.Model):

@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db.models import Subquery, OuterRef, Q
-from common.models import Containers, Locations, ContainerAuditLog, Users
+from common.models import Containers, Locations, ContainerAuditLog, Users, ACS_Hazards
 from django.views.decorators.csrf import csrf_exempt
 import json
 import base64
@@ -206,6 +206,7 @@ def getSearch(request):
                     'acqn_date': container.acqn_date,
                     'location': location,
                     'quantity': container.quantity,
+                    'hasWarning': container.is_hazard,
                 })
             return JsonResponse(data, safe=False)
         except Exception as error:
@@ -279,6 +280,7 @@ def getSearchRecent(request):
                     'acqn_date': container.acqn_date,
                     'location': location,
                     'quantity': container.quantity,
+                    'hasWarning': container.is_hazard,
                 })
             return JsonResponse(recently_changed_data, safe=False)
         except Exception as error:
@@ -336,6 +338,10 @@ def editContainer(request):
                 FoundContainer.chemical_name = data.get("chemical_name")
             if (data.get("cas_number") != None):
                 FoundContainer.cas_number = data.get("cas_number")
+                if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
+                    FoundContainer.is_hazard = True
+                else:
+                    FoundContainer.is_hazard = False
             if (data.get("expr_date") != None):
                 FoundContainer.expr_date = data.get("expr_date")
             if (data.get("acqn_date") != None):
@@ -856,6 +862,10 @@ def createContainer(request):
         # to utf-8 str for its own response), so it needs to be re-encoded
         # back to bytes here - sds_sheet stores the same raw base64 bytes
         # uploadSDS/getContainer use everywhere else in this file.
+        if ACS_Hazards.objects.filter(cas_number=data.get("cas_number")).exists():
+            is_hazard = True
+        else:
+            is_hazard = False
         NewContainer = Containers.objects.create(
             chemical_name=chemical_name,
             cas_number=data.get("cas_number"),
@@ -864,7 +874,9 @@ def createContainer(request):
             location=FoundLocation,
             quantity=quantity,
             sds_sheet=sds_base64.encode("utf-8"),
+            is_hazard=is_hazard,
         )
+
     except Exception as e:
         print(e)
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
