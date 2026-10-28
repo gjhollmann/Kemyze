@@ -6,7 +6,7 @@ import { mockUserState } from '.';
 
 jest.mock('expo-router', () => ({
   useRouter: () => require('.').mockRouter,
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => require('.').mockLocalSearchParams,
   useFocusEffect: jest.fn(),
   Link: ({ children }: { children: unknown }) => children,
 
@@ -35,6 +35,9 @@ jest.mock('../src/app/contexts/UserState', () => ({
 
 beforeEach(() => {
   mockUserState.activeUser = null;
+  Object.keys(require('.').mockLocalSearchParams).forEach((key) => {
+    delete require('.').mockLocalSearchParams[key];
+  });
 
   // Any request a test did not mock fails loudly instead of hitting the server.
   global.fetch = jest.fn((url: unknown) =>
