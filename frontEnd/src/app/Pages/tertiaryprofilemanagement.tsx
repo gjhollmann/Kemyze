@@ -697,7 +697,7 @@ export default function ManagedAccounts() {
           </View>
           <View style={{ marginVertical: 12, paddingHorizontal: 20 }}>
             <GradientButton
-              title="View My Profile (Test)"
+              title="View My Profile"
               onPress={() => router.push('/Pages/quaternaryprofile')}
               width="100%"
               height={BUTTON_HEIGHT}
