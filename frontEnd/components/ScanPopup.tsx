@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import QRCode from 'react-native-qrcode-svg';
 import GradientButton from './GradientButton';
 
 type ScanPopupProps = {
@@ -50,18 +51,23 @@ export function ScanPopup({
                     />
 
                     <View style={styling.top}>
+                        {/*KM-191: QR code for the container, same value the QR label popup encodes.*/}
                         <View
                             style={[
-                                styling.qrPlaceholder,
+                                styling.qrBox,
                                 {
                                     width: qrSize,
                                     height: qrSize,
                                 },
                             ]}
-                        />
+                        >
+                            {scanResult?.id ? (
+                                <QRCode value={String(scanResult.id)} size={qrSize - 8} />
+                            ) : null}
+                        </View>
 
-                        {/*Top section holds image of QR code, chemical name field, CAS, and quantity indicator. */}
-                        <View style={styling.topTextArea}> {}
+                        {/*Top section holds image of QR code, chemical name field, and CAS. */}
+                        <View style={styling.topTextArea}>
                             <Text style={styling.chemicalNameText}>
                                 {scanResult?.chemicalName}
                             </Text>
@@ -69,8 +75,6 @@ export function ScanPopup({
                             <Text style={styling.casText}>
                                 CAS: {scanResult?.cas}
                             </Text>
-
-                            <View style={styling.quantityIndicator} />
                         </View>
                     </View>
                     
@@ -239,13 +243,13 @@ const styling = StyleSheet.create({
         color: "#000000",
     },
 
-    qrPlaceholder: {
+    qrBox: {
         width: 90,
         height: 90,
         marginRight: 16,
-        backgroundColor: "#E5E7EB",
-        borderWidth: 1,
-        borderColor: "#000000",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#FFFFFF",
     },
     
     body: {
@@ -284,17 +288,6 @@ const styling = StyleSheet.create({
 
     actionButton: {
         marginBottom: 10,
-    },
-
-    quantityIndicator: {
-        width: 42,
-        height: 42,
-        marginTop: 10,
-        borderWidth: 1,
-        borderColor: "#FFFFFF",
-        backgroundColor: "#E5E7EB",
-        borderRadius: 6,
-        alignSelf: "flex-start",
     },
 
     footer: {
