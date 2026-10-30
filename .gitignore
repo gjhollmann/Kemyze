@@ -21,6 +21,10 @@ frontEnd/node_modules
 frontEnd/.expo
 .DS_Store
 
+.env
+.env.*
+!.env.example
+
 
 # Cline reference PDFs and plans stay on each person's computer.
 # Only the folder README and the empty plans folder are shared.
