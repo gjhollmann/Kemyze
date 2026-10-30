@@ -306,7 +306,7 @@ class ForgotPasswordReqTests(SimpleTestCase):
         mock_send_mail.assert_called_once_with(
             'Kemyze: Reset Password',
             'Hello - please follow the email reset instructions below.',
-            'no-reply@kemyze.com',
+            'onboarding@resend.dev',
             [self.test_user['email']],
             fail_silently=False,
         )
