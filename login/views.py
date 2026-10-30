@@ -74,7 +74,7 @@ def newModelTest(request):
 @csrf_exempt
 def forgotPasswordReq(request):
     if request.method == "POST":
-        data = json.loads(request.body) # Extract email from JSON payload. 
+        data = json.loads(request.body) # Extract email from JSON payload.
         user_email = data.get("email")
         
         if not user_email or not user_email.strip():
@@ -91,10 +91,9 @@ def forgotPasswordReq(request):
 
                 email_subject = "Kemyze: Reset Password"
                 reset_msg = "Hello - please follow the email reset instructions below." # Generic instruction prompt.
-                from_email = "no-reply@kemyze.com" # Test sender.
+                from_email = 'onboarding@resend.dev' # Test sender.
                 send_mail(email_subject, reset_msg, from_email, 
                           [user_email], fail_silently=False) # Use fail_silently for testing.
-
             except Users.DoesNotExist:
                 ValidUser = None
                 # Failed attempt logs to be added.
