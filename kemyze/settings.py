@@ -12,9 +12,14 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import dj_database_url
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from local .env
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -43,7 +48,8 @@ INSTALLED_APPS = [
     'tester',
     'login',
     'common',
-    'containers'
+    'containers',
+    'anymail'
 ]
 
 MIDDLEWARE = [
@@ -113,18 +119,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Email for user validation. Configured to use Gmail SMTP for testing as of 4/12/26.
-# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# Email for user validation. Configured to use Django-Anymail Resend EmailBackend.
+EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_FILE_PATH = BASE_DIR / "dev_email"
+ANYMAIL = {
+    'RESEND_API_KEY': os.environ.get('RESEND_API_KEY'),
+}
 
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "kemyzetester1@gmail.com"
-EMAIL_HOST_PASSWORD = "zitk atle fjnr tgnm" # Placeholder for app password
-DEFAULT_FROM_EMAIL = "kemyzetester1@gmail.com"
+DEFAULT_FROM_EMAIL = 'onboarding@resend.dev'
 
 
 # Internationalization
