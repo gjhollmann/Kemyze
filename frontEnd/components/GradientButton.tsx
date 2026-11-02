@@ -1,5 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, StyleSheet } from 'react-native';
+import {
+  AccessibilityRole,
+  AccessibilityState,
+  TouchableOpacity,
+  Text,
+  ViewStyle,
+  TextStyle,
+  StyleSheet,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 type GradientButtonProps = {
@@ -16,6 +24,9 @@ type GradientButtonProps = {
   borderRadius?: number;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityState?: AccessibilityState;
 };
 
 export default function GradientButton({
@@ -29,6 +40,9 @@ export default function GradientButton({
   borderRadius = 10,
   style,
   textStyle,
+  accessibilityLabel,
+  accessibilityRole = 'button',
+  accessibilityState,
 }: GradientButtonProps) {
   return (
     <LinearGradient
@@ -52,6 +66,9 @@ export default function GradientButton({
         onPress = {onPress}
         style = {{ flex: 1 }}
         disabled = {disabled}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityState={{ disabled, ...accessibilityState }}
       >
         <LinearGradient
           colors = {backgroundColors as [string, string, ...string[]]}

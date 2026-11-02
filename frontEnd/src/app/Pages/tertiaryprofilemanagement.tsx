@@ -272,6 +272,8 @@ export default function ManagedAccounts() {
   // Search state
 
   const [search, setSearch] = useState('');
+  const [recentlyActive, setRecentlyActive] = useState(false);
+  const [recentlyInactive, setRecentlyInactive] = useState(false);
 
   const [query, setQuery] = useState('');
 
@@ -334,6 +336,8 @@ export default function ManagedAccounts() {
             user_id: activeUser.userID,
             search: searchTerm,
             offset,
+            recently_active: recentlyActive,
+            recently_inactive: recentlyInactive,
           }),
         });
 
@@ -391,7 +395,7 @@ export default function ManagedAccounts() {
         }
       }
     },
-    [activeUser]
+    [activeUser, recentlyActive, recentlyInactive]
   );
 
   useEffect(() => {
@@ -637,43 +641,68 @@ export default function ManagedAccounts() {
                       borderRadius={10}
                     />
                   </View>
+              {/* Account Filters and Add New */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ width: '100%' }}
+                  contentContainerStyle={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingVertical: 4,
+                    paddingRight: 16,
+                  }}
+                >
+                  <GradientButton
+                    title={recentlyActive ? '✓ Recently Active' : 'Recently Active'}
+                    onPress={() => {
+                      haptic();
+                      setRecentlyActive(!recentlyActive);
+                      setRecentlyInactive(false);
+                    }}
+                    width={200}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
 
-                  {/* Add New */}
-                  <View
-                    style={[
-                      styles.filterRow,
-                      compactHeader && styles.compactRow,
-                    ]}
-                  >
-                    <GradientButton
-                      title="Add New"
-                      onPress={() => {
-                        haptic();
-                        router.push('/SubPages/createprofile');
-                      }}
-                      width={ACTION_BUTTON_WIDTH}
-                      height={BUTTON_HEIGHT}
-                      borderRadius={10}
-                    />
-                  </View>
+                  <GradientButton
+                    title={recentlyInactive ? '✓ Recently Inactive' : 'Recently Inactive'}
+                    onPress={() => {
+                      haptic();
+                      setRecentlyInactive(!recentlyInactive);
+                      setRecentlyActive(false);
+                    }}
+                    width={220}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
+
+                  <GradientButton
+                    title="Add New"
+                    onPress={() => {
+                      haptic();
+                      router.push('/SubPages/createprofile');
+                    }}
+                    width={ACTION_BUTTON_WIDTH}
+                    height={BUTTON_HEIGHT}
+                    borderRadius={10}
+                  />
+                </ScrollView>
+
+             
                 </View>
               </LinearGradient>
             </View>
           </View>
           <View style={{ marginVertical: 12, paddingHorizontal: 20 }}>
-            <Pressable
-            onPress={() => router.push('/Pages/quaternaryprofile')}
-            style={{
-              backgroundColor: '#2563EB',
-              padding: 16,
-              borderRadius: 10,
-              alignItems: 'center',
-            }}
-            >
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>
-                View My Profile (Test)
-                </Text>
-              </Pressable>
+            <GradientButton
+              title="View My Profile (Test)"
+              onPress={() => router.push('/Pages/quaternaryprofile')}
+              width="100%"
+              height={BUTTON_HEIGHT}
+              borderRadius={10}
+            />
             </View>
 
           {/* Managed Accounts */}

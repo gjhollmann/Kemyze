@@ -14,6 +14,7 @@ import {
 import { CameraView, CameraType, useCameraPermissions, Camera } from 'expo-camera'
 import { useEffect, useState, useRef } from 'react';
 import { ScanPopup } from "../../../components/ScanPopup";
+import { QRLabelPopup } from "../../../components/QRLabelPopup"; // KM-63
 import { handleContainerResponse } from "../../../utils/ScanResUtils";
 import { openBase64Pdf } from "../../../utils/PDFUtils";
 import { Linking } from "react-native";
@@ -32,6 +33,7 @@ export default function Scanner() {
     const [editPrivilege, setEditPrivilege] = useState(false);
     const [currentKemId, setCurrentKemId] = useState<string | null>(null);
     const [scannedKemID, setScannedKemId] = useState(0);
+    const [qrLabelVisible, setQrLabelVisible] = useState(false); // KM-63: is the QR label popup open?
 
   const [permission, requestPermission] = useCameraPermissions();
     const lastScanRef = useRef({ data: '', timestamp: 0 });
@@ -241,7 +243,7 @@ export default function Scanner() {
           <CameraView
             style={{ flex: 1 }}
             facing="back"
-            onBarcodeScanned={popupVisible ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={popupVisible || qrLabelVisible ? undefined : handleBarCodeScanned}
             barcodeScannerSettings={{
               barcodeTypes: ['qr'],
             }}
@@ -275,8 +277,26 @@ export default function Scanner() {
             }}
             scanResult={popupData}
             editPrivilege={editPrivilege}
+            
             onViewSds={handleViewSds}
             onEdit={handleEditContainer}
+            onQrLabel={() => {
+              // KM-63: Hide the scan popup and show the QR label instead
+              setPopupVisible(false);
+              setQrLabelVisible(true);
+            }}
+          />
+
+          {/* KM-63: QR label for the scanned container (same popup the Inventory screen uses) */}
+          <QRLabelPopup
+            visible={qrLabelVisible}
+            onClose={() => {
+              // Close the label and go back to the scan popup
+              setQrLabelVisible(false);
+              setPopupVisible(true);
+            }}
+            containerId={Number(currentKemId)}
+            chemicalName={popupData?.chemicalName ?? ''}
           />
     </SafeAreaView>
   );
