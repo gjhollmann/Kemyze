@@ -637,3 +637,92 @@ describe('confirmDelete', () => {
     });
   });
 });
+
+describe('screen renders', () => {
+  it('shows the title and back button', async () => {
+    await renderWithAccounts();
+
+    expect(screen.getByText('Managed Accounts')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Go back')).toBeOnTheScreen();
+  });
+
+  it('shows the search field and button', async () => {
+    await renderWithAccounts();
+
+    expect(screen.getByPlaceholderText('Search accounts...')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Search managed accounts')).toBeOnTheScreen();
+    expect(screen.getByText('Search')).toBeOnTheScreen();
+  });
+
+  it('shows Add New and the account filters', async () => {
+    await renderWithAccounts();
+
+    expect(screen.getByText('Add New')).toBeOnTheScreen();
+    expect(screen.getByText('Recently Active')).toBeOnTheScreen();
+    expect(screen.getByText('Recently Inactive')).toBeOnTheScreen();
+  });
+
+  it('shows the header when no user is logged in', async () => {
+    mockUserState.activeUser = null;
+    await render(<ManagedAccounts />);
+
+    expect(screen.getByText('Managed Accounts')).toBeOnTheScreen();
+    expect(screen.getByText('Search')).toBeOnTheScreen();
+    expect(screen.getByText('Add New')).toBeOnTheScreen();
+  });
+
+  it('shows the name, location and privilege level on each account card', async () => {
+    await renderWithAccounts();
+
+    expect(screen.getByText('John Smith')).toBeOnTheScreen();
+    expect(screen.getByText('Sacramento Lab')).toBeOnTheScreen();
+    expect(screen.getByText('Privilege Level: Tertiary')).toBeOnTheScreen();
+    expect(screen.getByText('Maria Delgado')).toBeOnTheScreen();
+    expect(screen.getByText('Davis Lab')).toBeOnTheScreen();
+    expect(screen.getByText('Privilege Level: Secondary')).toBeOnTheScreen();
+  });
+
+  it('shows Edit and Delete on every account card', async () => {
+    await renderWithAccounts();
+
+    expect(screen.getAllByText('Edit')).toHaveLength(2);
+    expect(screen.getAllByText('Delete')).toHaveLength(2);
+  });
+
+  it.each([
+    { accessLevel: 1, label: 'Primary' },
+    { accessLevel: 2, label: 'Secondary' },
+    { accessLevel: 3, label: 'Tertiary' },
+    { accessLevel: 4, label: 'Quaternary' },
+    { accessLevel: 5, label: 'Quinary' },
+    { accessLevel: 9, label: 'Level 9' },
+  ])('shows access level $accessLevel as $label', async ({ accessLevel, label }) => {
+    await renderWithAccounts(accountsPage([{ ...JOHN, access_level: accessLevel }]));
+
+    expect(screen.getByText(`Privilege Level: ${label}`)).toBeOnTheScreen();
+  });
+
+  it('opens the create profile page from Add New', async () => {
+    await renderWithAccounts();
+
+    await fireEvent.press(screen.getByText('Add New'));
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/SubPages/createprofile');
+  });
+
+  it('opens the edit page for the chosen account from Edit', async () => {
+    await renderWithAccounts();
+
+    await fireEvent.press(screen.getAllByText('Edit')[1]);
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/SubPages/editprofile?user_id=2');
+  });
+
+  it('goes back from the back button', async () => {
+    await renderWithAccounts();
+
+    await fireEvent.press(screen.getByLabelText('Go back'));
+
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+  });
+});
