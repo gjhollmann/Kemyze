@@ -9,6 +9,8 @@ frontEnd/.expo/
 frontEnd/expo-env.d.ts
 
 .env
+.env.*
+!.env.example
 
 # VS Code local settings
 .vscode/
