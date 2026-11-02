@@ -435,3 +435,205 @@ describe('loadAccounts', () => {
     });
   });
 });
+
+describe('confirmDelete', () => {
+  // Press Delete on a card. Cards are listed in order, so index 1 is Maria.
+  const openSheetFor = (cardIndex: number) => fireEvent.press(screen.getAllByText('Delete')[cardIndex]);
+
+  // The sheet renders after the list, so its Delete button is the last one on screen.
+  const pressConfirm = () => fireEvent.press(screen.getAllByText('Delete').at(-1)!);
+
+  const deleteCalls = () => fetchMock().mock.calls.filter(([url]) => url === DELETE_URL);
+
+  describe('confirmation sheet', () => {
+    it('stays closed until Delete is pressed', async () => {
+      await renderWithAccounts();
+
+      expect(screen.queryByText('Delete Account?')).toBeNull();
+    });
+
+    it('shows the chosen account and does not delete it yet', async () => {
+      await renderWithAccounts();
+
+      await openSheetFor(1);
+
+      expect(screen.getByText('Delete Account?')).toBeOnTheScreen();
+      expect(screen.getByText('User ID: 2')).toBeOnTheScreen();
+      expect(screen.getAllByText('Maria Delgado')).toHaveLength(2);
+      expect(deleteCalls()).toHaveLength(0);
+    });
+
+    it.each([
+      { name: 'Cancel', press: () => screen.getByText('Cancel') },
+      { name: 'the area outside the sheet', press: () => screen.getByLabelText('Cancel deleting account') },
+    ])('closes without deleting when $name is pressed', async ({ press }) => {
+      await renderWithAccounts();
+      await openSheetFor(1);
+
+      await fireEvent.press(press());
+
+      expect(screen.queryByText('Delete Account?')).toBeNull();
+      expect(screen.getByText('Maria Delgado')).toBeOnTheScreen();
+      expect(deleteCalls()).toHaveLength(0);
+    });
+  });
+
+  describe('success', () => {
+    it('sends the logged-in user and the chosen account to the delete endpoint', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: true, message: 'User deleted successfully.' }));
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      await screen.findByText('User deleted successfully.');
+      expect(deleteCalls()).toHaveLength(1);
+      expect(deleteCalls()[0][1].method).toBe('POST');
+      expect(sentBody(1)).toEqual({ user_id: 7, target_user_id: 2 });
+    });
+
+    it('removes only that account from the list and closes the sheet', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: true, message: 'User deleted successfully.' }));
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      await screen.findByText('User deleted successfully.');
+      expect(screen.queryByText('Maria Delgado')).toBeNull();
+      expect(screen.getByText('John Smith')).toBeOnTheScreen();
+      expect(screen.queryByText('Delete Account?')).toBeNull();
+      expect(Haptics.notificationAsync).toHaveBeenCalledWith('success');
+    });
+
+    it('does not reload the list after deleting', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: true, message: 'User deleted successfully.' }));
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      await screen.findByText('User deleted successfully.');
+      expect(fetchMock()).toHaveBeenCalledTimes(2);
+    });
+
+    it('names the account when the server sends no message', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: true }));
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      expect(await screen.findByText('Maria Delgado was deleted.')).toBeOnTheScreen();
+    });
+
+    it('shows Deleting... and sends one request while the delete is running', async () => {
+      await renderWithAccounts();
+      const deletion = deferredResponse();
+      fetchMock().mockReturnValueOnce(deletion.promise);
+
+      await openSheetFor(1);
+      // The press only finishes when the delete does, so it is awaited after the response arrives.
+      const confirming = pressConfirm();
+      await fireEvent.press(await screen.findByText('Deleting...'));
+      await fireEvent.press(screen.getByText('Cancel'));
+
+      expect(screen.getByText('Delete Account?')).toBeOnTheScreen();
+      expect(deleteCalls()).toHaveLength(1);
+
+      await act(async () => {
+        deletion.resolve(jsonResponse({ success: true, message: 'User deleted successfully.' }));
+        await confirming;
+      });
+
+      await screen.findByText('User deleted successfully.');
+      expect(screen.queryByText('Deleting...')).toBeNull();
+    });
+  });
+
+  describe('server errors', () => {
+    it.each([
+      {
+        name: 'the JSON error message',
+        response: jsonResponse({ success: false, message: 'User to delete does not exist.' }, 404),
+        message: 'User to delete does not exist.',
+      },
+      {
+        name: 'a plain text error',
+        response: jsonResponse('User does not have permission to delete accounts.', 403),
+        message: 'User does not have permission to delete accounts.',
+      },
+      {
+        name: 'the default message when the error has no text',
+        response: jsonResponse('', 500),
+        message: 'The account could not be deleted.',
+      },
+    ])('shows $name and keeps the account', async ({ response, message }) => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(response);
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      expect(await screen.findByText(message)).toBeOnTheScreen();
+      expect(screen.getByText('Delete Account?')).toBeOnTheScreen();
+      expect(screen.getAllByText('Maria Delgado')).toHaveLength(2);
+      expect(Haptics.notificationAsync).toHaveBeenCalledWith('error');
+    });
+
+    it('keeps the account in the list after the sheet is closed', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: false, message: 'Delete failed.' }, 500));
+      await openSheetFor(1);
+      await pressConfirm();
+      await screen.findByText('Delete failed.');
+
+      await fireEvent.press(screen.getByText('Cancel'));
+
+      expect(screen.getByText('Maria Delgado')).toBeOnTheScreen();
+      expect(screen.queryByText('Delete failed.')).toBeNull();
+    });
+
+    it('shows the error when the network request fails', async () => {
+      await renderWithAccounts();
+      fetchMock().mockRejectedValueOnce(new Error('Network request failed'));
+
+      await openSheetFor(1);
+      await pressConfirm();
+
+      expect(await screen.findByText('Network request failed')).toBeOnTheScreen();
+      expect(screen.getAllByText('Maria Delgado')).toHaveLength(2);
+    });
+
+    it('clears the error and deletes when the retry works', async () => {
+      await renderWithAccounts();
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: false, message: 'Delete failed.' }, 500));
+      await openSheetFor(1);
+      await pressConfirm();
+      await screen.findByText('Delete failed.');
+      fetchMock().mockResolvedValueOnce(jsonResponse({ success: true, message: 'User deleted successfully.' }));
+
+      await pressConfirm();
+
+      await screen.findByText('User deleted successfully.');
+      expect(screen.queryByText('Delete failed.')).toBeNull();
+      expect(screen.queryByText('Maria Delgado')).toBeNull();
+    });
+  });
+
+  describe('no logged-in user', () => {
+    // Accounts only load for a logged-in user, so the user logs out with the sheet open.
+    it('shows the login message without calling the delete endpoint', async () => {
+      await renderWithAccounts();
+      await openSheetFor(1);
+      mockUserState.activeUser = null;
+      await screen.rerender(<ManagedAccounts />);
+
+      await pressConfirm();
+
+      expect(await screen.findByText('You must be logged in to delete an account.')).toBeOnTheScreen();
+      expect(screen.getByText('Delete Account?')).toBeOnTheScreen();
+      expect(deleteCalls()).toHaveLength(0);
+    });
+  });
+});
