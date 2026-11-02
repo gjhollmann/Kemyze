@@ -8,6 +8,8 @@ frontEnd/node_modules/
 frontEnd/.expo/
 frontEnd/expo-env.d.ts
 
+.env
+
 # VS Code local settings
 .vscode/
 .venv/

@@ -25,7 +25,7 @@ describe('Create Profile Screen', () => {
     // Clear previous mock call history, simulate user. 
     beforeEach(() => {
         jest.clearAllMocks();
-        //fetchMock().mockReset();
+        fetchMock().mockReset();
 
         mockUserState.activeUser = {
         userID: 49035,
