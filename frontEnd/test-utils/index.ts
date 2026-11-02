@@ -12,6 +12,10 @@ export const mockRouter = {
   canGoBack: jest.fn(() => true),
 };
 
+// Values returned by the mocked useLocalSearchParams(). Route-screen tests set
+// these before rendering so they exercise the same path as Expo Router.
+export const mockLocalSearchParams: Record<string, string> = {};
+
 // Value returned by the mocked useUserState(). Tests set activeUser to log a user in.
 export const mockUserState: {
   activeUser: MockActiveUser;
