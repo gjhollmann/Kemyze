@@ -735,6 +735,7 @@ export default function ManagedAccounts() {
               ]}
             >
               <ScrollView
+                testID="accounts-list"
                 contentContainerStyle={styles.list}
                 keyboardShouldPersistTaps="handled"
                 onMomentumScrollEnd={({ nativeEvent }) => {
