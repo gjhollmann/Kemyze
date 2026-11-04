@@ -117,3 +117,132 @@ describe('fetchAllContainers', () => {
     expect(urlOfCall(1)).toBe(`${API}getSearch?input=&count=0&userID=7`);
   });
 });
+
+// KM-156
+describe('addMoreContainers', () => {
+    // Finds the inventory list itself by starting at a card and walking up
+    // until we reach the scroll view that holds it.
+     const inventoryList = () => {
+       let element = screen.getByText('Chemical 1');
+       while (element.type !== 'RCTScrollView') element = element.parent!;
+       return element;
+     };
+
+     // Pretend the user scrolled to the very bottom of the inventory list.
+     const scrollToBottom = () =>
+       fireEvent.scroll(inventoryList(), {
+      nativeEvent: {
+        layoutMeasurement: { height: 600 },
+        contentOffset: { y: 1400 },
+        contentSize: { height: 2000 },
+      },
+    });
+
+  it('loads the next page and adds it below the first page', async () => {
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(11, 10)));
+    await render(<Inventory />);
+    await screen.findByText('Chemical 1');
+
+    await scrollToBottom();
+
+    expect(await screen.findByText('Chemical 20')).toBeOnTheScreen();
+    expect(screen.getByText('Chemical 1')).toBeOnTheScreen(); // first page is still there
+    expect(urlOfCall(1)).toBe(`${API}getSearch?input=&count=10&userID=7`);
+  });
+
+  it('asks for the page after that on the next scroll', async () => {
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(11, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(21, 10)));
+    await render(<Inventory />);
+    await screen.findByText('Chemical 1');
+
+    await scrollToBottom();
+    await screen.findByText('Chemical 20');
+    await scrollToBottom();
+
+    expect(await screen.findByText('Chemical 30')).toBeOnTheScreen();
+    expect(screen.getByText('Chemical 15')).toBeOnTheScreen();
+    expect(urlOfCall(2)).toBe(`${API}getSearch?input=&count=20&userID=7`);
+  });
+
+  it.each([
+    ['Show Low', `${API}getSearch?input=&count=10&show_low=true&userID=7`],
+    ['Expiring Soon', `${API}getSearch?input=&count=10&expiringSoon=true&userID=7`],
+    ['Recently Changed', `${API}getSearchRecent?search=&count=10&userID=7`],
+  ])('keeps the %s filter when loading the next page', async (filter, nextPageUrl) => {
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(100, 10))) // first load
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10))) // filter pressed
+      .mockResolvedValueOnce(jsonResponse(makeContainers(11, 10))); // next page
+    await render(<Inventory />);
+    await screen.findByText('Chemical 100');
+
+    await fireEvent.press(screen.getByText(filter));
+    await screen.findByText('Chemical 1');
+    await scrollToBottom();
+
+    await screen.findByText('Chemical 20');
+    expect(urlOfCall(2)).toBe(nextPageUrl);
+  });
+
+  it('keeps the search text when loading the next page', async () => {
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(100, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(11, 10)));
+    await render(<Inventory />);
+    await screen.findByText('Chemical 100');
+
+    await fireEvent.changeText(screen.getByPlaceholderText('SEARCH INVENTORY'), 'acid');
+    await fireEvent.press(screen.getByText('Search'));
+    await screen.findByText('Chemical 1');
+    await scrollToBottom();
+
+    await screen.findByText('Chemical 20');
+    expect(urlOfCall(2)).toBe(`${API}getSearch?input=acid&count=10&userID=7`);
+  });
+
+  it.each([
+    ['an empty page', 0],
+    ['a partly filled page', 4],
+  ])('stops asking for more after the server sends %s', async (_case, lastPageSize) => {
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10)))
+      .mockResolvedValueOnce(jsonResponse(makeContainers(11, lastPageSize)));
+    await render(<Inventory />);
+    await screen.findByText('Chemical 1');
+
+    await scrollToBottom();
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(2));
+    await scrollToBottom();
+    await scrollToBottom();
+
+    expect(fetchMock()).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows "Loading more…" and sends only one request while a page is loading', async () => {
+    let answer!: () => void;
+    fetchMock()
+      .mockResolvedValueOnce(jsonResponse(makeContainers(1, 10)))
+      .mockImplementationOnce(
+        () => new Promise((resolve) => { answer = () => resolve(jsonResponse(makeContainers(11, 10))); }),
+      );
+    await render(<Inventory />);
+    await screen.findByText('Chemical 1');
+
+    await scrollToBottom();
+    await scrollToBottom();
+    await scrollToBottom();
+
+    expect(screen.getByText('Loading more…')).toBeOnTheScreen();
+    expect(fetchMock()).toHaveBeenCalledTimes(2);
+
+    answer();
+    expect(await screen.findByText('Chemical 20')).toBeOnTheScreen();
+    expect(screen.queryByText('Loading more…')).toBeNull();
+  });
+});
