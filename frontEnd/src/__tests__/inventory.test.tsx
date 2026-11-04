@@ -246,3 +246,119 @@ describe('addMoreContainers', () => {
     expect(screen.queryByText('Loading more…')).toBeNull();
   });
 });
+
+// KM-157
+describe('Chemical Inventory screen renders', () => {
+  // One container with distinct values so each field can be found on its own.
+  const SODIUM_CHLORIDE = {
+    container_id: 1001,
+    chemical_name: 'Sodium Chloride',
+    cas_number: '7647-14-5',
+    expr_date: null,
+    location: 'Room 204 - Cabinet B',
+    quantity: 'Half',
+  };
+
+  it('shows the title, search field and all filter buttons', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([]));
+
+    await render(<Inventory />);
+
+    expect(screen.getByText('CHEMICAL INVENTORY')).toBeOnTheScreen();
+    expect(screen.getByPlaceholderText('SEARCH INVENTORY')).toBeOnTheScreen();
+    for (const button of ['Search', 'Show All', 'Recently Changed', 'Expiring Soon', 'Show Low', 'Add New']) {
+      expect(screen.getByText(button)).toBeOnTheScreen();
+    }
+  });
+
+  it("shows a container card's name, CAS #, ID, location and status", async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([SODIUM_CHLORIDE]));
+
+    await render(<Inventory />);
+
+    expect(await screen.findByText('Sodium Chloride')).toBeOnTheScreen();
+    expect(screen.getByText('7647-14-5')).toBeOnTheScreen();
+    expect(screen.getByText('1001')).toBeOnTheScreen();
+    expect(screen.getByText('Room 204 - Cabinet B')).toBeOnTheScreen();
+    expect(screen.getByText('Half')).toBeOnTheScreen();
+  });
+
+  it('shows N/A when a container has no CAS #', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([{ ...SODIUM_CHLORIDE, cas_number: null }]));
+
+    await render(<Inventory />);
+
+    expect(await screen.findByText('N/A')).toBeOnTheScreen();
+  });
+
+  it('shows View SDS, QR Label and Edit Info on every card', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse(makeContainers(1, 3)));
+
+    await render(<Inventory />);
+
+    await screen.findByText('Chemical 1');
+    expect(screen.getAllByText('View SDS')).toHaveLength(3);
+    expect(screen.getAllByText('QR Label')).toHaveLength(3);
+    expect(screen.getAllByText('Edit Info')).toHaveLength(3);
+  });
+
+  it("View SDS opens that container's Safety Data Sheet", async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    fetchMock().mockResolvedValueOnce(jsonResponse([SODIUM_CHLORIDE]));
+    await render(<Inventory />);
+    await screen.findByText('Sodium Chloride');
+
+    await fireEvent.press(screen.getByText('View SDS'));
+
+    expect(openURL).toHaveBeenCalledWith(`${API}getSDS?kemID=1001`);
+  });
+
+  it('QR Label opens the label popup for that container', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([SODIUM_CHLORIDE]));
+    await render(<Inventory />);
+    await screen.findByText('Sodium Chloride');
+
+    await fireEvent.press(screen.getByText('QR Label'));
+
+    // The popup repeats the chemical name under the QR code and has a Done button.
+    expect(screen.getAllByText('Sodium Chloride')).toHaveLength(2);
+    expect(screen.getByText('Done')).toBeOnTheScreen();
+  });
+
+  it('Edit Info opens the Edit Container page for that container', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([SODIUM_CHLORIDE]));
+    await render(<Inventory />);
+    await screen.findByText('Sodium Chloride');
+
+    await fireEvent.press(screen.getByText('Edit Info'));
+
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      pathname: '../SubPages/edit_container',
+      params: { container_id: 1001 },
+    });
+  });
+
+  it('Add New opens the Add Container page', async () => {
+    fetchMock().mockResolvedValueOnce(jsonResponse([]));
+    await render(<Inventory />);
+
+    await fireEvent.press(screen.getByText('Add New'));
+
+    expect(mockRouter.push).toHaveBeenCalledWith('../SubPages/add_container');
+  });
+
+  it.each([
+    ['Edit Info', 'You do not have permission to edit containers.'],
+    ['Add New', 'You do not have permission to add new containers.'],
+  ])('%s shows Access Denied for a user without edit rights', async (button, message) => {
+    mockUserState.activeUser = { userID: 7, accessLevel: '5' };
+    fetchMock().mockResolvedValueOnce(jsonResponse([SODIUM_CHLORIDE]));
+    await render(<Inventory />);
+    await screen.findByText('Sodium Chloride');
+
+    await fireEvent.press(screen.getByText(button));
+
+    expect(alertSpy).toHaveBeenCalledWith('Access Denied', message);
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+});
