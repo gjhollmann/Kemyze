@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Text,
   View,
@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
@@ -82,23 +83,27 @@ const Inventory: React.FC = () => {
   const [inventoryData, setInventoryData] = useState<Chemical[]>([]);
   const [noMoreData, setNoMoreData] = useState(false);
 
+  // KM-192: true while a "load more" request is waiting on the server.
+  // A ref updates instantly (state waits for the next render), so it blocks
+  // a second request even if scroll events fire back to back.
+  const loadingMoreRef = useRef(false);
+
   // function called when user scrolls to end of inventory
-  const onScrollAtEnd = useCallback(() => {
-      if (!noMoreData){
-          setLoadingMore(true);
-          setTimeout(() => {
-              setLoadingMore(false);
-          }, 2000);
-          console.log("User scrolled to end");
-          if (lastUsedSearch){
-              addMoreContainers();
-          }
-      }
-  }, [lastUsedSearch, noMoreData]);
+  // KM-192: this used to be wrapped in useCallback, which froze an old copy of
+  // addMoreContainers (empty list, counter stuck at 10). Every scroll then asked
+  // for items 10-20 again and replaced the list. A plain function always sees
+  // the current list, counter, search text and filter.
+  const onScrollAtEnd = () => {
+    if (noMoreData || loading || !lastUsedSearch) return;
+    if (loadingMoreRef.current) return; // a request is already running
+    addMoreContainers();
+  };
 
   // function that adds more containers to list based on search
   const addMoreContainers = async () => {
-    console.log("Adding more containers based on search");
+    // KM-192: lock out more requests and show the spinner until this one finishes
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
     const queryUrl = activeQuickFilter === 'recentlyChanged'
       ? `${BASE_URL}containers/getSearchRecent?search=${encodeURIComponent(search)}&count=${currentIndex}` + (activeUser ? "&userID=" + activeUser.userID : "")
       : `${BASE_URL}containers/getSearch?input=${encodeURIComponent(search)}&count=${currentIndex}`
@@ -114,20 +119,24 @@ const Inventory: React.FC = () => {
         },
       });
       if (!response.ok){
-        console.log("We are having issues");
         throw new Error("BAD TIME STATUS: " + response.status);
       }
       const data = await response.json();
-      console.log(data);
-      if (data !== undefined && data.length > 0){
-        setCurrentIndex(currentIndex + 10);
-        setInventoryData(inventoryData.concat(data));
+      if (Array.isArray(data) && data.length > 0){
+        // KM-192: add the new page to the END of the current list (prev = list as it is right now)
+        setCurrentIndex((prev) => prev + 10);
+        setInventoryData((prev) => prev.concat(data));
       }
-        if (data.length <= 0){
-            setNoMoreData(true);
-        }
+      // The server sends 10 at a time, so fewer than 10 means we reached the end
+      if (!Array.isArray(data) || data.length < 10){
+        setNoMoreData(true);
+      }
     } catch (error: any) {
       console.log(error.message);
+    } finally {
+      // KM-192: unlock and hide the spinner
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
     }
   };
 
@@ -153,6 +162,7 @@ const Inventory: React.FC = () => {
   const fetchAllContainers = async (searchTerm = '') => {
     setLoading(true);
     setLastUsedSearch(true);
+    setNoMoreData(false); // KM-192: a new list can be scrolled again
     setCurrentIndex(10);
     const getAllURL = BASE_URL + "containers/getSearch?input=" + encodeURIComponent(searchTerm) + "&count=0" + (activeUser ? "&userID="+activeUser.userID:"");
     console.log(getAllURL);
@@ -553,10 +563,13 @@ const Inventory: React.FC = () => {
       <ScrollView style={styles.list}
           //Function call when user scrolls to end of list
           //refreshControl = {<RefreshControl refreshing={loadingMore} onRefresh={onScrollAtEnd}/>}
-          onMomentumScrollEnd = {({nativeEvent}) => {
+          // KM-192: check on every scroll (not only when a swipe ends) so it
+          // also works with a mouse wheel in the browser
+          onScroll = {({nativeEvent}) => {
               if (isCloseToBottom(nativeEvent))
                   onScrollAtEnd();
           }}
+          scrollEventThrottle={100}
       >
         {loading && (
           <Text style={styles.emptyText}>Loading your chemicals…</Text>
@@ -630,6 +643,13 @@ const Inventory: React.FC = () => {
             </Text>
           </View>
         ))}
+            {/* KM-192: spinner at the bottom while the next page loads */}
+            {loadingMore && (
+             <View style={styles.loadingMore}>
+               <ActivityIndicator color="#3b82f6" />
+               <Text style={styles.emptyText}>Loading more…</Text>
+             </View>
+           )}
       </ScrollView>
 
       {/* Add Container Screen Modal (Popup) */}
@@ -949,6 +969,12 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 15,
+  },
+  // KM-192: "Loading more…" row under the last card
+  loadingMore: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 6,
   },
   emptyText: {
     color: 'rgba(255,255,255,0.6)',
