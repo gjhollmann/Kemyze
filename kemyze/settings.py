@@ -131,6 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_FILE_PATH = BASE_DIR / "dev_email"
 
 EMAIL_HOST = "smtp.gmail.com"
