@@ -79,7 +79,7 @@ class SearchManagedUsersTests(SimpleTestCase):
 
         managed_users = users.filter.return_value
         searchable_users = managed_users.filter.return_value
-        searchable_users.select_related.return_value.order_by.return_value.__getitem__.return_value = [
+        searchable_users.order_by.return_value.select_related.return_value.__getitem__.return_value = [
             SimpleNamespace(
                 user_id=20,
                 first_name='Maria',
@@ -133,7 +133,7 @@ class SearchManagedUsersTests(SimpleTestCase):
         )
         locations.filter.return_value.values_list.return_value = []
         managed_users = users.filter.return_value
-        managed_users.select_related.return_value.order_by.return_value.__getitem__.return_value = [
+        managed_users.order_by.return_value.select_related.return_value.__getitem__.return_value = [
             SimpleNamespace(
                 user_id=20,
                 first_name='Stacy',
@@ -178,7 +178,7 @@ class SearchManagedUsersTests(SimpleTestCase):
             )
             for index in range(1, 12)
         ]
-        users.filter.return_value.select_related.return_value.order_by.return_value.__getitem__.return_value = paged_users
+        users.filter.return_value.order_by.return_value.select_related.return_value.__getitem__.return_value = paged_users
 
         response = searchManagedUsers(self.post_search_request({'user_id': 5, 'offset': 20}))
 
