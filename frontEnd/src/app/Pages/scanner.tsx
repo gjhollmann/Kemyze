@@ -19,6 +19,7 @@ import { handleContainerResponse } from "../../../utils/ScanResUtils";
 import { openBase64Pdf } from "../../../utils/PDFUtils";
 import { Linking } from "react-native";
 import GradientButton from "../../../components/GradientButton";
+import LogoutButton from "../../../components/LogoutButton";
 import { useUserState } from '../contexts/UserState';
 import { useRouter } from 'expo-router';
 import { BASE_URL } from '../../../constants/api';
@@ -238,6 +239,9 @@ export default function Scanner() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.backgroundGradient}>
+        <View style = {styles.header}>
+          <LogoutButton />
+        </View>
         <Text style={styles.QRScannerTitle}>Quick Scan</Text>
         <View style={styles.CameraBox}>
           <CameraView
@@ -315,6 +319,12 @@ export default function Scanner() {
       justifyContent: "center",
       experimental_backgroundImage:
         "linear-gradient(to left, #09091C 0%, #131338 33%, #131338 66%, #09091C 100%)",
+    },
+    header: {
+      position: "absolute",
+      top: 16,
+      left: 16,
+      zIndex: 1,
     },
     CameraBox: {
       width: 250,
