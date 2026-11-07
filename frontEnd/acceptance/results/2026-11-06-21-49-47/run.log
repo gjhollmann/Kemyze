@@ -1,0 +1,616 @@
+11/6/2026, 9:49:49 PM  Tester: Matthew Fronda  Command: npm run tester
+11/6/2026, 9:49:54 PM  Using src/app as the root directory for Expo Router.
+11/6/2026, 9:49:56 PM  React Compiler enabled
+11/6/2026, 9:49:56 PM  Starting Metro Bundler
+11/6/2026, 9:49:56 PM  Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+11/6/2026, 9:49:56 PM  Error while reading cache, falling back to a full crawl:
+11/6/2026, 9:49:56 PM   Error: Unable to deserialize cloned data.
+11/6/2026, 9:49:56 PM      at deserialize (node:v8:436:14)
+11/6/2026, 9:49:56 PM      at DiskCacheManager.read (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro-file-map\src\cache\DiskCacheManager.js:60:33)
+11/6/2026, 9:49:56 PM      at FileMap.read (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro-file-map\src\index.js:317:14)
+11/6/2026, 9:49:56 PM      at C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro-file-map\src\index.js:208:25
+11/6/2026, 9:49:56 PM      at DependencyGraph.ready (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro\src\node-haste\DependencyGraph.js:94:5)
+11/6/2026, 9:49:56 PM      at Bundler.ready (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro\src\Bundler.js:62:5)
+11/6/2026, 9:49:56 PM      at IncrementalBundler.ready (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro\src\IncrementalBundler.js:310:5)
+11/6/2026, 9:49:56 PM      at Server.ready (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\metro\src\Server.js:1446:5)
+11/6/2026, 9:49:59 PM  Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+11/6/2026, 9:49:59 PM  λ node_modules\@expo\router-server\node\render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+11/6/2026, 9:50:02 PM  Web node_modules\expo-router\entry.js ▓▓░░░░░░░░░░░░░░ 16.0% (4/7)
+11/6/2026, 9:50:02 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓░░░░░░░░░░░░░ 20.1% (13/29)
+11/6/2026, 9:50:06 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓░░░░░░░░░░░ 37.3% ( 25/146)
+11/6/2026, 9:50:06 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓░░░░░░░░░░ 39.1% ( 50/200)
+11/6/2026, 9:50:09 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓░░░░░░░░░░░ 37.3% (100/262)
+11/6/2026, 9:50:09 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓░░░░░░░░░░ 39.1% (181/386)
+11/6/2026, 9:50:13 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 38.1% (258/438)
+11/6/2026, 9:50:13 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓░░░░░░░░░░ 39.1% (237/495)
+11/6/2026, 9:50:16 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 44.4% (426/640)
+11/6/2026, 9:50:16 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓░░░░░░░░░░ 39.3% (462/772)
+11/6/2026, 9:50:20 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 49.0% (523/787)
+11/6/2026, 9:50:20 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.6% ( 772/1026)
+11/6/2026, 9:50:23 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.1% (785/990)
+11/6/2026, 9:50:23 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.6% (1004/1178)
+11/6/2026, 9:50:27 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.2% (1048/1149)
+11/6/2026, 9:50:27 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.0% (1195/1253)
+11/6/2026, 9:50:30 PM  Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1393/1393)
+11/6/2026, 9:50:30 PM  λ node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (1444/1446)
+11/6/2026, 9:50:31 PM  λ Bundled 31929ms node_modules\@expo\router-server\node\render.js (1446 modules)
+11/6/2026, 9:50:33 PM  Web Bundled 33842ms node_modules\expo-router\entry.js (1393 modules)
+11/6/2026, 9:50:34 PM  λ  WARN  [Layout children]: Too many screens defined. Route "login" is extraneous. 
+11/6/2026, 9:50:34 PM    console.warn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:177:21)
+11/6/2026, 9:50:34 PM    map (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:70:21)
+11/6/2026, 9:50:34 PM    getSortedChildren (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:68:10)
+11/6/2026, 9:50:34 PM    useSortedScreens (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:127:38)
+11/6/2026, 9:50:34 PM    Component (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\layouts\withLayoutContext.js:152:41)
+11/6/2026, 9:50:34 PM    renderWithHooks (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4196:18)
+11/6/2026, 9:50:34 PM    renderElement (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4740:18)
+11/6/2026, 9:50:34 PM    retryNode (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:5040:16)
+11/6/2026, 9:50:34 PM    Wn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4843:7)
+11/6/2026, 9:50:34 PM  handlePrintLabel: [AsyncFunction: t]
+11/6/2026, 9:50:34 PM  λ  WARN  [Layout children]: Too many screens defined. Route "login" is extraneous. 
+11/6/2026, 9:50:34 PM    console.warn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:177:21)
+11/6/2026, 9:50:34 PM    map (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:70:21)
+11/6/2026, 9:50:34 PM    getSortedChildren (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:68:10)
+11/6/2026, 9:50:34 PM    useSortedScreens (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:127:38)
+11/6/2026, 9:50:34 PM    Component (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\layouts\withLayoutContext.js:152:41)
+11/6/2026, 9:50:34 PM    renderWithHooks (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4196:18)
+11/6/2026, 9:50:34 PM    renderElement (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4740:18)
+11/6/2026, 9:50:34 PM    retryNode (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:5040:16)
+11/6/2026, 9:50:34 PM    Wn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4843:7)
+11/6/2026, 9:50:34 PM  λ  LOG  Quaternary activeUser: null
+11/6/2026, 9:50:34 PM  λ  LOG  Quaternary userId: undefined
+11/6/2026, 9:50:34 PM  λ  WARN  [Layout children]: Too many screens defined. Route "login" is extraneous. 
+11/6/2026, 9:50:34 PM    console.warn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:177:21)
+11/6/2026, 9:50:34 PM    map (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:70:21)
+11/6/2026, 9:50:34 PM    getSortedChildren (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:68:10)
+11/6/2026, 9:50:34 PM    useSortedScreens (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:127:38)
+11/6/2026, 9:50:34 PM    Component (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\layouts\withLayoutContext.js:152:41)
+11/6/2026, 9:50:34 PM    renderWithHooks (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4196:18)
+11/6/2026, 9:50:34 PM    renderElement (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4740:18)
+11/6/2026, 9:50:34 PM    retryNode (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:5040:16)
+11/6/2026, 9:50:34 PM    Wn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4843:7)
+11/6/2026, 9:50:34 PM  λ  WARN  [Layout children]: Too many screens defined. Route "login" is extraneous. 
+11/6/2026, 9:50:34 PM    console.warn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:177:21)
+11/6/2026, 9:50:34 PM    map (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:70:21)
+11/6/2026, 9:50:34 PM    getSortedChildren (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:68:10)
+11/6/2026, 9:50:34 PM    useSortedScreens (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\useScreens.js:127:38)
+11/6/2026, 9:50:34 PM    Component (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\expo-router\build\layouts\withLayoutContext.js:152:41)
+11/6/2026, 9:50:34 PM    renderWithHooks (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4196:18)
+11/6/2026, 9:50:34 PM    renderElement (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4740:18)
+11/6/2026, 9:50:34 PM    retryNode (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:5040:16)
+11/6/2026, 9:50:34 PM    Wn (C:\Users\Frond\OneDrive\Documents\Kemyze\frontEnd\node_modules\react-dom\cjs\react-dom-server-legacy.node.production.js:4843:7)
+11/6/2026, 9:50:34 PM  › web bundles (2):
+11/6/2026, 9:50:34 PM  _expo/static/js/web/entry-862369392762eb247c04551bc15168a9.js (2.9MB)
+11/6/2026, 9:50:34 PM  _expo/static/js/web/index-97c01bdee3c0ae64fe7777e123569de9.js (45KB)
+11/6/2026, 9:50:34 PM  › Static routes (15):
+11/6/2026, 9:50:34 PM  / (index) (27KB)
+11/6/2026, 9:50:34 PM  /_sitemap (20KB)
+11/6/2026, 9:50:34 PM  /qr-scanner (23KB)
+11/6/2026, 9:50:34 PM  /+not-found (20KB)
+11/6/2026, 9:50:34 PM  /Pages/scanner (29KB)
+11/6/2026, 9:50:34 PM  /Pages/inventory (34KB)
+11/6/2026, 9:50:34 PM  /components/NavBar (32KB)
+11/6/2026, 9:50:34 PM  /contexts/UserState (32KB)
+11/6/2026, 9:50:34 PM  /SubPages/editprofile (32KB)
+11/6/2026, 9:50:34 PM  /SubPages/add_container (41KB)
+11/6/2026, 9:50:34 PM  /SubPages/createprofile (38KB)
+11/6/2026, 9:50:34 PM  /SubPages/scannerbypass (32KB)
+11/6/2026, 9:50:34 PM  /Pages/quaternaryprofile (28KB)
+11/6/2026, 9:50:34 PM  /SubPages/edit_container (31KB)
+11/6/2026, 9:50:34 PM  /Pages/tertiaryprofilemanagement (38KB)
+11/6/2026, 9:50:34 PM  Exported: dist
+11/6/2026, 9:50:39 PM  Environment ready (app http://localhost:8082, server https://kemyze.vercel.app)
+11/6/2026, 9:50:54 PM  PASS test-utils/setup.test.ts
+11/6/2026, 9:50:55 PM  PASS src/utils/handleLogin.test.ts
+11/6/2026, 9:51:01 PM  PASS src/__tests__/scanner.test.tsx (11.077 s)
+11/6/2026, 9:51:01 PM    ● Console
+11/6/2026, 9:51:01 PM      console.warn
+11/6/2026, 9:51:01 PM        SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context
+11/6/2026, 9:51:01 PM        237 |     
+11/6/2026, 9:51:01 PM        238 |   return (
+11/6/2026, 9:51:01 PM      > 239 |     <SafeAreaView style={styles.safeArea}>
+11/6/2026, 9:51:01 PM            |      ^
+11/6/2026, 9:51:01 PM        240 |       <View style={styles.backgroundGradient}>
+11/6/2026, 9:51:01 PM        241 |         <Text style={styles.QRScannerTitle}>Quick Scan</Text>
+11/6/2026, 9:51:01 PM        242 |         <View style={styles.CameraBox}>
+11/6/2026, 9:51:01 PM        at warnOnce (node_modules/react-native/Libraries/Utilities/warnOnce.js:12:11)
+11/6/2026, 9:51:01 PM        at Object.get SafeAreaView [as SafeAreaView] (node_modules/react-native/index.js:54:5)
+11/6/2026, 9:51:01 PM        at SafeAreaView (src/app/Pages/scanner.tsx:239:6)
+11/6/2026, 9:51:01 PM        at Object.react_stack_bottom_frame (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:19204:20)
+11/6/2026, 9:51:01 PM        at renderWithHooks (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:5549:22)
+11/6/2026, 9:51:01 PM        at updateFunctionComponent (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:7969:19)
+11/6/2026, 9:51:01 PM        at beginWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:9591:18)
+11/6/2026, 9:51:01 PM        at runWithFiberInDEV (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:2663:13)
+11/6/2026, 9:51:01 PM        at performUnitOfWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16674:22)
+11/6/2026, 9:51:01 PM        at workLoopSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16500:41)
+11/6/2026, 9:51:01 PM        at renderRootSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16481:11)
+11/6/2026, 9:51:01 PM        at performWorkOnRoot (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:15540:11)
+11/6/2026, 9:51:01 PM        at performWorkOnRootViaSchedulerTask (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:3520:7)
+11/6/2026, 9:51:01 PM        at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+11/6/2026, 9:51:01 PM        at node_modules/react/cjs/react.development.js:847:21
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=not-a-kemyze-id&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:66:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:66:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:66:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:66:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=43&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=999&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=999&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=null&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=1
+11/6/2026, 9:51:01 PM        at log (src/app/Pages/scanner.tsx:152:19)
+11/6/2026, 9:51:01 PM  PASS src/__tests__/edit_container.test.tsx (11.26 s)
+11/6/2026, 9:51:01 PM    ● Console
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        ${formattedTime} Sending add location URL: https://kemyze.vercel.app/containers/addLocation
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:1086:17)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        We are having issues
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:1415:25)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        BAD TIME STATUS: 500
+11/6/2026, 9:51:01 PM        Error Reason: Could not load history
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:1449:21)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:142:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Sending edit URL: https://kemyze.vercel.app/containers/editContainer
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:990:21)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Save complete
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/edit_container.tsx:945:19)
+11/6/2026, 9:51:01 PM  PASS src/__tests__/scannerbypass.test.tsx (11.469 s)
+11/6/2026, 9:51:01 PM    ● Console
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=not-a-kemyze-id&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: not-a-kemyze-id
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:103:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:103:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:103:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Container ID not found for QR Code
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:103:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=999&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=999&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=null&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        https://kemyze.vercel.app/containers/getContainer?kemID=42&accessLevel=5
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:197:15)
+11/6/2026, 9:51:01 PM      console.log
+11/6/2026, 9:51:01 PM        Valid QR Code: 42
+11/6/2026, 9:51:01 PM        at log (src/app/SubPages/scannerbypass.tsx:97:13)
+11/6/2026, 9:51:03 PM  PASS src/__tests__/index.test.tsx (12.87 s)
+11/6/2026, 9:51:03 PM    ● Console
+11/6/2026, 9:51:03 PM      console.warn
+11/6/2026, 9:51:03 PM        SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context
+11/6/2026, 9:51:03 PM        181 |   
+11/6/2026, 9:51:03 PM        182 |   return (
+11/6/2026, 9:51:03 PM      > 183 |     <SafeAreaView style={styles.safeArea}>
+11/6/2026, 9:51:03 PM            |      ^
+11/6/2026, 9:51:03 PM        184 |       <StatusBar barStyle="light-content" />
+11/6/2026, 9:51:03 PM        185 |
+11/6/2026, 9:51:03 PM        186 |       <View style={styles.backgroundGradient}>
+11/6/2026, 9:51:03 PM        at warnOnce (node_modules/react-native/Libraries/Utilities/warnOnce.js:12:11)
+11/6/2026, 9:51:03 PM        at Object.get SafeAreaView [as SafeAreaView] (node_modules/react-native/index.js:54:5)
+11/6/2026, 9:51:03 PM        at SafeAreaView (src/app/index.tsx:183:6)
+11/6/2026, 9:51:03 PM        at Object.react_stack_bottom_frame (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:19204:20)
+11/6/2026, 9:51:03 PM        at renderWithHooks (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:5549:22)
+11/6/2026, 9:51:03 PM        at updateFunctionComponent (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:7969:19)
+11/6/2026, 9:51:03 PM        at beginWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:9591:18)
+11/6/2026, 9:51:03 PM        at runWithFiberInDEV (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:2663:13)
+11/6/2026, 9:51:03 PM        at performUnitOfWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16674:22)
+11/6/2026, 9:51:03 PM        at workLoopSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16500:41)
+11/6/2026, 9:51:03 PM        at renderRootSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16481:11)
+11/6/2026, 9:51:03 PM        at performWorkOnRoot (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:15540:11)
+11/6/2026, 9:51:03 PM        at performWorkOnRootViaSchedulerTask (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:3520:7)
+11/6/2026, 9:51:03 PM        at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+11/6/2026, 9:51:03 PM        at node_modules/react/cjs/react.development.js:847:21
+11/6/2026, 9:51:04 PM  PASS src/__tests__/quaternaryprofile.test.tsx (14.456 s)
+11/6/2026, 9:51:04 PM    ● Console
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary activeUser: { userID: 526, accessLevel: '4' }
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:75:11)
+11/6/2026, 9:51:04 PM      console.log
+11/6/2026, 9:51:04 PM        Quaternary userId: 526
+11/6/2026, 9:51:04 PM        at log (src/app/Pages/quaternaryprofile.tsx:76:11)
+11/6/2026, 9:51:05 PM  PASS src/__tests__/add_container.test.tsx (14.742 s)
+11/6/2026, 9:51:05 PM    ● Console
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:135:13)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:135:13)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:135:13)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        [SDS] File Selected: acetone-sds.pdf
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:612:17)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        [SDS] Upload started for "acetone-sds.pdf"
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:636:15)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:135:13)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        ${formattedTime} Sending add location URL: https://kemyze.vercel.app/containers/addLocation
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:896:19)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        Active user: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:135:13)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        [SDS] File Selected: acetone-sds.pdf
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:612:17)
+11/6/2026, 9:51:05 PM      console.log
+11/6/2026, 9:51:05 PM        [SDS] Upload started for "acetone-sds.pdf"
+11/6/2026, 9:51:05 PM        at log (src/app/SubPages/add_container.tsx:636:15)
+11/6/2026, 9:51:06 PM  PASS src/__tests__/editprofile.test.tsx (16.324 s)
+11/6/2026, 9:51:06 PM    ● Console
+11/6/2026, 9:51:06 PM      console.log
+11/6/2026, 9:51:06 PM        Active user for edit profile: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:06 PM        at log (src/app/SubPages/editprofile.tsx:194:13)
+11/6/2026, 9:51:06 PM      console.log
+11/6/2026, 9:51:06 PM        Active user for edit profile: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:06 PM        at log (src/app/SubPages/editprofile.tsx:194:13)
+11/6/2026, 9:51:06 PM      console.log
+11/6/2026, 9:51:06 PM        Active user for edit profile: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:06 PM        at log (src/app/SubPages/editprofile.tsx:194:13)
+11/6/2026, 9:51:06 PM      console.log
+11/6/2026, 9:51:06 PM        Active user for edit profile: { userID: 7, accessLevel: '1' }
+11/6/2026, 9:51:06 PM        at log (src/app/SubPages/editprofile.tsx:194:13)
+11/6/2026, 9:51:06 PM      console.log
+11/6/2026, 9:51:06 PM        ${formattedTime} Sending add location URL: https://kemyze.vercel.app/containers/addLocation
+11/6/2026, 9:51:06 PM        at log (src/app/SubPages/editprofile.tsx:777:15)
+11/6/2026, 9:51:06 PM  PASS src/__tests__/scanpopup.test.tsx (16.518 s)
+11/6/2026, 9:51:07 PM  PASS src/__tests__/createprofile.test.tsx (17.169 s)
+11/6/2026, 9:51:07 PM    ● Console
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        Active user: { userID: 49035, accessLevel: '1' }
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:95:15)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        Active user: { userID: 49035, accessLevel: '1' }
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:95:15)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        ${formattedTime} Sending add User URL: https://kemyze.vercel.app/login/addUser
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:346:19)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        Save User complete
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:324:23)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        Active user: { userID: 49035, accessLevel: '1' }
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:95:15)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        Active user: { userID: 49035, accessLevel: '1' }
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:95:15)
+11/6/2026, 9:51:07 PM      console.log
+11/6/2026, 9:51:07 PM        ${formattedTime} Sending add location URL: https://kemyze.vercel.app/containers/addLocation
+11/6/2026, 9:51:07 PM        at log (src/app/SubPages/createprofile.tsx:407:19)
+11/6/2026, 9:51:12 PM  PASS src/__tests__/inventory.test.tsx (21.858 s)
+11/6/2026, 9:51:12 PM    ● Console
+11/6/2026, 9:51:12 PM      console.log
+11/6/2026, 9:51:12 PM        handlePrintLabel: [Function: handlePrintLabel]
+11/6/2026, 9:51:12 PM        at Object.log (components/QRLabelPopup.tsx:7:9)
+11/6/2026, 9:51:12 PM      console.warn
+11/6/2026, 9:51:12 PM        SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context
+11/6/2026, 9:51:12 PM        459 |
+11/6/2026, 9:51:12 PM        460 |   return (
+11/6/2026, 9:51:12 PM      > 461 |     <SafeAreaView style={styles.container}>
+11/6/2026, 9:51:12 PM            |      ^
+11/6/2026, 9:51:12 PM        462 |       <StatusBar barStyle="light-content" />
+11/6/2026, 9:51:12 PM        463 |       
+11/6/2026, 9:51:12 PM        464 |       {/* Header Section */}
+11/6/2026, 9:51:12 PM        at warnOnce (node_modules/react-native/Libraries/Utilities/warnOnce.js:12:11)
+11/6/2026, 9:51:12 PM        at Object.get SafeAreaView [as SafeAreaView] (node_modules/react-native/index.js:54:5)
+11/6/2026, 9:51:12 PM        at SafeAreaView (src/app/Pages/inventory.tsx:461:6)
+11/6/2026, 9:51:12 PM        at Object.react_stack_bottom_frame (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:19204:20)
+11/6/2026, 9:51:12 PM        at renderWithHooks (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:5549:22)
+11/6/2026, 9:51:12 PM        at updateFunctionComponent (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:7969:19)
+11/6/2026, 9:51:12 PM        at beginWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:9591:18)
+11/6/2026, 9:51:12 PM        at runWithFiberInDEV (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:2663:13)
+11/6/2026, 9:51:12 PM        at performUnitOfWork (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16674:22)
+11/6/2026, 9:51:12 PM        at workLoopSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16500:41)
+11/6/2026, 9:51:12 PM        at renderRootSync (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:16481:11)
+11/6/2026, 9:51:12 PM        at performWorkOnRoot (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:15540:11)
+11/6/2026, 9:51:12 PM        at performWorkOnRootViaSchedulerTask (node_modules/test-renderer/node_modules/react-reconciler/cjs/react-reconciler.development.js:3520:7)
+11/6/2026, 9:51:12 PM        at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+11/6/2026, 9:51:12 PM        at node_modules/react/cjs/react.development.js:847:21
+11/6/2026, 9:51:28 PM  PASS src/__tests__/tertiaryprofilemanagement.test.tsx (37.648 s)
+11/6/2026, 9:51:28 PM  Test Suites: 13 passed, 13 total
+11/6/2026, 9:51:28 PM  Tests:       209 passed, 209 total
+11/6/2026, 9:51:28 PM  Snapshots:   0 total
+11/6/2026, 9:51:28 PM  Time:        42.718 s
+11/6/2026, 9:51:28 PM  Ran all test suites.
+11/6/2026, 9:51:28 PM  Test results written to: acceptance\results\2026-11-06-21-49-47\unit-tests.json
+11/6/2026, 9:51:36 PM    console.log
+11/6/2026, 9:51:36 PM      Acceptance test bed
+11/6/2026, 9:51:36 PM        OS: Windows_NT 10.0.26300 (x64)
+11/6/2026, 9:51:36 PM        Node: v24.11.0
+11/6/2026, 9:51:36 PM        Browser: chrome 156.0.8078.74
+11/6/2026, 9:51:36 PM        ChromeDriver: 156.0.8078.80
+11/6/2026, 9:51:36 PM        Selenium WebDriver: 4.51.0
+11/6/2026, 9:51:36 PM        Expo: 55.0.32
+11/6/2026, 9:51:36 PM        App URL: http://localhost:8082
+11/6/2026, 9:51:36 PM        at logTestBed (helpers.js:86:11)
+11/6/2026, 9:52:07 PM  PASS acceptance/login.test.js (35.075 s)
+11/6/2026, 9:52:07 PM    Login (KM-68)
+11/6/2026, 9:52:07 PM      √ AT-01 shows the title, email and password fields, and all buttons (730 ms)
+11/6/2026, 9:52:07 PM      √ AT-02 asks for an email when Log In is pressed with empty fields (519 ms)
+11/6/2026, 9:52:07 PM      √ AT-03 asks for a password when Log In is pressed with only an email (615 ms)
+11/6/2026, 9:52:07 PM      √ AT-04 asks for an email when Forgot Password is pressed with an empty email (512 ms)
+11/6/2026, 9:52:07 PM      √ AT-05 rejects an invalid email for Forgot Password (563 ms)
+11/6/2026, 9:52:07 PM      √ AT-06 keeps the user on the login screen after a wrong password (5734 ms)
+11/6/2026, 9:52:07 PM      √ AT-07 logs in with the test account and goes to the scanner (2359 ms)
+11/6/2026, 9:52:07 PM      √ AT-08 shows the success message when the reset email is sent (575 ms)
+11/6/2026, 9:52:07 PM      √ AT-09 shows the server error message when the reset request fails (552 ms)
+11/6/2026, 9:52:07 PM      √ AT-10 reports a timeout when the server does not answer (10540 ms)
+11/6/2026, 9:52:07 PM      √ AT-11 logs in as Primary (level 1) and shows the Accounts tab (2378 ms)
+11/6/2026, 9:52:07 PM      √ AT-12 logs in as Secondary (level 2) and shows the Accounts tab (2166 ms)
+11/6/2026, 9:52:07 PM      √ AT-13 logs in as Tertiary (level 3) and shows the Accounts tab (2301 ms)
+11/6/2026, 9:52:07 PM  Test Suites: 1 passed, 1 total
+11/6/2026, 9:52:07 PM  Tests:       13 passed, 13 total
+11/6/2026, 9:52:07 PM  Snapshots:   0 total
+11/6/2026, 9:52:07 PM  Time:        35.236 s
+11/6/2026, 9:52:07 PM  Ran all test suites.

@@ -1,0 +1,16 @@
+Kemyze Run For Record  commit 8f79684e (main)  started 11/6/2026, 9:49:49 PM
+Tester: Matthew Fronda  Recorder: not yet
+11/6/2026, 9:51:28 PM  UT-ALL  PASS  Runs every unit test in the repository with npm test. The login tests call handleLogin, onPressLogin, handleForgotPassword and showPopup directly with the server mocked, and run as iOS.
+11/6/2026, 9:51:37 PM  AT-01  PASS  The login screen renders all of its fields and buttons.
+11/6/2026, 9:51:38 PM  AT-02  PASS  Log In is pressed with no email or password.
+11/6/2026, 9:51:38 PM  AT-03  PASS  Log In is pressed with an email but no password.
+11/6/2026, 9:51:39 PM  AT-04  PASS  Forgot Password is pressed with an empty email.
+11/6/2026, 9:51:40 PM  AT-05  PASS  Forgot Password is pressed with an invalid email address.
+11/6/2026, 9:51:45 PM  AT-06  PASS  Log In with the test account email and a wrong password.
+11/6/2026, 9:51:48 PM  AT-07  PASS  Log In with the test account.
+11/6/2026, 9:51:49 PM  AT-08  PASS  Forgot Password with a valid email; the server answers that the email was sent.
+11/6/2026, 9:51:49 PM  AT-09  PASS  Forgot Password when the server returns an error.
+11/6/2026, 9:52:00 PM  AT-10  PASS  Forgot Password when the server never answers.
+11/6/2026, 9:52:02 PM  AT-11  PASS  Log In as a Primary user (access level 1).
+11/6/2026, 9:52:05 PM  AT-12  PASS  Log In as a Secondary user (access level 2).
+11/6/2026, 9:52:07 PM  AT-13  PASS  Log In as a Tertiary user (access level 3).

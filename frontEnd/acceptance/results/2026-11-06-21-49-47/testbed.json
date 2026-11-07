@@ -1,0 +1,30 @@
+{
+  "tester": "Matthew Fronda",
+  "testerPickedAt": "2026-11-07T05:49:47.549Z",
+  "command": "npm run tester",
+  "os": "Windows 11 Home (Windows_NT 10.0.26300, x64)",
+  "node": "v24.11.0",
+  "npm": "11.19.1",
+  "packages": {
+    "jest": "29.7.0",
+    "jest-expo": "55.0.22",
+    "@testing-library/react-native": "14.1.0",
+    "selenium-webdriver": "4.51.0",
+    "expo": "55.0.32",
+    "react-native": "0.83.10",
+    "react": "19.2.0"
+  },
+  "repository": "https://github.com/gjhollmann/Kemyze.git",
+  "branch": "main",
+  "commit": "8f79684e",
+  "commitFull": "8f79684efa4ca1bb04faffd7c4d639877dc3ac5c",
+  "commitDate": "2026-11-04 23:18:57 -0800",
+  "dirty": true,
+  "pushed": true,
+  "backend": "https://kemyze.vercel.app",
+  "runStartedAt": "2026-11-07T05:49:49.183Z",
+  "detected": [
+    "the code had uncommitted changes"
+  ],
+  "unitFinishedAt": "2026-11-07T05:51:28.227Z"
+}
