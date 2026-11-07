@@ -1,6 +1,8 @@
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.db.models import Q, OuterRef, Subquery
-from common.models import Locations, Users, ContainerAuditLog
+from common.models import Locations, Users, ContainerAuditLog, Containers
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseForbidden, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -730,3 +732,99 @@ def searchManagedUsers(request):
         status=200,
     )
 
+def _get_child_location_ids(root_location_id):
+    """Return a location ID and all of its descendant child location IDs."""
+    location_ids = {root_location_id}
+    parent_ids = [root_location_id]
+
+    while parent_ids:
+        child_ids = list(
+            Locations.objects.filter(parent_id__in=parent_ids).values_list(
+                "location_id", flat=True
+            )
+        )
+        parent_ids = [
+            loc_id for loc_id in child_ids if loc_id not in location_ids
+        ]
+        location_ids.update(parent_ids)
+
+    return location_ids
+    
+@csrf_exempt
+def sendContainerAlertEmails(request):
+    """
+    Sends an email to each user listing expired, expiring (within 2 months), 
+    and marked Low containers that match their assigned location tree.
+    """
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
+    try:
+        today = date.today()
+        two_months_later = today + relativedelta(months=2)
+
+        users = Users.objects.select_related('location').exclude(email__isnull=True).exclude(email="")
+
+        emails_sent = 0
+        for user in users:
+            if not user.location_id:
+                continue
+
+            # Get the user's location and all child/descendant location IDs
+            location_ids = _get_child_location_ids(user.location_id)
+
+            # Query containers belonging to the user's location or any sub-locations
+            user_containers = Containers.objects.filter(location_id__in=location_ids)
+
+            expired_list = []
+            expiring_list = []
+            low_list = []
+
+            for c in user_containers:
+                is_expired = c.expr_date and c.expr_date < today
+                is_expiring = c.expr_date and (today <= c.expr_date <= two_months_later)
+                is_low = bool(c.quantity and c.quantity.strip().lower() == 'low')
+
+                if not (is_expired or is_expiring or is_low):
+                    continue
+
+                desc = f"- {c.chemical_name} (ID: {c.container_id}, Quantity: {c.quantity}, Expires: {c.expr_date or 'N/A'})"
+
+                if is_expired:
+                    expired_list.append(desc)
+                elif is_expiring:
+                    expiring_list.append(desc)
+                
+                if is_low:
+                    if desc not in expired_list and desc not in expiring_list:
+                        low_list.append(desc)
+
+
+            body = (
+                f"Hello {user.first_name},\n\n"
+                f"Here is the container alert summary for your location tree ({user.location.name}):\n\n"
+            )
+
+            if expired_list:
+                body += "=== EXPIRED CONTAINERS ===\n" + "\n".join(expired_list) + "\n\n"
+            if expiring_list:
+                body += "=== EXPIRING SOON (Within 2 Months) ===\n" + "\n".join(expiring_list) + "\n\n"
+            if low_list:
+                body += "=== LOW QUANTITY CONTAINERS ===\n" + "\n".join(low_list) + "\n\n"
+            if not (expired_list or expiring_list or low_list):
+                body += "There are no containers that need attention\n"
+
+            body += "Please take appropriate action.\n\nThank you,\nThe Kemyze Team"
+            send_mail(
+                subject="Kemyze: Container Status Alert",
+                message=body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'webmaster@localhost'),
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            emails_sent += 1
+
+        return JsonResponse({"success": True, "emails_sent": emails_sent})
+
+    except Exception as e:
+        return HttpResponseServerError(f"An unexpected error occurred: {e}")
