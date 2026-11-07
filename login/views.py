@@ -756,8 +756,8 @@ def sendContainerAlertEmails(request):
     Sends an email to each user listing expired, expiring (within 2 months), 
     and marked Low containers that match their assigned location tree.
     """
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
 
     try:
         today = date.today()
