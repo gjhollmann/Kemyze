@@ -9,6 +9,7 @@ urlpatterns = [
     path('users/delete/', views.deleteUser, name='deleteUser'),
     path('users/search/', views.searchManagedUsers, name='searchManagedUsers'),
     path('getUser', views.getUser, name='getUser'),
-    path('editUser', views.editUser, name='editUser')
+    path('editUser', views.editUser, name='editUser'),
+    path('sendContainerReport', views.sendContainerAlertEmails, name='sendContainerAlertEmails')
 ]
 
