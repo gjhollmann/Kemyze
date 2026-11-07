@@ -12,6 +12,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NavBar from '../components/NavBar';
+import LogoutButton from '../../../components/LogoutButton';
 import { useUserState } from '../contexts/UserState';
 import { BASE_URL } from '../../../constants/api';
 
@@ -291,6 +292,17 @@ if (profileError || !profile) {
         }}
       />
 
+      {/* Pinned to the screen corner (not the centered page) so it lines up with Scanner/Inventory */}
+      <View style={[styles.logoutHeader, { top: insets.top + 16, left: insets.left + 16 }]}>
+        {/* Tertiary and above reach this page via "View My Profile", so they get Back instead of Log Out
+            (same access-level check as NavBar). */}
+        {Number(activeUser?.accessLevel) >= 4 ? (
+          <LogoutButton />
+        ) : (
+          <LogoutButton label="Back" onPress={() => router.back()} />
+        )}
+      </View>
+
       <View
         style={[
           styles.page,
@@ -310,6 +322,9 @@ if (profileError || !profile) {
             },
           ]}
         >
+          {/* Reserves space so the title sits below the LogoutButton */}
+          <View style={styles.logoutSpacer} />
+
           {/* Page title */}
           <Text style={styles.title}>Your profile</Text>
 
@@ -449,6 +464,16 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignSelf: 'center',
+  },
+
+  logoutHeader: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+
+  // Same height as tertiaryprofilemanagement's backButton so both profile screens line up.
+  logoutSpacer: {
+    height: 44,
   },
 
   title: {
