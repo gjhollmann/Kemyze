@@ -7,6 +7,7 @@ from django.test import RequestFactory, SimpleTestCase
 from .views import deleteUser, getUser, editUser, addUser, searchManagedUsers, loginMain, forgotPasswordReq, _get_accessible_location_ids
 from django.contrib.auth.hashers import make_password, check_password
 from common.models import Users
+from django.conf import settings
 
 
 class DeleteUserTests(SimpleTestCase):
@@ -270,8 +271,10 @@ class ForgotPasswordReqTests(SimpleTestCase):
         # User info (repeated).
         self.test_user = {
             'user_id': 526,
+            'first_name': 'Johnny',
             'email': 'john@example.com',
             'access_level': 4,
+            'location_id': 10,
         }
     # def setUp(self)
     
@@ -279,7 +282,10 @@ class ForgotPasswordReqTests(SimpleTestCase):
     @patch('login.views.send_mail')
     @patch('login.views.Users.objects')
     def test_forgotten_password_valid_email(self, users, mock_send_mail):
-        users.get.return_value = SimpleNamespace(**self.test_user)
+        users.get.return_value = SimpleNamespace(
+            **self.test_user,
+            location=SimpleNamespace(location_id=10, name='School'),
+        )
 
         # POST request with email. 
         request = self.factory.post(
@@ -303,13 +309,29 @@ class ForgotPasswordReqTests(SimpleTestCase):
 
         # User found via email? Check call to email function.
         users.get.assert_called_once_with(email=self.test_user['email'])
-        mock_send_mail.assert_called_once_with(
-            'Kemyze: Reset Password',
-            'Hello - please follow the email reset instructions below.',
+        """mock_send_mail.assert_called_once_with(
+            'Kemyze: Password Reset Requested',
+            reset_msg,
             'no-reply@kemyze.com',
             [self.test_user['email']],
             fail_silently=False,
-        )
+        )"""
+        mock_send_mail.assert_called_once()
+
+        # Retrieve the arguments passed to send_mail().
+        args, kwargs = mock_send_mail.call_args
+
+        # Verify the email details.
+        self.assertEqual(args[0], "Kemyze: Password Reset Requested")
+        self.assertEqual(args[2], settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(args[3], [self.test_user["email"]])
+        self.assertFalse(kwargs["fail_silently"])
+
+        # Verify the generated email message.
+        reset_msg = args[1]
+
+        self.assertIn("Authorized Contacts:", reset_msg)
+        self.assertIn("Kemyze", reset_msg)
     # def test_forgotten_password_valid_email
 
     # Test for missing email.
