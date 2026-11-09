@@ -866,7 +866,7 @@ export default function Edit_Container() {
             const newReview: ReviewChange = {
                 field: 'CAS Number',
                 oldValue: oldCasFirst.join('')+"-"+oldCasSecond.join('')+"-"+oldCasThird.join(''),
-                newValue: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join(''),
+                newValue: casFirst.join('').replaceAll(" ","")+"-"+casSecond.join('')+"-"+casThird.join(''),
             }
             newChanges.push(newReview);
         }
@@ -961,7 +961,7 @@ export default function Edit_Container() {
             }
 
         if (casFirst!=oldCasFirst | casSecond != oldCasSecond | casThird!= oldCasThird){
-            data = {...data, cas_number: casFirst.join('')+"-"+casSecond.join('')+"-"+casThird.join('')}
+            data = {...data, cas_number: casFirst.join('').replaceAll(" ","")+"-"+casSecond.join('')+"-"+casThird.join('')}
             }
         
         if (expirationDate != oldExpirationDate){
@@ -1638,7 +1638,7 @@ export default function Edit_Container() {
                           styles.casButtonText
                         }
                       >
-                        {casFirst.join('')}
+                        {casFirst.join('').replaceAll(" ","")}
                       </Text>
                     </Pressable>
 
