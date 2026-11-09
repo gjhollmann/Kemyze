@@ -639,11 +639,11 @@ describe('confirmDelete', () => {
 });
 
 describe('screen renders', () => {
-  it('shows the title and back button', async () => {
+  it('shows the title and logout button', async () => {
     await renderWithAccounts();
 
     expect(screen.getByText('Managed Accounts')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Go back')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Logout')).toBeOnTheScreen();
   });
 
   it('shows the search field and button', async () => {
@@ -718,11 +718,12 @@ describe('screen renders', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/SubPages/editprofile?user_id=2');
   });
 
-  it('goes back from the back button', async () => {
+  it('logs out and returns to login from the logout button', async () => {
     await renderWithAccounts();
 
-    await fireEvent.press(screen.getByLabelText('Go back'));
+    await fireEvent.press(screen.getByLabelText('Logout'));
 
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    expect(mockUserState.setActiveUser).toHaveBeenCalledWith(null);
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
   });
 });

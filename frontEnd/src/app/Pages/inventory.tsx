@@ -12,12 +12,14 @@ import {
   Alert,
   Linking,
   Modal,
+  Image,
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import { QuantityFlask, getQuantityStyle } from '../../../components/QuantityFlask';
 import GradientButton from '../../../components/GradientButton';
+import LogoutButton from '../../../components/LogoutButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
 import { BASE_URL } from '../../../constants/api';
@@ -463,10 +465,10 @@ const Inventory: React.FC = () => {
       
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn}>
-          <Text style={styles.backText}>{"< Back"}</Text>
-        </TouchableOpacity>
-        
+        <View style={styles.backBtn}>
+          <LogoutButton />
+        </View>
+
         {/* Logo Placement */}
         <View style={styles.logoContainer}>
            <View>
@@ -585,20 +587,37 @@ const Inventory: React.FC = () => {
                 <Text style={styles.chemName}>{item.chemical_name}</Text>
                 <Text style={styles.casText}>{item.cas_number || 'N/A'}</Text>
                 <Text style={styles.idText}>{item.container_id}</Text>
+                <Text style={styles.exprText}>Expr. Date: {item.expr_date}</Text>
+                            <Text style={styles.locationText}>Location: {item.location}</Text>
+                            <Text style={[
+                              styles.statusText,
+                                 // KM-79: Text color matches the flask (green / yellow / red / grey)
+                                 { color: getQuantityStyle(item.quantity).color }            ]}>
+                              quantity: {item.quantity}
+                            </Text>
               </View>
+
 
               <View style={styles.visualSide}>
                 {/* KM-79: Flask (how much is left) and hazard symbol side by side */}
                 <View style={styles.indicatorRow}>
-                  <QuantityFlask quantity={item.quantity} />
                   {item.hasWarning && (
-                    <Image
-                      source={require('../../../assets/images/hazard-skull.png')}
-                      style={styles.hazardIcon}
-                    />
-                  )}
+                      <View style={{
+                                    paddingRight: 15,
+                                  }}>
+                                    <Image
+                                      source={require('../../../assets/images/hazard-skull.png')}
+                                      style={styles.hazardIcon}
+                                    />
+                                    </View>
+                                  )}
+                  <QuantityFlask quantity={item.quantity} />
+
                 </View>
               </View>
+              <View style={{
+                                                  paddingRight: 40,
+                                                }}></View>
 
               <View style={styles.buttonSide}>
                 <GradientButton
@@ -632,15 +651,8 @@ const Inventory: React.FC = () => {
                   textStyle={styles.actionButtonText}
                 />
               </View>
-            </View>
 
-            <Text style={styles.locationText}>{item.location}</Text>
-            <Text style={[
-              styles.statusText, 
-                 // KM-79: Text color matches the flask (green / yellow / red / grey)
-                 { color: getQuantityStyle(item.quantity).color }            ]}>
-              {item.quantity}
-            </Text>
+            </View>
           </View>
         ))}
             {/* KM-192: spinner at the bottom while the next page loads */}
@@ -908,8 +920,9 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    left: 20,
-    top: 0,
+    left: 16,
+    top: 6, // header has marginTop: 10, so this lands 16px from the top like the scanner
+    zIndex: 1,
   },
   backText: {
     color: '#3b82f6',
@@ -1026,8 +1039,8 @@ const styles = StyleSheet.create({
      },
     // KM-79: GHS skull hazard symbol, sized to sit next to the flask
   hazardIcon: {
-    width: 26,
-    height: 26,
+    width: 40,
+    height: 40,
     marginLeft: 6,
     resizeMode: 'contain',
      },
@@ -1045,8 +1058,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'monospace',
     fontSize: 11,
-    marginTop: 10,
   },
+  exprText: {
+      color: 'white',
+      fontFamily: 'monospace',
+      fontSize: 11,
+      marginTop: 10,
+    },
   statusText: {
     fontFamily: 'monospace',
     fontSize: 12,
