@@ -1,3 +1,9 @@
 {
-
+  "schedules": {
+    "monthly-report": {
+      "schedule": "0 0 1 * *",
+      "path": "/login/sendContainerReport",
+      "timezone": "America/New_York"
+    }
+  }
 }
