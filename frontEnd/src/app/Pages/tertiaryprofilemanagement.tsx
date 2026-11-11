@@ -26,6 +26,7 @@ import { BlurView } from 'expo-blur';
 import { useUserState } from '../contexts/UserState';
 
 import GradientButton from '../../../components/GradientButton';
+import LogoutButton from '../../../components/LogoutButton';
 
 import { BASE_URL } from '../../../constants/api';
 
@@ -522,6 +523,11 @@ export default function ManagedAccounts() {
 
   return (
     <View style={styles.screen}>
+      {/* Pinned to the screen corner (not the centered page) so it lines up with Scanner/Inventory */}
+      <View style={[styles.logoutHeader, { top: insets.top + 16, left: insets.left + 16 }]}>
+        <LogoutButton />
+      </View>
+
       <View
         style={[
           styles.page,
@@ -554,23 +560,9 @@ export default function ManagedAccounts() {
                   : undefined
               }
             >
-              <Pressable
-                onPress={() => {
-                  haptic();
-                  router.back();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-                style={({ pressed }) => [
-                  styles.backButton,
-                  pressed &&
-                    styles.buttonPressed,
-                ]}
-              >
-                <Text style={styles.backText}>
-                  ‹ Back
-                </Text>
-              </Pressable>
+              {/* Keeps the header row's original spacing (height in portrait, width in landscape
+                  to balance backSpacer); LogoutButton is rendered above */}
+              <View style={[styles.backButton, styles.backSpacer]} />
 
               <Text
                 style={[
@@ -993,6 +985,11 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignSelf: 'center',
+  },
+
+  logoutHeader: {
+    position: 'absolute',
+    zIndex: 1,
   },
 
   backButton: {

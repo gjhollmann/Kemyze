@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { QRLabelPopup } from '../../../components/QRLabelPopup';
 import { QuantityFlask, getQuantityStyle } from '../../../components/QuantityFlask';
 import GradientButton from '../../../components/GradientButton';
+import LogoutButton from '../../../components/LogoutButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUserState } from '../../app/contexts/UserState'; // Import shared user state from '../../app/contexts/UserState
 import { BASE_URL } from '../../../constants/api';
@@ -464,10 +465,10 @@ const Inventory: React.FC = () => {
       
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn}>
-          <Text style={styles.backText}>{"< Back"}</Text>
-        </TouchableOpacity>
-        
+        <View style={styles.backBtn}>
+          <LogoutButton />
+        </View>
+
         {/* Logo Placement */}
         <View style={styles.logoContainer}>
            <View>
@@ -919,8 +920,9 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    left: 20,
-    top: 0,
+    left: 16,
+    top: 6, // header has marginTop: 10, so this lands 16px from the top like the scanner
+    zIndex: 1,
   },
   backText: {
     color: '#3b82f6',
