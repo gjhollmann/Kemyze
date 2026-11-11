@@ -1,0 +1,7 @@
+Found 26 test(s).
+System check identified no issues (0 silenced).
+{'user_id': 989, 'name': 'Johnny Appleseed', 'location': 'School', 'phone': '5551234567', 'email': 'john@example.com', 'authorization': 'Quaternary', 'password': 'Password123'}
+{'user_id': 989, 'location': 'School', 'phone': '5551234567', 'email': 'john@example.com', 'authorization': 'Quaternary', 'password': 'Password123'}
+{'user_id': 989, 'name': 'Johnny Appleseed', 'location': 'School', 'phone': '5551234567', 'email': 'john@example.com', 'authorization': 'Quaternary', 'password': 'Password123'}
+{'user_id': 989, 'name': 'Johnny Appleseed', 'location': 'School', 'phone': '5551234567', 'email': 'john@example.com', 'authorization': 'Quaternary', 'password': 'Password123'}
+User does not already exist. Continuing Add user

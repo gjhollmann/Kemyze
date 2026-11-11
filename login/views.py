@@ -5,6 +5,8 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, Http
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import check_password, make_password
+from django.utils.html import escape
+from django.conf import settings
 import json
 
 # Create your views here.
@@ -70,6 +72,64 @@ def newModelTest(request):
     return HttpResponse(myData)
 
 
+""" Begin forgotten password handling. """
+# Helper for formatting 10-digit U.S. phone numbers.
+def format_phone_number(phone):
+    if not phone:
+        return "Not available."
+
+    # Remove hyphens, spaces, parentheses.
+    digits = ''.join(char for char in str(phone) if char.isdigit())
+
+    # Insert 10-digit phone number format.
+    if len(digits) == 10:
+        return f'({digits[:3]}) {digits[3:6]}-{digits[6:]}'
+
+    # If not 10 digits, return original number.
+    return str(phone)
+# end format_phone_number
+
+
+# Helper for writing and formatting the body of the password reset email. 
+def write_password_email(user, privileged_users):
+    # Password reset contact instructions to be written in body of email sent.
+    msg = (
+        f'Hi, {user.first_name}!\n\n'
+        'We received a request to reset your password for Kemyze.\n\n'
+        'To reset your password, please contact one of the authorized users '
+        'listed below. They can assist you with changing your password.\n\n'
+        'Authorized Contacts: \n'
+    )
+
+    # Include contact information of each authorized user.
+    privileged_users = list(privileged_users)
+    if privileged_users:
+        for contact in privileged_users:
+            msg += (
+                f'\nName: { contact.first_name } { contact.last_name }\n'
+                f'Email: { contact.email }\n'
+                f'Phone: { format_phone_number(contact.phone) }\n' # Ensure phone number is formatted. 
+                f'Location: { contact.location.name if contact.location else 'Not available.'}\n'
+            )
+        # for ...    
+    else:
+        msg += ( # Notify user if privileged users are not present at their current location.
+            '\nNo authorized users are currently available for your location.\n\n'
+            'Please contact the Kemyze administrator for your organization.\n'
+        )
+
+    # Include user safety reminder to protect password.
+    msg += (
+        '\nFor your security, do NOT share your current password. '
+        'An authorized user should always verify your identity before '
+        'modifying your password.\n\n'
+        'Thank you,\n'
+        'The Kemyze Team'
+    )
+    return msg
+# end write_password_email
+
+
 # Handle user's forgotten password specification.
 @csrf_exempt
 def forgotPasswordReq(request):
@@ -89,10 +149,29 @@ def forgotPasswordReq(request):
                 ValidUser = Users.objects.get(email=user_email)
                 # Successful attempt logs to be added.
 
-                email_subject = "Kemyze: Reset Password"
-                reset_msg = "Hello - please follow the email reset instructions below." # Generic instruction prompt.
-                from_email = "no-reply@kemyze.com" # Test sender.
-                send_mail(email_subject, reset_msg, from_email, 
+                # Address primary users. 
+                if ValidUser.access_level == 1:
+                    privileged_users = Users.objects.filter(
+                        location_id=ValidUser.location,
+                        access_level=1,
+                    ).exclude(
+                        user_id=ValidUser.user_id
+                    ).select_related('location').order_by('last_name', 'first_name')
+
+                else:
+                    privileged_users = Users.objects.filter(
+                        location_id=ValidUser.location,
+                        access_level__lt=ValidUser.access_level,
+                    ).order_by('access_level', 'last_name', 'first_name')
+
+                reset_msg = write_password_email(
+                    ValidUser,
+                    privileged_users
+                )
+
+                # Include subject, default testing email address. 
+                email_subject = "Kemyze: Password Reset Requested"
+                send_mail(email_subject, reset_msg, settings.DEFAULT_FROM_EMAIL, 
                           [user_email], fail_silently=False) # Use fail_silently for testing.
 
             except Users.DoesNotExist:
@@ -108,6 +187,8 @@ def forgotPasswordReq(request):
     else:
         return HttpResponseNotAllowed(["POST"])
 # end forgotPasswordReq        
+""" End forgotten password handling. """
+
 
 """
 View to retrieve a user's profile information.
