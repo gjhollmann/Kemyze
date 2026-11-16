@@ -323,7 +323,7 @@ def editContainer(request):
         #Verify User access level
         try:
             FoundUser = Users.objects.get(user_id = user_id)
-            if FoundUser.access_level > 3:
+            if FoundUser.access_level > 4:
                 return HttpResponseForbidden()
         except Users.DoesNotExist:
             return HttpResponseBadRequest("User does not exist")
@@ -725,7 +725,7 @@ def uploadSDS(request):
     # Change this if you want to allow other access levels to upload SDS files.
     try:
         FoundUser = Users.objects.get(user_id=user_id)
-        if FoundUser.access_level > 3:
+        if FoundUser.access_level > 4:
             return HttpResponseForbidden("User does not have permission to upload SDS documents")
     except Users.DoesNotExist:
         return HttpResponseBadRequest("User does not exist")
@@ -811,11 +811,11 @@ def createContainer(request):
         return HttpResponseBadRequest("Missing 'user_id' Parameter")
  
     # Verify user access level
-    # access levels > 3 are not allowed to create containers
-    # chnage this if needed
+    # access levels > 4 are not allowed to create containers
+    # change this if needed
     try:
         FoundUser = Users.objects.get(user_id=user_id)
-        if FoundUser.access_level > 3:
+        if FoundUser.access_level > 4:
             return HttpResponseForbidden("User does not have permission to create containers")
     except Users.DoesNotExist:
         return HttpResponseBadRequest("User does not exist")
