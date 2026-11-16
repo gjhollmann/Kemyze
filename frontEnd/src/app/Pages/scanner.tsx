@@ -128,11 +128,11 @@ export default function Scanner() {
       }
     };
 
-    // Helper to ensure users of access level <= 3 can edit info (matches backend editContainer check).
-    const tertiaryUser = 3;
+    // Helper to ensure users of access level <= 4 can edit info (matches backend editContainer check).
+    const quaternaryUser = 4;
     
     const canEditFromAccessLevel = (accessLevel: number) => {
-      return accessLevel <= tertiaryUser;
+      return accessLevel <= quaternaryUser;
     };
 
     const fetchContainerData = async (kemId: string | null = currentKemId) => {
