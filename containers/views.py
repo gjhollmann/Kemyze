@@ -473,7 +473,7 @@ def getContainerChangeLog(request):
                     user_last_name = 'User'
                 old_values = log.old_values
                 new_values = log.new_values
-                if (!new_values):
+                if (new_values is None):
                     continue
                 
                 if (old_values):
