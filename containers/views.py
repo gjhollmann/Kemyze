@@ -475,6 +475,8 @@ def getContainerChangeLog(request):
                 new_values = log.new_values
                 if (new_values is None):
                     continue
+                if (log.changed_at is None):
+                    continue
                 
                 if (old_values):
                     old_name = old_values.get("chemical_name")
