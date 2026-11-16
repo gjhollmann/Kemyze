@@ -165,14 +165,16 @@ class ContainerViewsTestCase(TestCase):
         self.container.refresh_from_db()
         self.assertEqual(self.container.chemical_name, "Updated Acetone")
 
-    def test_edit_container_forbidden(self):
-        payload = {"user_id": 3, "container_id": 100, "chemical_name": "Bad Edit"}
+    def test_edit_container_allowed_for_quaternary(self):
+        payload = {"user_id": 3, "container_id": 100, "chemical_name": "Quaternary Edit"}
         response = self.client.post(
             reverse("editContainer"),
             data=json.dumps(payload),
             content_type="application/json"
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.chemical_name, "Quaternary Edit")
 
     def test_edit_container_missing_user(self):
         payload = {"container_id": 100, "chemical_name": "No User"}
