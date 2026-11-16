@@ -324,7 +324,7 @@ describe('fetchContainerData', () => {
 });
 
 describe('handleEditContainer', () => {
-  it.each(['1', '2', '3'])('shows Edit Information for access level %s', async (accessLevel) => {
+  it.each(['1', '2', '3', '4'])('shows Edit Information for access level %s', async (accessLevel) => {
     mockUserState.activeUser = { userID: 7, accessLevel };
 
     await openPopup();
@@ -332,7 +332,7 @@ describe('handleEditContainer', () => {
     expect(screen.getByText('Edit Information')).toBeOnTheScreen();
   });
 
-  it.each(['4', '5'])('hides Edit Information for access level %s', async (accessLevel) => {
+  it.each(['5'])('hides Edit Information for access level %s', async (accessLevel) => {
     mockUserState.activeUser = { userID: 7, accessLevel };
 
     await openPopup();
