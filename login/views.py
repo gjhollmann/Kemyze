@@ -828,3 +828,12 @@ def sendContainerAlertEmails(request):
 
     except Exception as e:
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
+        
+from pathlib import Path
+PRIVACY_POLICY_PATH = Path(__file__).resolve().parent / "privacy_policy.html"
+
+def privacy_policy(request):
+    print('privacy attempt')
+
+    html_content = PRIVACY_POLICY_PATH.read_text(encoding="utf-8")
+    return HttpResponse(html_content)
