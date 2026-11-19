@@ -830,10 +830,13 @@ def sendContainerAlertEmails(request):
         return HttpResponseServerError(f"An unexpected error occurred: {e}")
         
 from pathlib import Path
-PRIVACY_POLICY_PATH = Path(__file__).resolve().parent / "privacy_policy.html"
+BASE_APP_DIR = Path(__file__).resolve().parent
+PRIVACY_POLICY_PATH = BASE_APP_DIR / "privacy_policy.html"
+SUPPORT_PATH = BASE_APP_DIR / "support.html"
 
 def privacy_policy(request):
-    print('privacy attempt')
-
     html_content = PRIVACY_POLICY_PATH.read_text(encoding="utf-8")
     return HttpResponse(html_content)
+
+def support(request):
+    return HttpResponse(SUPPORT_PATH.read_text(encoding="utf-8"))
