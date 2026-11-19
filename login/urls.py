@@ -10,6 +10,7 @@ urlpatterns = [
     path('users/search/', views.searchManagedUsers, name='searchManagedUsers'),
     path('getUser', views.getUser, name='getUser'),
     path('editUser', views.editUser, name='editUser'),
-    path('sendContainerReport', views.sendContainerAlertEmails, name='sendContainerAlertEmails')
+    path('sendContainerReport', views.sendContainerAlertEmails, name='sendContainerAlertEmails'),
+    path('privacy/', views.privacy_policy, name='privacy_policy')
 ]
 
