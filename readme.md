@@ -1,348 +1,435 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
 
+<!-- HEADER: https://github.com/kyechan99/capsule-render -->
+![Kemyze header](https://capsule-render.vercel.app/api?type=waving&color=0:050816,50:0b1f4d,100:1e6fd9&height=200&section=header&text=Kemyze&fontSize=70&fontColor=7fd4ff&animation=fadeIn&fontAlignY=35&desc=Chemical%20Container%20Management%20for%20iOS&descAlignY=58&descSize=18)
 
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/gjhollmann/Kemyze">
-    <img src="frontEnd/assets/images/kemyze-logo.png" alt="Logo" height="80">
-  </a>
 
-<h3 align="center">Kemyze</h3>
+<a href="https://github.com/gjhollmann/Kemyze">
+  <img src="frontEnd/assets/images/kemyze-logo.png" alt="Kemyze logo" height="90">
+</a>
 
-  <p align="center">
-    A Chemical Container Management Application
-    <br />
-    <br />
-    <br />
-     </p>
+<br />
+<br />
+
+[![React Native][ReactNative-shield]][ReactNative-url]
+[![Expo][Expo-shield]][Expo-url]
+[![Django][Django-shield]][Django-url]
+[![MySQL][MySQL-shield]][MySQL-url]
+[![Vercel][Vercel-shield]][Vercel-url]
+[![iOS][iOS-shield]][iOS-url]
+[![Jest][Jest-shield]][Jest-url]
+
+[![Contributors][contributors-shield]][contributors-url]
+[![Last commit][last-commit-shield]][last-commit-url]
+[![Pull requests][pulls-shield]][pulls-url]
+
+**Team Reverse Engineers** · CSC 190/191 Senior Project · California State University, Sacramento
+
 </div>
 
-
-
-<!-- TABLE OF CONTENTS -->
 <details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#Testing">Testing</a></li>
-        <li><a href="#Deployment">Deployment</a></li>
-        <li><a href="#Developer Instructions">Developer Instructions</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#project-status">Project Status</a></li>
-    <li><a href="#key-features">Key Features</a></li>
-    <li><a href="#user-roles">User Roles</a></li>
-    <li><a href="#planned-application-workflow">Planned Application Workflow</a></li>
-    <li><a href="#database-information">Database Information</a></li>
-    <li><a href="#security-considerations">Security Considerations</a></li>
-    <li><a href="#future-improvements">Future Improvements</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#academic-context">Academic Context</a></li>
-    <li><a href="#contact">Contact</a></li>
-    </ol>
+  <summary><b>📑 Table of Contents</b></summary>
+
+1. [About the Project](#-about-the-project)
+2. [Key Features](#-key-features)
+3. [Screenshots](#-screenshots)
+4. [Built With](#-built-with)
+5. [System Architecture](#-system-architecture)
+6. [Application Workflow](#-application-workflow)
+7. [User Roles](#-user-roles)
+8. [Database Information](#-database-information)
+9. [Getting Started](#-getting-started)
+10. [Deployment](#-deployment)
+11. [Testing](#-testing)
+12. [Security Considerations](#-security-considerations)
+13. [Contributing](#-contributing)
+14. [Team Members](#-team-members)
+15. [Academic Context](#-academic-context)
+16. [Acknowledgements](#-acknowledgements)
+
 </details>
 
+---
 
+## 🧪 About the Project
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
-
-Kemyze is a mobile application that will be used to manage chemical inventory, manage and track users that can change chemical inventory, and provide easy access to chemical SDS to any user. <br>
-<br>
-Containers are given a QR code label which is used by the in app scanner to provide SDS or chemical information based on user's logged in credentials. 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-### Built With
-
-
-* [![React][ReactNative]][ReactNative-url]
-* [![React][Django]][Django-url]
-* [![React][Expo]][Expo-url]
-
+Kemyze is an iOS application for managing a chemical inventory. It tracks every chemical container by name, CAS number, location, quantity, and expiration date, and it controls which users can view or change those records. Each container carries a QR code label. When a user scans the label with the in-app scanner, Kemyze shows the container's information and its Safety Data Sheet (SDS), based on the permissions of the logged-in user. Administrators manage user accounts and inventory, and every user receives a monthly email report of expired, expiring, and low-supply containers.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## ✨ Key Features
 
+| Feature | Description |
+| :-- | :-- |
+| 📦 **Inventory tracking** | Add, edit, and search chemical containers. |
+| 📷 **QR code scanning** | Scan a container label to look it up instantly. |
+| 📄 **SDS access** | Open and upload Safety Data Sheets for stored chemicals. |
+| 👥 **User management** | Create, edit, search, and delete user accounts. |
+| 🔐 **Role-based access** | Each role sees and changes only what it is allowed to. |
+| 📍 **Location tracking** | Store containers by building, room, cabinet, and shelf. |
+| ⏰ **Expiration tracking** | Flag containers that are expired or expiring soon. |
+| 📉 **Low-supply visibility** | Mark containers whose quantity is low. |
+| 📬 **Monthly reports** | Email each user a monthly report of expired, expiring, and low containers. |
+| 🕓 **Change history** | Keep a change log for containers and users. |
 
-<!-- GETTING STARTED -->
-## Getting Started
-
-Below will be instructions that developers will need to set up the application for use. 
-### Testing
-
-Reserved for 191
-
-### Deployment
-
-Reserved for 191
-   
-### Developer Instructions
-Reserved for 191
-
-AI coding assistant (optional): anyone who wants to use Cline in VS Code with Google Gemini can follow [CLINE_SETUP.md](CLINE_SETUP.md). The rules, skills, workflows, and hooks in `.clinerules/` and `.cline/skills/` are read only by Cline and do not change the app.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## 📱 Screenshots
 
+| Login | QR Scanner | Account Management |
+| :-: | :-: | :-: |
+| <img src="frontEnd/assets/images/loginPage.png" alt="Login screen" width="250"> | <img src="frontEnd/assets/images/scannerPage.png" alt="QR scanner screen" width="250"> | <img src="frontEnd/assets/images/accountManagePage.png" alt="Account management screen" width="250"> |
+| Users sign in with their account to see the features their role allows. | Users point the camera at a container's QR code to see its details and SDS. | Administrators create, edit, search, and remove user accounts. |
 
-<!-- USAGE EXAMPLES -->
-## Usage
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-ERD for the database configuration: <br>
-<a href="https://github.com/gjhollmann/Kemyze">
-<img src="frontEnd/assets/images/kemyzeERD.png" alt="ERD">
+## 🛠 Built With
+
+| Layer | Technology |
+| :-- | :-- |
+| **Mobile app (iOS)** | React Native, Expo, Expo Router, TypeScript |
+| **Backend API** | Python, Django, Django REST Framework |
+| **Database** | MySQL |
+| **Email** | Resend (via `django-anymail`) |
+| **Hosting** | Vercel (backend API and scheduled monthly report) |
+| **Testing** | Jest, `jest-expo`, Django test runner |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🏗 System Architecture
+
+```mermaid
+flowchart LR
+    A["📱 Kemyze iOS app<br/>(React Native + Expo)"] -- "HTTPS requests" --> B["⚙️ Django REST API<br/>(hosted on Vercel)"]
+    B -- "reads and writes" --> C[("🗄️ MySQL database")]
+    D["⏰ Vercel cron job<br/>(1st of every month)"] -- "calls /login/sendContainerReport" --> B
+    B -- "sends report emails" --> E["📬 Resend email service"]
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🔄 Application Workflow
+
+<details>
+  <summary><b>🔍 View the application workflow diagram</b></summary>
+<br />
+
+```mermaid
+flowchart TD
+    A[A chemical container is added to the inventory] --> B[Container details are saved:<br/>name, CAS number, location, quantity,<br/>acquisition date, expiration date]
+    B --> C[A QR code is linked to the container]
+    C --> D[The QR code label is placed on the container]
+    D --> E[A user scans the QR code in Kemyze]
+    E --> F{Is the user allowed<br/>to edit inventory?}
+    F -- Yes --> G[View details and SDS,<br/>and update the record]
+    F -- No --> H[View details and SDS only]
+```
+
+</details>
+
+<details>
+  <summary><b>📬 How the monthly report sorts containers</b></summary>
+<br />
+
+On the 1st of each month, every container is checked against today's date $t$ and its expiration date $e$:
+
+$$
+\text{status} =
+\begin{cases}
+\text{Expired} & \text{if } e < t \\
+\text{Expiring soon} & \text{if } t \le e \le t + 2\ \text{months} \\
+\text{Low supply} & \text{if quantity} = \text{"low"}
+\end{cases}
+$$
+
+Containers that match none of these are left out of the report.
+
+</details>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 👥 User Roles
+
+| Role | What they can do |
+| :-- | :-- |
+| **Administrator** | Manages instructor accounts, inventory records, SDS files, and system-level information. |
+| **Authorized Instructor** | Views and updates chemical container records within their assigned department. |
+| **Staff User** | Views relevant chemical and SDS information based on assigned access. |
+| **Guest or Student User** | Scans QR codes to view SDS and basic chemical safety information without a permanent account. |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🗄 Database Information
+
+The Kemyze database stores chemical containers, users, locations, and Safety Data Sheets.
+
+<details>
+  <summary><b>View the Entity Relationship Diagram (ERD)</b></summary>
+<br />
+
+<img src="frontEnd/assets/images/kemyzeERD.png" alt="Kemyze ERD">
+
+</details>
+
+| Records stored | |
+| :-- | :-- |
+| Chemical container name | CAS Registry Number |
+| Acquisition date | Expiration date |
+| Quantity status | Building, room, cabinet, and shelf location |
+| SDS document reference | User account information |
+| User role and permission information | Container and user change logs |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+| Tool | Used for |
+| :-- | :-- |
+| [Git](https://git-scm.com/) | Downloading the project |
+| [Python 3](https://www.python.org/downloads/) | Running the Django backend |
+| [Node.js (LTS)](https://nodejs.org/) | Running the Expo app |
+| [Expo Go](https://apps.apple.com/app/expo-go/id982107779) on an iPhone, **or** Xcode's iOS Simulator on a Mac | Opening the app |
+
+### 1. Download the project
+
+```bash
+git clone https://github.com/gjhollmann/Kemyze.git
+cd Kemyze
+```
+
+<details>
+  <summary><b>2. Set up and run the backend (Django)</b></summary>
+<br />
+
+Create a virtual environment and install the dependencies:
+
+```bash
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+python -m pip install -r requirements.txt
+```
+
+Create a `.env` file in the project root (see **Environment Variables** below), then set up the database and start the server:
+
+```bash
+python manage.py migrate
+python manage.py runserver
+```
+
+The API runs at `http://127.0.0.1:8000/`.
+
+</details>
+
+<details>
+  <summary><b>3. Set up and run the iOS app (Expo)</b></summary>
+<br />
+
+```bash
+cd frontEnd
+npm install
+npx expo start
+```
+
+- **On an iPhone:** scan the QR code in the terminal with the Camera app to open it in Expo Go.
+- **On a Mac:** press `i` in the terminal to open the iOS Simulator.
+
+The app talks to the backend at the URL in [`frontEnd/constants/api.ts`](frontEnd/constants/api.ts). To use a local backend, change `BASE_URL` to your local server address.
+
+</details>
+
+<details>
+  <summary><b>🔑 Environment Variables</b></summary>
+<br />
+
+Add these to the `.env` file in the project root. Ask a team member for the values. **Never commit the `.env` file.**
+
+| Variable | Purpose |
+| :-- | :-- |
+| `SECRET_KEY` | Django secret key |
+| `DATABASE_NAME` | MySQL database name |
+| `DATABASE_USER` | MySQL username |
+| `DATABASE_PASSWORD` | MySQL password |
+| `DATABASE_HOST` | MySQL server address |
+| `DATABASE_PORT` | MySQL port (usually `3306`) |
+| `RESEND_API_KEY` | API key for sending report and password emails |
+
+</details>
+
+<details>
+  <summary><b>🤖 AI coding assistant (optional)</b></summary>
+<br />
+
+Anyone who wants to use Cline in VS Code with Google Gemini can follow [CLINE_SETUP.md](CLINE_SETUP.md). The rules, skills, workflows, and hooks in `.clinerules/` and `.cline/skills/` are read only by Cline and do not change the app.
+
+</details>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## ☁️ Deployment
+
+| Part | Where it runs | How |
+| :-- | :-- | :-- |
+| **Backend API** | Vercel — [kemyze-one.vercel.app](https://kemyze-one.vercel.app/) | Vercel runs [`build_files.sh`](build_files.sh) to install dependencies and apply migrations. |
+| **Monthly report** | Vercel cron job | [`vercel.json`](vercel.json) calls `/login/sendContainerReport` at midnight on the 1st of each month. |
+| **iOS app** | iPhone | Built with Expo from the [`frontEnd/`](frontEnd/) folder (bundle ID `com.gjhollmann.frontEnd`). |
+
+<details>
+  <summary><b>Deploy the backend to your own Vercel project</b></summary>
+<br />
+
+1. Import the GitHub repository into [Vercel](https://vercel.com/new).
+2. Add every variable from **Environment Variables** in the Vercel project settings.
+3. Deploy. Then set `BASE_URL` in [`frontEnd/constants/api.ts`](frontEnd/constants/api.ts) to your new Vercel URL.
+
+</details>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## ✅ Testing
+
+| Test suite | Location | Command |
+| :-- | :-- | :-- |
+| **Frontend unit tests** (Jest) | [`frontEnd/src/__tests__/`](frontEnd/src/__tests__/) | `cd frontEnd` → `npm test` |
+| **Backend unit tests** (Django) | `login/`, `containers/`, `common/`, `tester/` | `python manage.py test` |
+| **Acceptance tests** (system tests) | [`frontEnd/acceptance/`](frontEnd/acceptance/) | `cd frontEnd` → `npm run tester` |
+
+<details>
+  <summary><b>What the frontend unit tests cover</b></summary>
+<br />
+
+| Test file | Screen |
+| :-- | :-- |
+| `index.test.tsx` | Login |
+| `scanner.test.tsx` | QR scanner |
+| `inventory.test.tsx` | Inventory |
+| `add_container.test.tsx` | Add container |
+| `edit_container.test.tsx` | Edit container |
+| `createprofile.test.tsx` | Create profile |
+| `editprofile.test.tsx` | Edit profile |
+| `quaternaryprofile.test.tsx` | Profile |
+| `src/utils/handleLogin.test.ts` | Login logic |
+
+</details>
+
+<details>
+  <summary><b>How to run an acceptance test</b></summary>
+<br />
+
+Acceptance tests use two people: a **Tester** who runs the test and a **Recorder** who watches and records the result.
+
+| Role | Command (from `frontEnd/`) |
+| :-- | :-- |
+| Tester | `npm run tester` |
+| Recorder | `npm run record` |
+
+Full step-by-step instructions are in [`frontEnd/acceptance/RUN-STEPS.md`](frontEnd/acceptance/RUN-STEPS.md).
+
+</details>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🔒 Security Considerations
+
+- User authentication
+- Role-based access control
+- Inventory editing restricted to authorized users
+- Guest access kept separate from administrative access
+- Protection of account information
+- SDS and inventory changes limited to authorized users
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 🤝 Contributing
+
+Team members follow the project workflow agreed upon by the development team.
+
+```mermaid
+flowchart LR
+    A[Pull latest main] --> B[Create a branch] --> C[Make and test changes] --> D[Open a pull request] --> E[Team review] --> F[Merge]
+```
+
+- Pull the latest version of the repository before making changes.
+- Create a separate branch for new work.
+- Write clear commit messages.
+- Test changes before submitting them.
+- Don't commit unnecessary files, credentials, or local environment settings.
+- Tell the team about major changes before merging.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 👨‍💻 Team Members
+
+<div align="center">
+
+| | Name | GitHub | Contact |
+| :-: | :-- | :-- | :-- |
+| <img src="https://github.com/gjhollmann.png?size=80" width="60" alt="George Hollmann"> | **George Hollmann** | [@gjhollmann](https://github.com/gjhollmann) | ghollmann@csus.edu |
+| <img src="https://github.com/alexapolonio.png?size=80" width="60" alt="Alexander Apolonio-Flores"> | **Alexander Apolonio-Flores** | [@alexapolonio](https://github.com/alexapolonio) | aapolonio-flores@csus.edu |
+| <img src="https://github.com/jzamora34.png?size=80" width="60" alt="Joshua Zamora"> | **Joshua Zamora** | [@jzamora34](https://github.com/jzamora34) | joshuazamora@csus.edu |
+| <img src="https://github.com/reesen1103.png?size=80" width="60" alt="Reese Nelson"> | **Reese Nelson** | [@reesen1103](https://github.com/reesen1103) | reesenelson@csus.edu |
+| <img src="https://github.com/mfronda.png?size=80" width="60" alt="Matthew Fronda"> | **Matthew Fronda** | [@mfronda](https://github.com/mfronda) | mfronda@csus.edu |
+| <img src="https://github.com/echeys01.png?size=80" width="60" alt="Eric Cheyssial"> | **Eric Cheyssial** | [@echeys01](https://github.com/echeys01) | echeyssial@csus.edu |
+| <img src="https://github.com/Sarav011.png?size=80" width="60" alt="Sarav011"> | **Sarav011** | [@Sarav011](https://github.com/Sarav011) | saravjotsingh@csus.edu |
+
+<a href="https://github.com/gjhollmann/Kemyze/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=gjhollmann/Kemyze" alt="Contributors">
 </a>
 
-Sample Screen Designs:<br>
-<a href="https://github.com/gjhollmann/Kemyze">
-<img src="frontEnd/assets/images/loginPage.png" alt="Login">
-</a>
-<a href="https://github.com/gjhollmann/Kemyze">
-<img src="frontEnd/assets/images/scannerPage.png" alt="Scanner">
-</a>
-<a href="https://github.com/gjhollmann/Kemyze">
-<img src="frontEnd/assets/images/accountManagePage.png" alt="AccountManagment">
-</a>
+</div>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## 🎓 Academic Context
 
-
-<!-- ROADMAP -->
-## Roadmap
-
-Below is the roadmap and timeline that the development team will follow for the second semester of development.
-
-  <a href="https://github.com/gjhollmann/Kemyze">
-    <img src="frontEnd/assets/images/kemyzeTimeline.png" alt="JiraTimeline">
-  </a>
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- PROJECT STATUS -->
-## Project Status
-
-Kemyze is currently in active development as part of the CSC 190/191 Senior Project sequence at California State University, Sacramento.
-
-Current focus areas include:
-
-* Building the mobile application interface
-* Designing and implementing the chemical inventory database
-* Creating QR code scanning functionality
-* Supporting role-based access for administrators, instructors, staff, and guest users
-* Providing access to Safety Data Sheets (SDS) for chemical containers
+Kemyze is developed as part of the CSC 190/191 Senior Project sequence at California State University, Sacramento. The project gives students experience in software engineering, Agile/SCRUM development, client communication, documentation, prototyping, implementation, testing, and delivery of a working software product.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## 🙏 Acknowledgements
 
-<!-- KEY FEATURES -->
-## Key Features
+<details>
+  <summary><b>Resources used to build this README</b></summary>
+<br />
 
-Kemyze is planned to support the following major features:
+- [GitHub Docs: Basic writing and formatting syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+- [GitHub Docs: Organizing information with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections)
+- [GitHub Docs: Organizing information with tables](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables)
+- [GitHub Docs: Creating diagrams](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)
+- [GitHub Docs: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions)
+- [capsule-render](https://github.com/kyechan99/capsule-render)
+- [Awesome GitHub Profile README](https://github.com/abhisheknaiidu/awesome-github-profile-readme)
+- [Awesome README](https://github.com/matiassingers/awesome-readme)
+- [GitHub Profile README Generator](https://rahuldkjain.github.io/gh-profile-readme-generator/)
+- [Shields.io](https://shields.io/) and [contrib.rocks](https://contrib.rocks/)
 
-* Chemical container inventory tracking
-* QR code scanning for quick container lookup
-* Safety Data Sheet access for stored chemicals
-* User account management
-* Role-based access control
-* Chemical location tracking by building, room, cabinet, and shelf
-* Expiration date tracking
-* Low-supply visibility
-* Monthly expiration and inventory reports
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- USER ROLES -->
-## User Roles
-
-Kemyze will support multiple types of users:
-
-* Administrator: Manages instructor accounts, inventory records, SDS files, and system-level information.
-* Authorized Instructor: Views and updates chemical container records within their assigned department.
-* Staff User: Views relevant chemical and SDS information based on assigned access.
-* Guest or Student User: Scans QR codes to view SDS and basic chemical safety information without needing a permanent account.
+</details>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-<!-- PLANNED APPLICATION WORKFLOW -->
-## Planned Application Workflow
-
-1. A chemical container is added to the inventory system.
-2. The container is assigned identifying information such as chemical name, CAS number, location, quantity status, acquisition date, and expiration date.
-3. A QR code is generated or associated with the container.
-4. The QR code is placed on the physical chemical container.
-5. A user scans the QR code using the Kemyze mobile application.
-6. The application displays the container information and provides access to the associated SDS.
-7. Authorized users can update inventory information when needed.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- DATABASE INFORMATION -->
-## Database Information
-
-The Kemyze database is planned to store information related to chemical containers, users, locations, and Safety Data Sheets.
-
-Planned database records include:
-
-* Chemical container name
-* CAS Registry Number
-* Acquisition date
-* Expiration date
-* Quantity status
-* Building, room, cabinet, and shelf location
-* SDS document reference
-* User account information
-* User role and permission information
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- SECURITY CONSIDERATIONS -->
-## Security Considerations
-
-Kemyze is expected to include security controls appropriate for a chemical inventory management application.
-
-Planned security considerations include:
-
-* User authentication
-* Role-based access control
-* Restricted inventory editing permissions
-* Separation of guest access from administrative access
-* Protection of account information
-* Limiting SDS and inventory modification privileges to authorized users
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- FUTURE IMPROVEMENTS -->
-## Future Improvements
-
-Potential future improvements may include:
-
-* Web application extension
-* Multi-school or district-level support
-* Advanced inventory filtering
-* Mass inventory updates
-* Automated email reports
-* Push notifications
-* Chemical reorder recommendations
-* Expanded audit history for archived chemicals
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Team members should follow the project workflow agreed upon by the development team.
-
-General contribution expectations:
-
-* Pull the latest version of the repository before making changes.
-* Create a separate branch for new work when appropriate.
-* Write clear commit messages.
-* Test changes before submitting them.
-* Avoid committing unnecessary files, credentials, or local environment settings.
-* Communicate major changes with the team before merging.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- ACADEMIC CONTEXT -->
-## Academic Context
-
-Kemyze is being developed as part of the CSC 190/191 Senior Project sequence at California State University, Sacramento.
-
-The project is intended to provide students with experience in software engineering, Agile/SCRUM development, client communication, documentation, prototyping, implementation, testing, and delivery of a working software product.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- CONTACT -->
-## Contact
-
-Team Reverse Engineers <br>
-George Hollmann - ghollmann@csus.edu <br>
-Alexander Apolonio-Flores - aapolonio-flores@csus.edu <br>
-Joshua Zamora - joshuazamora@csus.edu <br>
-Reese Nelson - reesenelson@csus.edu <br>
-Matthew Fronda - mfronda@csus.edu <br>
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-
+<!-- FOOTER: https://github.com/kyechan99/capsule-render -->
+![Footer](https://capsule-render.vercel.app/api?type=waving&color=0:1e6fd9,50:0b1f4d,100:050816&height=120&section=footer)
 
 <!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/github_username/repo_name.svg?style=for-the-badge
-[contributors-url]: https://github.com/github_username/repo_name/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/github_username/repo_name.svg?style=for-the-badge
-[forks-url]: https://github.com/github_username/repo_name/network/members
-[stars-shield]: https://img.shields.io/github/stars/github_username/repo_name.svg?style=for-the-badge
-[stars-url]: https://github.com/github_username/repo_name/stargazers
-[issues-shield]: https://img.shields.io/github/issues/github_username/repo_name.svg?style=for-the-badge
-[issues-url]: https://github.com/github_username/repo_name/issues
-[license-shield]: https://img.shields.io/github/license/github_username/repo_name.svg?style=for-the-badge
-[license-url]: https://github.com/github_username/repo_name/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/screenshot.png
-<!-- Shields.io badges. You can a comprehensive list with many more badges at: https://github.com/inttter/md-badges -->
-[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
-[Next-url]: https://nextjs.org/
-[Django]: https://img.shields.io/badge/Django-%23092E20.svg?logo=django&logoColor=white
-[Django-url]: https://www.djangoproject.com/
-[Expo]: https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=fff
-[Expo-url]: https://expo.dev/
-[ReactNative]: https://img.shields.io/badge/React_Native-%2320232a.svg?logo=react&logoColor=%2361DAFB
+[ReactNative-shield]: https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [ReactNative-url]: https://reactnative.dev/
-[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
-[React-url]: https://reactjs.org/
-[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
-[Vue-url]: https://vuejs.org/
-[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
-[Angular-url]: https://angular.io/
-[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
-[Svelte-url]: https://svelte.dev/
-[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
-[Laravel-url]: https://laravel.com
-[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
-[Bootstrap-url]: https://getbootstrap.com
-[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
-[JQuery-url]: https://jquery.com 
+[Expo-shield]: https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white
+[Expo-url]: https://expo.dev/
+[Django-shield]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white
+[Django-url]: https://www.djangoproject.com/
+[MySQL-shield]: https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white
+[MySQL-url]: https://www.mysql.com/
+[Vercel-shield]: https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white
+[Vercel-url]: https://vercel.com/
+[iOS-shield]: https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=apple&logoColor=white
+[iOS-url]: https://developer.apple.com/ios/
+[Jest-shield]: https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white
+[Jest-url]: https://jestjs.io/
+[contributors-shield]: https://img.shields.io/github/contributors/gjhollmann/Kemyze?style=for-the-badge
+[contributors-url]: https://github.com/gjhollmann/Kemyze/graphs/contributors
+[last-commit-shield]: https://img.shields.io/github/last-commit/gjhollmann/Kemyze?style=for-the-badge
+[last-commit-url]: https://github.com/gjhollmann/Kemyze/commits/main
+[pulls-shield]: https://img.shields.io/github/issues-pr/gjhollmann/Kemyze?style=for-the-badge
+[pulls-url]: https://github.com/gjhollmann/Kemyze/pulls
